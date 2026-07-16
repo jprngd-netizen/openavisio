@@ -1,0 +1,40 @@
+http://{$DOMAIN} {
+    handle /api/auth/* {
+        reverse_proxy frontend:3000
+    }
+    handle /api/upload/* {
+        reverse_proxy frontend:3000
+    }
+    handle /api/documents/*/file {
+        reverse_proxy frontend:3000
+    }
+    handle /api/shares/*/file {
+        reverse_proxy frontend:3000
+    }
+    handle /api/sharing-purposes/*/download {
+        reverse_proxy frontend:3000
+    }
+    handle /api/patients/*/photo {
+        reverse_proxy frontend:3000
+    }
+    handle_path /api/backend/* {
+        rewrite * /api{uri}
+        reverse_proxy backend:8000 {
+            flush_interval -1
+        }
+    }
+    handle /api/admin/logs/stream* {
+        skip_log
+        reverse_proxy backend:8000 {
+            flush_interval -1
+        }
+    }
+    handle /api/* {
+        reverse_proxy backend:8000 {
+            flush_interval -1
+        }
+    }
+    handle {
+        reverse_proxy frontend:3000
+    }
+}

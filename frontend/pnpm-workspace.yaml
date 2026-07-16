@@ -1,0 +1,14 @@
+allowBuilds:
+  '@parcel/watcher': true
+  '@swc/core': true
+  sharp: true
+  unrs-resolver: true
+
+# Security overrides. All three are transitive and cannot be reached by bumping
+# a direct dependency: form-data sits under axios, postcss and @babel/core under
+# next. Patch-level fixes for known advisories; drop an entry once the parent
+# ships the fix itself.
+overrides:
+  form-data: '>=4.0.6'
+  postcss: '>=8.5.10'
+  '@babel/core': '>=7.29.1'

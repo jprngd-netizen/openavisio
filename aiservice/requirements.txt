@@ -1,0 +1,37 @@
+# OpenAvisio AI Service Dependencies
+
+# Web Framework
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+
+# Data Validation
+pydantic>=2.5.0
+python-multipart>=0.0.9
+
+# HTTP Client (for Ollama communication)
+httpx>=0.26.0
+
+# PDF text + image extraction
+pypdfium2>=4.0.0
+
+# Image processing
+Pillow>=10.0.0
+
+# OCR
+ocrmypdf>=16.0.0
+pytesseract>=0.3.10
+
+# Ollama Python Client
+ollama>=0.4.0
+
+# OpenAI SDK (for vLLM backend)
+openai>=1.12.0
+
+# Token counting for chunking
+tiktoken>=0.9.0
+
+# OpenTelemetry (for Aspire integration)
+opentelemetry-api>=1.22.0
+opentelemetry-sdk>=1.22.0
+opentelemetry-instrumentation-fastapi>=0.43b0
+opentelemetry-exporter-otlp>=1.22.0

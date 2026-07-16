@@ -1,0 +1,19 @@
+{
+  "name": "openavisio-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Capacitor shell for OpenAvisio (see ADR 023)",
+  "scripts": {
+    "sync": "cap sync"
+  },
+  "dependencies": {
+    "@aparajita/capacitor-biometric-auth": "^10.0.0",
+    "@capacitor/android": "^8.4.1",
+    "@capacitor/app": "^8.1.0",
+    "@capacitor/core": "^8.4.1",
+    "@capacitor/ios": "^8.4.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.4.1"
+  }
+}
