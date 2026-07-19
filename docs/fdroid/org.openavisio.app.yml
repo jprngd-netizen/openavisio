@@ -1,18 +1,26 @@
 # Reference copy of the fdroiddata metadata for OpenAvisio.
-# The authoritative file lives in fdroid/fdroiddata as metadata/org.openavisio.app.yml.
+# Authoritative file lives in fdroid/fdroiddata as metadata/org.openavisio.app.yml.
 #
-# This recipe is VERIFIED: it built green on F-Droid's own buildserver
-# (MR fdroid/fdroiddata!43322). Notes on the non-obvious bits:
-#   - Node 22 via NodeSource: the F-Droid VM ships Node 20, but @capacitor/cli 8 needs >=22.
-#   - pnpm pinned to 9.15.9 via npm -g: Node 20's corepack can't load pnpm 11 (ESM); pinning
-#     also survived (lockfile is v9.0). Kept even with Node 22 for determinism.
-#   - prebuild uses `pnpm exec cap`, not npx (@capacitor/cli is a devDep, resolves locally);
-#     CI=true so cap sync's inner pnpm install runs head-less.
-#   - output: points at the app MODULE's APK (multi-module gradle; fdroid looks in subdir/build by default).
-#   - scandelete: removes @capacitor/cli scaffolding .tar.gz templates the scanner flags (unused by the build).
+# VERIFIED green on F-Droid's buildserver (MR !43322), and locally clean via
+# `fdroid lint org.openavisio.app` + `fdroid rewritemeta` (fdroidserver 2.4.5).
+# ALWAYS run those two locally before touching this recipe - it's what stops the
+# review ping-pong (CONTRIBUTING.md: "fdroid lint ... doesn't report warnings").
+#
+# Reviewer-enforced conventions baked in here:
+#   - commit is the FULL hash of the built commit on Codeberg, never a tag/branch.
+#   - subdir is the app MODULE (mobile/android/app) = where build/ is generated;
+#     with that, fdroid finds the APK by default, so no `output:` is needed. gradle
+#     searches up for settings.gradle, so it still builds the multi-module project.
+#   - prebuild is a LIST of commands (fdroid joins them with `;` in one shell, so
+#     the leading `cd ../..` persists) - never join with && or ; yourself.
+#   - Node comes from Debian (Capacitor 7 needs only Node 20; ADR 035). pnpm pinned
+#     to 9.15.9 via npm -g (Node 20 corepack can't load pnpm 11 ESM).
+#   - scandelete path is relative to the repo root and version-pinned to the CLI.
+#   - No Name/Summary/Description here - those live in fastlane (mobile/android/app/fastlane).
+# The `commit:` below is release-specific; bump it (to the new Codeberg commit) each release.
 
 Categories:
-  - Science & Education
+  - Health Manager
 License: AGPL-3.0-only
 AuthorName: OpenAvisio
 WebSite: https://openavisio.org
@@ -25,21 +33,20 @@ Repo: https://codeberg.org/openavisio/openavisio.git
 Builds:
   - versionName: 0.1.0-beta
     versionCode: 1
-    commit: v0.1.0-beta
-    subdir: mobile/android
+    commit: e74326798c5ce5c52ec67a758a60002aed6a01da
+    subdir: mobile/android/app
     sudo:
       - apt-get update
-      - apt-get install -y curl ca-certificates
-      - curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
-      - apt-get install -y nodejs
+      - apt-get install -y nodejs npm
       - npm install -g pnpm@9.15.9
     gradle:
       - yes
-    output: app/build/outputs/apk/release/app-release-unsigned.apk
-    prebuild: cd .. && CI=true pnpm install --frozen-lockfile && CI=true pnpm exec
-      cap sync android
+    prebuild:
+      - cd ../..
+      - CI=true pnpm install --frozen-lockfile
+      - CI=true pnpm exec cap sync android
     scandelete:
-      - mobile/node_modules/.pnpm/@capacitor+cli@8.4.1/node_modules/@capacitor/cli/assets
+      - mobile/node_modules/.pnpm/@capacitor+cli@7.6.8/node_modules/@capacitor/cli/assets
 
 AutoUpdateMode: None
 UpdateCheckMode: Static
