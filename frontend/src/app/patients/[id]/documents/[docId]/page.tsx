@@ -102,7 +102,7 @@ export default async function DocumentDetailPage({ params }: { params: Promise<{
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
         {/* PDF — sticky on desktop */}
         <DocumentViewer
           docId={docId}

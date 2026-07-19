@@ -52,6 +52,10 @@
     <button id="unlock" class="hidden" type="button">Entsperren / Unlock</button>
     <div id="error"></div>
   </main>
+  <!-- @capacitor/core runtime: the native bridge exposes window.Capacitor but
+       not registerPlugin — that lives here. Must load before shell.js. Refresh
+       www/capacitor.js from node_modules/@capacitor/core/dist/ on a core bump. -->
+  <script src="capacitor.js"></script>
   <script src="shell.js"></script>
 </body>
 </html>

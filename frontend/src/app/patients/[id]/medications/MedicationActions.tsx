@@ -30,7 +30,7 @@ export interface Med {
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export function MedicationActions({ med }: { med: Med }) {
+export function MedicationActions({ med, iconBar = false }: { med: Med; iconBar?: boolean }) {
   const t = useTranslations("Med");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -76,44 +76,39 @@ export function MedicationActions({ med }: { med: Med }) {
   const stopBtn = `${btn} hover:border-amber-500 hover:bg-amber-500/10 hover:text-amber-700 dark:hover:text-amber-400`;
   const editBtn = `${btn} hover:border-blue-500 hover:bg-blue-500/10 hover:text-blue-700 dark:hover:text-blue-400`;
 
-  return (
-    <div className="flex items-center gap-2" onMouseLeave={() => setConfirmDelete(false)}>
+  // Phone: the same icon bar documents and conditions reveal on tap.
+  const bar = (
+    <div className="flex items-stretch divide-x border-t [&>*]:min-h-12 [&>*]:flex-1 [&>*]:justify-center [&>*]:rounded-none [&>*]:border-0"
+         onClick={(e) => e.stopPropagation()}>
       {med.is_active ? (
-        <button onClick={() => setStopOpen(true)} disabled={pending} title={t("MarkStoppedTitle")} className={`${stopBtn} ${firstSlot}`}>
-          <StopCircle className="h-3.5 w-3.5" />
-          {t("Stop")}
+        <button onClick={() => setStopOpen(true)} disabled={pending} aria-label={t("MarkStoppedTitle")}
+                className="inline-flex items-center text-foreground disabled:opacity-50">
+          <StopCircle className="h-5 w-5" />
         </button>
       ) : (
-        <button
-          onClick={() => save({ status: "active", effective_end: null }, () => {})}
-          disabled={pending}
-          title={t("MarkActiveTitle")}
-          className={`${btn} ${firstSlot} hover:border-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-400`}
-        >
-          <Undo2 className="h-3.5 w-3.5" />
-          {t("Reactivate")}
+        <button onClick={() => save({ status: "active", effective_end: null }, () => {})} disabled={pending}
+                aria-label={t("MarkActiveTitle")}
+                className="inline-flex items-center bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 disabled:opacity-50">
+          <Undo2 className="h-5 w-5" />
         </button>
       )}
-
-      <button onClick={() => setEditOpen(true)} disabled={pending} title={t("EditTitle")} className={editBtn}>
-        <Pencil className="h-3.5 w-3.5" />
-        {t("Edit")}
+      <button onClick={() => setEditOpen(true)} disabled={pending} aria-label={t("EditTitle")}
+              className="inline-flex items-center text-foreground disabled:opacity-50">
+        <Pencil className="h-5 w-5" />
       </button>
-
-      <button
-        onClick={handleDelete}
-        disabled={pending}
-        title={confirmDelete ? t("ConfirmAgain") : t("DeleteTitle")}
-        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-          confirmDelete
-            ? "border-destructive bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            : "border-border bg-muted text-foreground hover:border-destructive hover:bg-destructive/10 hover:text-destructive"
-        }`}
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-        {confirmDelete ? t("Confirm") : t("Delete")}
+      <button onClick={handleDelete} disabled={pending}
+              aria-label={confirmDelete ? t("ConfirmAgain") : t("DeleteTitle")}
+              className={`inline-flex items-center disabled:opacity-50 ${
+                confirmDelete ? "bg-destructive text-destructive-foreground" : "text-destructive"
+              }`}>
+        <Trash2 className="h-5 w-5" />
+        {confirmDelete && <span className="ml-1.5 text-xs font-medium">{t("Confirm")}</span>}
       </button>
+    </div>
+  );
 
+  const dialogs = (
+    <>
       {/* Stop: which day did she actually stop? */}
       <Dialog open={stopOpen} onOpenChange={(v) => !pending && setStopOpen(v)}>
         <DialogContent>
@@ -216,6 +211,51 @@ export function MedicationActions({ med }: { med: Med }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </>
+  );
+
+  if (iconBar) return (<>{bar}{dialogs}</>);
+
+  return (
+    <div className="flex items-center gap-2" onMouseLeave={() => setConfirmDelete(false)}>
+      {med.is_active ? (
+        <button onClick={() => setStopOpen(true)} disabled={pending} title={t("MarkStoppedTitle")} className={`${stopBtn} ${firstSlot}`}>
+          <StopCircle className="h-3.5 w-3.5" />
+          {t("Stop")}
+        </button>
+      ) : (
+        <button
+          onClick={() => save({ status: "active", effective_end: null }, () => {})}
+          disabled={pending}
+          title={t("MarkActiveTitle")}
+          className={`${btn} ${firstSlot} hover:border-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-400`}
+        >
+          <Undo2 className="h-3.5 w-3.5" />
+          {t("Reactivate")}
+        </button>
+      )}
+
+      <button onClick={() => setEditOpen(true)} disabled={pending} title={t("EditTitle")} className={editBtn}>
+        <Pencil className="h-3.5 w-3.5" />
+        {t("Edit")}
+      </button>
+
+      <button
+        onClick={handleDelete}
+        disabled={pending}
+        title={confirmDelete ? t("ConfirmAgain") : t("DeleteTitle")}
+        className={`inline-flex cursor-pointer items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+          confirmDelete
+            ? "border-destructive bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            : "border-border bg-muted text-foreground hover:border-destructive hover:bg-destructive/10 hover:text-destructive"
+        }`}
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+        {confirmDelete ? t("Confirm") : t("Delete")}
+      </button>
+
+      {dialogs}
+
     </div>
   );
 }

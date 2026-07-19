@@ -66,11 +66,17 @@ run_backup() {
   # "not empty" is not a check: age of an EMPTY stream is ~200 bytes and sails
   # through `-s`. Demand a plausible size per stream — a real clinical dump of
   # this schema is megabytes, a keystore is at least a kilobyte.
+  #
+  # documents is the exception: a fresh instance has zero blobs, so its tarball
+  # is legitimately ~300 bytes. The floor guards against a TRUNCATED archive of a
+  # FULL volume, so only apply it when the volume actually holds files.
+  docs_floor=1024
+  [ "$(find "$DOCS" -type f 2>/dev/null | head -1 | wc -l)" -eq 0 ] && docs_floor=1
   min_size() {
     case "$1" in
       clinical-*)  echo 65536 ;;   # 64 KB — an empty schema dump is already bigger
       keystore-*)  echo 1024  ;;   # 1 KB
-      documents-*) echo 1024  ;;
+      documents-*) echo "$docs_floor" ;;
       *)           echo 1     ;;
     esac
   }
@@ -111,7 +117,10 @@ while true; do
   # busybox date has no `-d "today 3:00"` — it silently fell back to "in 24h",
   # so the job drifted to whenever the container happened to start. Compute the
   # delay from the local wall clock instead.
-  secs_now=$(( $(date +%H) * 3600 + $(date +%M) * 60 + $(date +%S) ))
+  # Strip the leading zero: ash reads `08`/`09` as octal and dies with an
+  # arithmetic error (crashloop every day between 08:00 and 09:59).
+  now_h=$(date +%H); now_m=$(date +%M); now_s=$(date +%S)
+  secs_now=$(( ${now_h#0} * 3600 + ${now_m#0} * 60 + ${now_s#0} ))
   delay=$(( HOUR * 3600 - secs_now ))
   [ "$delay" -le 0 ] && delay=$(( delay + 86400 ))
   log "nächster Lauf um ${HOUR}:00 (in $(( delay / 60 )) min)"

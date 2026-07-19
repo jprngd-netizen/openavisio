@@ -51,6 +51,11 @@ function Sources({ sources, patientId }: { sources: any[]; patientId: string }) 
   );
 }
 
+function tSafe(t: any, key: string, raw: string | null | undefined) {
+  if (!raw) return "—";
+  try { return t(`${key}_${raw}`); } catch { return raw; }
+}
+
 export function ConditionsTable({ conditions, patientId }: { conditions: any[]; patientId: string }) {
   // Phone: the documents-list look — one card per condition, a tap reveals the
   // icon action bar under the card. Desktop keeps the table.
@@ -71,12 +76,12 @@ export function ConditionsTable({ conditions, patientId }: { conditions: any[]; 
                 <div className="flex items-start justify-between gap-2">
                   <span className="min-w-0 text-sm font-medium"><ConditionName name={c.code_display} /></span>
                   <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeColor(c.clinical_status)}`}>
-                    {c.clinical_status}
+                    {tSafe(t, "status", c.clinical_status)}
                   </span>
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground">
                   {c.onset_date_time && <>{formatDate(c.onset_date_time)} · </>}
-                  {c.severity && <span className="capitalize">{c.severity} · </span>}
+                  {c.severity && <span className="capitalize">{tSafe(t, "severity", c.severity)} · </span>}
                   {c.sources?.length ? t("documents", { count: c.sources.length }) : t("manual")}
                 </div>
               </div>
@@ -126,11 +131,11 @@ export function ConditionsTable({ conditions, patientId }: { conditions: any[]; 
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/50">
             <tr>
-              <th className="px-4 py-3 text-left font-medium">Condition</th>
-              <th className="px-4 py-3 text-left font-medium">Onset</th>
-              <th className="px-4 py-3 text-left font-medium">Severity</th>
-              <th className="px-4 py-3 text-left font-medium">Status</th>
-              <th className="px-4 py-3 text-left font-medium">Source</th>
+              <th className="px-4 py-3 text-left font-medium">{t("colCondition")}</th>
+              <th className="px-4 py-3 text-left font-medium">{t("colOnset")}</th>
+              <th className="px-4 py-3 text-left font-medium">{t("colSeverity")}</th>
+              <th className="px-4 py-3 text-left font-medium">{t("colStatus")}</th>
+              <th className="px-4 py-3 text-left font-medium">{t("colSource")}</th>
               <th className="w-px px-4 py-3" />
             </tr>
           </thead>
@@ -139,10 +144,10 @@ export function ConditionsTable({ conditions, patientId }: { conditions: any[]; 
               <tr key={c.id} className={`hover:bg-muted/30 transition-colors ${c.clinical_status === "inactive" ? "opacity-50" : ""}`}>
                 <td className="px-4 py-3 font-medium max-w-0 w-1/2"><ConditionName name={c.code_display} /></td>
                 <td className="px-4 py-3 text-muted-foreground">{formatDate(c.onset_date_time)}</td>
-                <td className="px-4 py-3 text-muted-foreground capitalize">{c.severity || "—"}</td>
+                <td className="px-4 py-3 text-muted-foreground capitalize">{tSafe(t, "severity", c.severity)}</td>
                 <td className="px-4 py-3">
                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusBadgeColor(c.clinical_status)}`}>
-                    {c.clinical_status}
+                    {tSafe(t, "status", c.clinical_status)}
                   </span>
                 </td>
                 <td className="px-4 py-3 text-muted-foreground text-xs">

@@ -60,6 +60,24 @@ Release builds need a signing keystore — keep it out of the repo and back it u
 losing it means losing the Play Store identity. That is why CI builds debug only:
 the keystore is not going into a workflow file (#59).
 
+## App icon
+
+Launcher icons are generated from `assets/` (the OpenAvisio shield) into the
+native `res/mipmap-*` folders. `@capacitor/assets` is **not** a committed
+dependency — it pulls in ~300 packages plus a native `sharp` build for a job
+that runs maybe once a year. Regenerate one-off:
+
+```bash
+pnpm add -D @capacitor/assets      # then in pnpm-workspace.yaml: allowBuilds: { sharp: true }; pnpm install
+pnpm exec capacitor-assets generate --android
+git checkout -- android/app/src/main/AndroidManifest.xml   # it reformats the manifest; keep only the icons
+pnpm remove @capacitor/assets && rm pnpm-workspace.yaml
+```
+
+`assets/icon-foreground.png` is near full-bleed on purpose — the adaptive-icon
+template adds its own 16.7% safe-zone inset, so pre-padding it renders the
+shield tiny. `assets/icon-background.png` is the app cream `#f7f3e8`.
+
 ## iOS
 
 Requires a Mac with Xcode + CocoaPods:

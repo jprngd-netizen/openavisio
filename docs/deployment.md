@@ -30,9 +30,25 @@ Traffic path: Browser → Nginx Proxy Manager (HTTPS termination) → Caddy (HTT
 - **Stack location:** `/opt/openavisio/`
 - **Env file:** `/opt/openavisio/.env`
 
-### Deploying a change
+### Deploying a release
 
-Always run `docker compose` from `/opt/openavisio/`, not from `deploy/`. Running from `deploy/` creates a separate `deploy-*` project that is not the live stack.
+To ship a tagged release to a box, use the deploy script — it streams the tag's
+tree over SSH, rebuilds, and waits for the backend to report healthy:
+
+```bash
+./deploy/deploy.sh root@YOUR_SERVER_IP v0.1.0
+```
+
+It deploys only a pushed annotated tag (see `docs/releasing.md`), never touches
+the box's `.env`/`data`/`backups` (they are untracked, so absent from
+`git archive`), and lets the backend's own start-up run `alembic upgrade head`.
+
+### Iterating a single file (test server)
+
+For a quick one-file change while developing, skip the tag dance and copy
+directly. Always run `docker compose` from `/opt/openavisio/`, not from
+`deploy/` — running from `deploy/` creates a separate `deploy-*` project that is
+not the live stack.
 
 ```bash
 # 1. Copy changed files to the server
@@ -59,6 +75,32 @@ ssh root@YOUR_SERVER_IP "docker logs openavisio-celery-worker-1 --tail 100"
 
 # All services, live
 ssh root@YOUR_SERVER_IP "cd /opt/openavisio && docker compose logs -f --tail 50"
+```
+
+## Demo instance
+
+The public demo (`demo.openavisio.org`) is its **own** host, separate from the
+test server above — a different box with a different `.env`. It uses the same
+deploy layout (stack in `/opt/openavisio/`, compose run from there), so the
+"Deploying a change" and "Viewing logs" steps apply unchanged; only the target
+host differs.
+
+Because it shares one admin account with every visitor, uploads must be locked
+to the bundled sample — otherwise the box is an anonymous file drop under our
+domain, and we own whatever gets uploaded. This takes **two** env vars that must
+be set together:
+
+- `DEMO_MODE=true` — frontend. Replaces the upload dropzone with a "replay the
+  bundled sample" button.
+- `DEMO_LOCKED_UPLOAD_SHA256=<sha256 of frontend/public/demo-sample.pdf>` —
+  backend. Returns 403 for any file whose hash differs from the sample.
+
+`DEMO_MODE` alone is a silent hole: the UI looks locked but the API stays open,
+so a direct POST (or the frontend proxy) still stores any file. Both, or neither.
+
+```bash
+# the value to set — recompute if demo-sample.pdf ever changes
+sha256sum frontend/public/demo-sample.pdf
 ```
 
 ## Backups

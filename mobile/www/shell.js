@@ -1,5 +1,6 @@
 // Connect/lock screen of the Capacitor shell (ADR 023).
-// Plain JS, no bundler — native plugins via Capacitor.registerPlugin.
+// Plain JS, no bundler — native plugins via Capacitor.registerPlugin, which the
+// @capacitor/core runtime (loaded in index.html) attaches to window.Capacitor.
 //
 // Deep links:
 //   openavisio://connect?url=https://deployment[&token=INVITE]  → store URL, open /register?token=…
@@ -15,8 +16,12 @@ const LOCK_KEY = "bioLock";
 const inWebView = typeof document !== "undefined";
 const $ = (id) => document.getElementById(id);
 const cap = inWebView ? window.Capacitor : null;
-const App = cap ? cap.registerPlugin("App") : null;
-const Bio = cap ? cap.registerPlugin("BiometricAuth") : null;
+// Guard registerPlugin: if the core runtime is ever missing, degrade to no
+// deep links / no biometry instead of throwing here — a throw would leave the
+// submit handler below unbound and silently break "Verbinden" entirely.
+const reg = cap && typeof cap.registerPlugin === "function" ? cap.registerPlugin.bind(cap) : null;
+const App = reg ? reg("App") : null;
+const Bio = reg ? reg("BiometricAuth") : null;
 
 function normalize(u) {
   u = u.trim().replace(/\/+$/, "");

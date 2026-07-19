@@ -1,0 +1,49 @@
+# DRAFT of the fdroiddata metadata for OpenAvisio.
+#
+# This file is submitted as `metadata/org.openavisio.app.yml` via a merge
+# request to https://gitlab.com/fdroid/fdroiddata . It is kept here only for
+# reference and version control — F-Droid reads the copy in *their* repo.
+#
+# BUILD RECIPE VALIDATED 2026-07-19 (JDK 21 + Android SDK, cmdline-tools,
+# platforms;android-36, build-tools;36.0.0). The exact working sequence:
+#     cd mobile
+#     CI=true pnpm install --frozen-lockfile
+#     CI=true pnpm exec cap sync android      # NOT npx — @capacitor/cli is a devDep, resolves locally
+#     cd android && ANDROID_HOME=... ./gradlew assembleRelease
+#     -> app/build/outputs/apk/release/app-release-unsigned.apk  (no signature block; F-Droid signs)
+# CI=true is required: cap sync shells out to `pnpm install`, which refuses to
+# purge node_modules without a TTY unless it knows it is in CI.
+
+Categories:
+  - Science & Education
+License: AGPL-3.0-only
+AuthorName: OpenAvisio
+WebSite: https://openavisio.org
+SourceCode: https://codeberg.org/openavisio/openavisio
+IssueTracker: https://codeberg.org/openavisio/openavisio/issues
+
+RepoType: git
+Repo: https://codeberg.org/openavisio/openavisio.git
+
+Builds:
+  - versionName: 0.1.0-beta
+    versionCode: 1
+    # The tag in the PUBLIC repo. Snapshots now accumulate tagged releases
+    # (ADR 032, amended), so this tag persists — cut it with a public beta release.
+    commit: v0.1.0-beta
+    subdir: mobile/android
+    sudo:
+      - apt-get update
+      - apt-get install -y nodejs npm
+      - corepack enable
+    prebuild:
+      - cd .. && CI=true pnpm install --frozen-lockfile && CI=true pnpm exec cap sync android
+    gradle:
+      - yes
+
+# First submission; leave auto-update off until a second release confirms the
+# tag pattern.
+AutoUpdateMode: None
+UpdateCheckMode: Static
+CurrentVersion: 0.1.0-beta
+CurrentVersionCode: 1
