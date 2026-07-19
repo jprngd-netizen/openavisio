@@ -1,18 +1,15 @@
-# DRAFT of the fdroiddata metadata for OpenAvisio.
+# Reference copy of the fdroiddata metadata for OpenAvisio.
+# The authoritative file lives in fdroid/fdroiddata as metadata/org.openavisio.app.yml.
 #
-# This file is submitted as `metadata/org.openavisio.app.yml` via a merge
-# request to https://gitlab.com/fdroid/fdroiddata . It is kept here only for
-# reference and version control — F-Droid reads the copy in *their* repo.
-#
-# BUILD RECIPE VALIDATED 2026-07-19 (JDK 21 + Android SDK, cmdline-tools,
-# platforms;android-36, build-tools;36.0.0). The exact working sequence:
-#     cd mobile
-#     CI=true pnpm install --frozen-lockfile
-#     CI=true pnpm exec cap sync android      # NOT npx — @capacitor/cli is a devDep, resolves locally
-#     cd android && ANDROID_HOME=... ./gradlew assembleRelease
-#     -> app/build/outputs/apk/release/app-release-unsigned.apk  (no signature block; F-Droid signs)
-# CI=true is required: cap sync shells out to `pnpm install`, which refuses to
-# purge node_modules without a TTY unless it knows it is in CI.
+# This recipe is VERIFIED: it built green on F-Droid's own buildserver
+# (MR fdroid/fdroiddata!43322). Notes on the non-obvious bits:
+#   - Node 22 via NodeSource: the F-Droid VM ships Node 20, but @capacitor/cli 8 needs >=22.
+#   - pnpm pinned to 9.15.9 via npm -g: Node 20's corepack can't load pnpm 11 (ESM); pinning
+#     also survived (lockfile is v9.0). Kept even with Node 22 for determinism.
+#   - prebuild uses `pnpm exec cap`, not npx (@capacitor/cli is a devDep, resolves locally);
+#     CI=true so cap sync's inner pnpm install runs head-less.
+#   - output: points at the app MODULE's APK (multi-module gradle; fdroid looks in subdir/build by default).
+#   - scandelete: removes @capacitor/cli scaffolding .tar.gz templates the scanner flags (unused by the build).
 
 Categories:
   - Science & Education
@@ -28,21 +25,22 @@ Repo: https://codeberg.org/openavisio/openavisio.git
 Builds:
   - versionName: 0.1.0-beta
     versionCode: 1
-    # The tag in the PUBLIC repo. Snapshots now accumulate tagged releases
-    # (ADR 032, amended), so this tag persists — cut it with a public beta release.
     commit: v0.1.0-beta
     subdir: mobile/android
     sudo:
       - apt-get update
-      - apt-get install -y nodejs npm
-      - corepack enable
-    prebuild:
-      - cd .. && CI=true pnpm install --frozen-lockfile && CI=true pnpm exec cap sync android
+      - apt-get install -y curl ca-certificates
+      - curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+      - apt-get install -y nodejs
+      - npm install -g pnpm@9.15.9
     gradle:
       - yes
+    output: app/build/outputs/apk/release/app-release-unsigned.apk
+    prebuild: cd .. && CI=true pnpm install --frozen-lockfile && CI=true pnpm exec
+      cap sync android
+    scandelete:
+      - mobile/node_modules/.pnpm/@capacitor+cli@8.4.1/node_modules/@capacitor/cli/assets
 
-# First submission; leave auto-update off until a second release confirms the
-# tag pattern.
 AutoUpdateMode: None
 UpdateCheckMode: Static
 CurrentVersion: 0.1.0-beta

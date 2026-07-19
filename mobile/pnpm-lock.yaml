@@ -9,53 +9,53 @@ importers:
   .:
     dependencies:
       '@aparajita/capacitor-biometric-auth':
-        specifier: ^10.0.0
-        version: 10.0.0
+        specifier: ^9.1.2
+        version: 9.1.2
       '@capacitor/android':
-        specifier: ^8.4.1
-        version: 8.4.1(@capacitor/core@8.4.1)
+        specifier: ^7.4.4
+        version: 7.6.8(@capacitor/core@7.6.8)
       '@capacitor/app':
-        specifier: ^8.1.0
-        version: 8.1.0(@capacitor/core@8.4.1)
+        specifier: ^7.1.0
+        version: 7.1.2(@capacitor/core@7.6.8)
       '@capacitor/core':
-        specifier: ^8.4.1
-        version: 8.4.1
+        specifier: ^7.4.4
+        version: 7.6.8
       '@capacitor/ios':
-        specifier: ^8.4.1
-        version: 8.4.1(@capacitor/core@8.4.1)
+        specifier: ^7.4.4
+        version: 7.6.8(@capacitor/core@7.6.8)
     devDependencies:
       '@capacitor/cli':
-        specifier: ^8.4.1
-        version: 8.4.1
+        specifier: ^7.6.8
+        version: 7.6.8
 
 packages:
 
-  '@aparajita/capacitor-biometric-auth@10.0.0':
-    resolution: {integrity: sha512-azjWaRucB8x1/gSzSTp/NxelaOZyg+m765gSzjwUkSQgg30RrZPmPq6pyLeeXVSZNDY3Rxf5Hj8obgZaXirCFQ==}
+  '@aparajita/capacitor-biometric-auth@9.1.2':
+    resolution: {integrity: sha512-cDcTFOQW4iI1+/AwkA0hRfiP53BuCSWvoxxkyp2NC7Hf0tNSg5fZ4zmXI/PcpLKUR7cd91TxnAxWYAAGJKOBig==}
     engines: {node: '>=20.0.0'}
 
-  '@capacitor/android@8.4.1':
-    resolution: {integrity: sha512-igtDCJ7QQn0P2qHFD9p4KXaa6V1b2PRNt+MxjVwtjTm/BJvqmiazOJq6rPjwFSZnfHm6iFoZk8TfzHd44pyBGw==}
+  '@capacitor/android@7.6.8':
+    resolution: {integrity: sha512-N5LXe1ls+TA0mq+RhtyDdP1JISzAAI+OuLGL3G7OWQxfQQOZYkiEjEJMYqMV6JR421IqpRsYj08JOfC0PFC3NA==}
     peerDependencies:
-      '@capacitor/core': ^8.4.0
+      '@capacitor/core': ^7.6.0
 
-  '@capacitor/app@8.1.0':
-    resolution: {integrity: sha512-MlmttTOWHDedr/G4SrhNRxsXMqY+R75S4MM4eIgzsgCzOYhb/MpCkA5Q3nuOCfL1oHm26xjUzqZ5aupbOwdfYg==}
+  '@capacitor/app@7.1.2':
+    resolution: {integrity: sha512-d4I/oF/PRu4megL7/IGKYfe5j7yzSON1FRFgq6kH+m5kH6g7V+wyjHRLauCzGNjdRx4S+nWOumINds0qcRBtKg==}
     peerDependencies:
-      '@capacitor/core': '>=8.0.0'
+      '@capacitor/core': '>=7.0.0'
 
-  '@capacitor/cli@8.4.1':
-    resolution: {integrity: sha512-t7F2s7fFHCq113xgrggrmK6ctV0/8E5YfLNVLfPHp4GCTDO+tly9fZvWPf2/sOI8lMm18dLT43qbXLRTz/OZgw==}
-    engines: {node: '>=22.0.0'}
+  '@capacitor/cli@7.6.8':
+    resolution: {integrity: sha512-sJYLoSS1wVHjDPwRc0grtNZcQZnkQc7TJKoVZdHL2HI5TPCq+27WBrMAo0mXvQQSH2axPYCz5cyRrcqqakOvxQ==}
+    engines: {node: '>=20.0.0'}
     hasBin: true
 
-  '@capacitor/core@8.4.1':
-    resolution: {integrity: sha512-xqhOGLbTAYeOWK+IDUNSjQJAPapQjRHrIcgk9PYp52or9zFTaaMko31uNi16N6W+CRJ8VrRram6fOYILkBG2Hg==}
+  '@capacitor/core@7.6.8':
+    resolution: {integrity: sha512-x1xfxvNcTSnj6OoYaAB0n0a0HRvi5f2YjcVnMLxpMhbHDgGDAzzN9z8cnPCYV+SKTvqGF1hezHm82Op32XaAGg==}
 
-  '@capacitor/ios@8.4.1':
-    resolution: {integrity: sha512-EgcAk7NYheHMTyP3CUrA65qKs4D2UEAKgw44HI6Uk3dTw6KjLQkdLOQWvbeRncHaZ2gklfOojUoc5DlSw2lhYg==}
+  '@capacitor/ios@7.6.8':
+    resolution: {integrity: sha512-TAM1FdI1Cfl8e/wLBo7x5m61V/J1fMEpyxU2psZzHzsa436k2pwEME6CQoBRYdw6Q6gud0jZSPwOVrNn+MI7Ag==}
     peerDependencies:
-      '@capacitor/core': ^8.4.0
+      '@capacitor/core': ^7.6.0
 
   '@ionic/cli-framework-output@2.2.8':
     resolution: {integrity: sha512-TshtaFQsovB4NWRBydbNFawql6yul7d5bMiW1WYYf17hd99V6xdDdk3vtF51bw6sLkxON3bDQpWsnUc9/hVo3g==}
@@ -404,22 +404,22 @@ packages:
 
 snapshots:
 
-  '@aparajita/capacitor-biometric-auth@10.0.0':
+  '@aparajita/capacitor-biometric-auth@9.1.2':
     dependencies:
-      '@capacitor/android': 8.4.1(@capacitor/core@8.4.1)
-      '@capacitor/app': 8.1.0(@capacitor/core@8.4.1)
-      '@capacitor/core': 8.4.1
-      '@capacitor/ios': 8.4.1(@capacitor/core@8.4.1)
+      '@capacitor/android': 7.6.8(@capacitor/core@7.6.8)
+      '@capacitor/app': 7.1.2(@capacitor/core@7.6.8)
+      '@capacitor/core': 7.6.8
+      '@capacitor/ios': 7.6.8(@capacitor/core@7.6.8)
 
-  '@capacitor/android@8.4.1(@capacitor/core@8.4.1)':
+  '@capacitor/android@7.6.8(@capacitor/core@7.6.8)':
     dependencies:
-      '@capacitor/core': 8.4.1
+      '@capacitor/core': 7.6.8
 
-  '@capacitor/app@8.1.0(@capacitor/core@8.4.1)':
+  '@capacitor/app@7.1.2(@capacitor/core@7.6.8)':
     dependencies:
-      '@capacitor/core': 8.4.1
+      '@capacitor/core': 7.6.8
 
-  '@capacitor/cli@8.4.1':
+  '@capacitor/cli@7.6.8':
     dependencies:
       '@ionic/cli-framework-output': 2.2.8
       '@ionic/utils-subprocess': 3.0.1
@@ -441,13 +441,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@capacitor/core@8.4.1':
+  '@capacitor/core@7.6.8':
     dependencies:
       tslib: 2.8.1
 
-  '@capacitor/ios@8.4.1(@capacitor/core@8.4.1)':
+  '@capacitor/ios@7.6.8(@capacitor/core@7.6.8)':
     dependencies:
-      '@capacitor/core': 8.4.1
+      '@capacitor/core': 7.6.8
 
   '@ionic/cli-framework-output@2.2.8':
     dependencies:
