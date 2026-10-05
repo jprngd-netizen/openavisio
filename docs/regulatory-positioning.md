@@ -109,3 +109,18 @@ non-device side.
   the line, with disclaimers and citations.
 - A **formal regulatory review** is planned as the product matures (budgeted
   under legal/data-protection).
+
+## Prescription issuing (Memed integration, 2026-10-05)
+
+Issuing medical prescriptions through the Memed integration (ADR-036) moves
+OpenAvisio into territory that the "not a medical device" positioning above
+does **not** cover. Generating and issuing a signed prescription document is
+a regulated act in most jurisdictions, including Brazil (ANVISA RDC 1000/25)
+and the EU (MDR 2017/745).
+
+**This feature is outside the current "not a medical device" claim and
+requires a formal regulatory review before any production deployment.** The
+review should determine whether issuing prescriptions through the platform
+triggers medical device classification, and if so, what conformity assessment
+route applies. This note does not constitute legal advice or a compliance
+assertion.

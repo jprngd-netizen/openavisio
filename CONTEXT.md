@@ -115,6 +115,24 @@ _Avoid_: CalendarEvent, appointment, entry, item
 A Patient's self-reported daily record — mood, pain level, sleep, bowel movement, medication compliance, and other subjective observations. Structured for trend tracking, not free-form journaling.
 _Avoid_: DiaryEntry, diary, journal, daily log
 
+### Prescription
+
+**Prescriber**:
+The licensed healthcare professional authorized to issue prescriptions for an Organization. Exactly one per Organization (singleton model with fixed ID). Stores the prescriber's professional registration (board code, number, state), contact information, and CPF (encrypted at rest, masked in API). A single User is linked as the authorized issuer.
+_Avoid_: doctor, physician, healthcare provider, issuer
+
+**Prescription**:
+A draft or issued medical prescription for a Patient. Has a status machine: `draft` (editable, local scratch), `issued` (signed PDF captured from Memed, read-only), `failed` (capture error, retryable), `deleted` (deleted in Memed). The authoritative content of an issued Prescription is the signed PDF stored in the linked PrescriptionDocument. Items on a Prescription are a local snapshot only.
+_Avoid_: receita, prescricao, order
+
+**PrescriptionDocument**:
+The archived signed PDF of an issued Prescription. Downloaded from Memed at capture time, encrypted with the patient's KEK (per-patient envelope encryption, ADR-031), and stored separately from the Document vault. Never processed through OCR or the AI Pipeline. Carries the Memed prescription ID, a `signed` flag from the event payload, and optional digital link data.
+_Avoid_: signed prescription, PDF receipt, document
+
+**PrescriptionItem**:
+A single line item on a Prescription draft — medication name, posology, and quantity. Local scratch only; the issued PDF is the authoritative record. Items are replaceable as a set on each autosave.
+_Avoid_: medication line, drug item, entry
+
 ### Data sharing
 
 **Sharing Purpose**:
