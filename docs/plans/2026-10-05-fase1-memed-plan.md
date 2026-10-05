@@ -345,7 +345,7 @@ Todos os modelos seguem `backend/app/models/base.py:11-25`: `BaseModel` (id UUID
   QA scenarios: happy — cadastro salva e reflete `memed_status`; failure — CPF completo não aparece no DOM nem em console após salvar; submit sem `birth_date`/`board` é bloqueado. Evidence `.omo/evidence/task-13-2026-10-05-fase1-memed-plan.txt`.
   Commit: Y | feat(frontend): add admin prescriber settings UI
 
-- [ ] 14. Publicar a cópia canônica do plano em `docs/plans/2026-10-05-fase1-memed-plan.md`
+- [x] 14. Publicar a cópia canônica do plano em `docs/plans/2026-10-05-fase1-memed-plan.md` — **feito** (2026-10-05: cópia publicada e commitada).
   What to do / Must NOT do: copiar o conteúdo de `.omo/plans/2026-10-05-fase1-memed-plan.md` para `docs/plans/2026-10-05-fase1-memed-plan.md` (documentação do repo). NÃO alterar o conteúdo; NÃO tratar como mudança de código. (O agente de planejamento é restrito a `.omo/*.md`; esta cópia é executada na sessão de worker ou manualmente.)
   Parallelization: pós-planejamento | Blocked by: - | Blocks: -
   References: `.omo/plans/2026-10-05-fase1-memed-plan.md` (fonte canônica).
