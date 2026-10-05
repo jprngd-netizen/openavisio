@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.access import AccessLevel, require_patient_access
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import decode_token
 from app.models.user import User, UserRole
@@ -59,3 +60,17 @@ def patient_access_dep(minimum: AccessLevel = AccessLevel.view):
         return user
 
     return dep
+
+
+def get_memed_client():
+    """FastAPI dependency that returns a MemedClient instance.
+
+    Override in tests with ``FakeMemedClient``.
+    """
+    from app.services.prescriptions.memed_client import MemedHTTPClient
+
+    return MemedHTTPClient(
+        api_url=settings.memed_api_url,
+        api_key=settings.memed_api_key,
+        secret_key=settings.memed_secret_key,
+    )

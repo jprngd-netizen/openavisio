@@ -28,6 +28,8 @@ from app.routers import (
     organization,
     passkey,
     patients,
+    prescriber,
+    prescriptions,
     share_links,
     sharing,
 )
@@ -80,6 +82,8 @@ app.include_router(dashboard.router, prefix="/api", tags=["dashboard"])
 app.include_router(export.router, prefix="/api", tags=["export"])
 app.include_router(sharing.router, prefix="/api", tags=["sharing"])
 app.include_router(share_links.router, prefix="/api", tags=["share-links"])
+app.include_router(prescriptions.router, prefix="/api", tags=["prescriptions"])
+app.include_router(prescriber.router, prefix="/api/admin", tags=["prescriber"])
 if settings.is_dev:
     app.include_router(dev.router, prefix="/api/dev", tags=["dev"])
 
