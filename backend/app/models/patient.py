@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import Boolean, Date, ForeignKey, LargeBinary, String
+from sqlalchemy import Boolean, ForeignKey, LargeBinary, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -20,6 +20,12 @@ class Patient(BaseModel):
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     identifier: Mapped[str | None] = mapped_column(String(256))
     group_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("groups.id"), nullable=True)
+
+    # Memed integration fields — added in the prescription migration
+    cpf_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
+    cpf_last4: Mapped[str | None] = mapped_column(String(4), nullable=True)
+    email: Mapped[str | None] = mapped_column(String(256), nullable=True)
+    phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
 
     # Optional patient photo — PHI, so stored envelope-encrypted like a document:
     # blob under a per-photo DEK wrapped by the patient KEK (ADR-031).

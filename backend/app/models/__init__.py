@@ -31,6 +31,14 @@ from app.models.sharing import (
 from app.models.share_link import DocumentShareLink, DocumentShareLinkItem, ShareLinkStatus
 from app.models.governance import DataCategory, ConsentRecord
 from app.models.favorite import PatientFavorite, DocumentFavorite
+from app.models.prescription import (
+    PRESCRIBER_SINGLETON_ID,
+    Prescriber,
+    Prescription,
+    PrescriptionDocument,
+    PrescriptionItem,
+    PrescriptionStatus,
+)
 
 __all__ = [
     "Base",
@@ -77,4 +85,10 @@ __all__ = [
     "ShareLinkStatus",
     "DataCategory",
     "ConsentRecord",
+    "Prescriber",
+    "Prescription",
+    "PrescriptionItem",
+    "PrescriptionDocument",
+    "PrescriptionStatus",
+    "PRESCRIBER_SINGLETON_ID",
 ]

@@ -85,6 +85,11 @@ services:
       WEBAUTHN_RP_NAME: ${WEBAUTHN_RP_NAME:-OpenAvisio}
       WEBAUTHN_ORIGIN: ${WEBAUTHN_ORIGIN:-https://${DOMAIN}}
       ENVIRONMENT: production
+      MEMED_API_URL: ${MEMED_API_URL:-}
+      MEMED_SCRIPT_URL: ${MEMED_SCRIPT_URL:-}
+      MEMED_API_KEY: ${MEMED_API_KEY:-}
+      MEMED_SECRET_KEY: ${MEMED_SECRET_KEY:-}
+      MEMED_ENVIRONMENT: ${MEMED_ENVIRONMENT:-integration}
     volumes:
       - document-data:/data/documents
     networks:
@@ -121,6 +126,11 @@ services:
       DOCUMENT_ENCRYPTION_KEY: ${DOCUMENT_ENCRYPTION_KEY}
       APP_URL: https://${DOMAIN}
       DOCUMENT_STORAGE_PATH: /data/documents
+      MEMED_API_URL: ${MEMED_API_URL:-}
+      MEMED_SCRIPT_URL: ${MEMED_SCRIPT_URL:-}
+      MEMED_API_KEY: ${MEMED_API_KEY:-}
+      MEMED_SECRET_KEY: ${MEMED_SECRET_KEY:-}
+      MEMED_ENVIRONMENT: ${MEMED_ENVIRONMENT:-integration}
     volumes:
       - document-data:/data/documents
     networks:
@@ -147,6 +157,11 @@ services:
       DOCUMENT_ENCRYPTION_KEY: ${DOCUMENT_ENCRYPTION_KEY}
       APP_URL: https://${DOMAIN}
       DOCUMENT_STORAGE_PATH: /data/documents
+      MEMED_API_URL: ${MEMED_API_URL:-}
+      MEMED_SCRIPT_URL: ${MEMED_SCRIPT_URL:-}
+      MEMED_API_KEY: ${MEMED_API_KEY:-}
+      MEMED_SECRET_KEY: ${MEMED_SECRET_KEY:-}
+      MEMED_ENVIRONMENT: ${MEMED_ENVIRONMENT:-integration}
     volumes:
       - document-data:/data/documents
     networks:

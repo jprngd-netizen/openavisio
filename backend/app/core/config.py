@@ -72,6 +72,13 @@ class Settings(BaseSettings):
     # and would trip its own limiter. Never disable this in production (#109).
     rate_limit_enabled: bool = True
 
+    # Memed — Sinapse Prescrição integration
+    memed_api_url: str = ""
+    memed_script_url: str = ""
+    memed_api_key: str = ""
+    memed_secret_key: str = ""
+    memed_environment: str = "integration"  # "integration" | "production"
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
