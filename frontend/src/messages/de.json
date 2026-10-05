@@ -194,6 +194,7 @@
     "AllPatients": "Alle Patienten",
     "Measurements": "Messungen",
     "LabResults": "Laborwerte",
+    "Prescriptions": "Rezepte",
     "desc": {
       "Dashboard": "Übersicht aller wichtigen Informationen",
       "Documents": "Alle Dateien und Arztbriefe",
@@ -202,7 +203,8 @@
       "Measurements": "Größe, Gewicht und mehr",
       "LabResults": "Blutwerte und Laborbefunde",
       "Calendar": "Anstehende Termine und Erinnerungen",
-      "Chat": "Fragen zur Akte stellen"
+      "Chat": "Fragen zur Akte stellen",
+      "Prescriptions": "Rezepte verwalten"
     },
     "TodayAtGlance": "Heute auf einen Blick",
     "ShowAllAppointments": "Alle Termine anzeigen",
@@ -698,5 +700,24 @@
     "patientNotFound": "Patient nicht gefunden.",
     "loadError": "Diagnosen konnten nicht geladen werden. Der Server ist möglicherweise nicht erreichbar.",
     "empty": "Keine Diagnosen erfasst."
+  },
+  "Prescriptions": {
+    "Title": "Rezepte",
+    "Empty": "Keine Rezepte erfasst.",
+    "LoadError": "Rezepte konnten nicht geladen werden. Der Server ist möglicherweise nicht erreichbar.",
+    "NotFound": "Patient nicht gefunden.",
+    "Status": "Status",
+    "StatusDraft": "Entwurf",
+    "StatusIssued": "Ausgestellt",
+    "StatusFailed": "Fehlgeschlagen",
+    "StatusDeleted": "Gelöscht",
+    "ViewPdf": "PDF anzeigen",
+    "CreatedAt": "Erstellt",
+    "IssuedAt": "Ausgestellt",
+    "Notes": "Notizen",
+    "Items": "Positionen",
+    "Medication": "Medikament",
+    "Posology": "Posologie",
+    "Quantity": "Menge"
   }
 }

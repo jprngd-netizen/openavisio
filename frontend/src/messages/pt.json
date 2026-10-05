@@ -194,6 +194,7 @@
     "AllPatients": "Todos os pacientes",
     "Measurements": "Medições",
     "LabResults": "Resultados laboratoriais",
+    "Prescriptions": "Receitas",
     "desc": {
       "Dashboard": "Visão geral de todas as informações",
       "Documents": "Todos os arquivos e laudos médicos",
@@ -202,7 +203,8 @@
       "Measurements": "Altura, peso e mais",
       "LabResults": "Exames de sangue e laudos",
       "Calendar": "Consultas e lembretes",
-      "Chat": "Perguntas sobre o prontuário"
+      "Chat": "Perguntas sobre o prontuário",
+      "Prescriptions": "Gerenciar receitas"
     },
     "TodayAtGlance": "Hoje em resumo",
     "ShowAllAppointments": "Ver todas as consultas",
@@ -698,5 +700,24 @@
     "patientNotFound": "Paciente não encontrado.",
     "loadError": "Falha ao carregar diagnósticos. O servidor pode estar indisponível.",
     "empty": "Nenhum diagnóstico registrado."
+  },
+  "Prescriptions": {
+    "Title": "Receitas",
+    "Empty": "Nenhuma receita registrada.",
+    "LoadError": "Falha ao carregar receitas. O servidor pode estar indisponível.",
+    "NotFound": "Paciente não encontrado.",
+    "Status": "Status",
+    "StatusDraft": "Rascunho",
+    "StatusIssued": "Emitida",
+    "StatusFailed": "Falha",
+    "StatusDeleted": "Excluída",
+    "ViewPdf": "Ver PDF",
+    "CreatedAt": "Criada",
+    "IssuedAt": "Emitida",
+    "Notes": "Anotações",
+    "Items": "Itens",
+    "Medication": "Medicamento",
+    "Posology": "Posologia",
+    "Quantity": "Quantidade"
   }
 }

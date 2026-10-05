@@ -84,6 +84,26 @@ export const createMedication = async (patientId: string, data: any) => api.post
 export const updateMedication = async (id: string, data: any) => api.put<any>(`/api/medications/${id}`, data);
 export const deleteMedication = async (id: string) => api.delete<void>(`/api/medications/${id}`);
 
+// Prescriptions
+export const getPrescriptions = async (patientId: string) =>
+  api.get<any[]>(`/api/patients/${patientId}/prescriptions`);
+export const createPrescription = async (patientId: string, data?: any) =>
+  api.post<any>(`/api/patients/${patientId}/prescriptions`, data);
+export const getPrescription = async (id: string) =>
+  api.get<any>(`/api/prescriptions/${id}`);
+export const updatePrescription = async (id: string, data: { version: number; notes?: string | null; items?: any[] | null }) =>
+  api.patch<any>(`/api/prescriptions/${id}`, data);
+export const deletePrescription = async (id: string) =>
+  api.delete<void>(`/api/prescriptions/${id}`);
+export const getMemedSession = async (id: string) =>
+  api.post<any>(`/api/prescriptions/${id}/memed-session`);
+export const capturePrescription = async (id: string, payload: any) =>
+  api.post<any>(`/api/prescriptions/${id}/capture`, payload);
+export const markPrescriptionDeleted = async (id: string, payload: any) =>
+  api.post<any>(`/api/prescriptions/${id}/memed-deleted`, payload);
+export const retryPrescription = async (id: string) =>
+  api.post<any>(`/api/prescriptions/${id}/retry`);
+
 // Conditions
 export const getConditions = async (patientId: string, status?: string) => api.get<any[]>(`/api/patients/${patientId}/conditions${status ? `?status=${status}` : ""}`);
 export const createCondition = async (patientId: string, data: any) => api.post<any>(`/api/patients/${patientId}/conditions`, data);

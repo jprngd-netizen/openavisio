@@ -194,6 +194,7 @@
     "AllPatients": "All patients",
     "Measurements": "Measurements",
     "LabResults": "Lab Results",
+    "Prescriptions": "Prescriptions",
     "desc": {
       "Dashboard": "Overview of all key information",
       "Documents": "All files and doctor's letters",
@@ -202,7 +203,8 @@
       "Measurements": "Height, weight and more",
       "LabResults": "Blood values and lab reports",
       "Calendar": "Upcoming appointments and reminders",
-      "Chat": "Ask questions about the record"
+      "Chat": "Ask questions about the record",
+      "Prescriptions": "Manage prescriptions"
     },
     "TodayAtGlance": "Today at a glance",
     "ShowAllAppointments": "Show all appointments",
@@ -698,5 +700,24 @@
     "patientNotFound": "Patient not found.",
     "loadError": "Failed to load conditions. The server may be unavailable.",
     "empty": "No conditions recorded."
+  },
+  "Prescriptions": {
+    "Title": "Prescriptions",
+    "Empty": "No prescriptions recorded.",
+    "LoadError": "Failed to load prescriptions. The server may be unavailable.",
+    "NotFound": "Patient not found.",
+    "Status": "Status",
+    "StatusDraft": "Draft",
+    "StatusIssued": "Issued",
+    "StatusFailed": "Failed",
+    "StatusDeleted": "Deleted",
+    "ViewPdf": "View PDF",
+    "CreatedAt": "Created",
+    "IssuedAt": "Issued",
+    "Notes": "Notes",
+    "Items": "Items",
+    "Medication": "Medication",
+    "Posology": "Posology",
+    "Quantity": "Quantity"
   }
 }

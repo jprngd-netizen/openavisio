@@ -6,6 +6,7 @@ import {
   Ruler,
   FlaskConical,
   Calendar,
+  FileSignature,
   type LucideIcon,
 } from "lucide-react";
 
@@ -21,4 +22,5 @@ export const PATIENT_SECTIONS: { key: string; segment: string; Icon: LucideIcon;
   { key: "Measurements", segment: "measurements", Icon: Ruler, tint: "bg-rose-500/10 text-rose-600 dark:text-rose-400" },
   { key: "LabResults", segment: "lab-results", Icon: FlaskConical, tint: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
   { key: "Calendar", segment: "calendar", Icon: Calendar, tint: "bg-teal-500/10 text-teal-600 dark:text-teal-400" },
+  { key: "Prescriptions", segment: "prescriptions", Icon: FileSignature, tint: "bg-sky-500/10 text-sky-600 dark:text-sky-400" },
 ];
