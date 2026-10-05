@@ -122,6 +122,13 @@ A confirmar no onboarding: preço da API de parceiro (o ToS indica licença grat
 - **Cadastro do prescritor exige** — id externo, nome, sobrenome, CPF, registro profissional + UF, especialidade, cidade.
 - **Armazenado em** — `.env` (gitignored) no repo: `MEMED_API_URL`, `MEMED_SCRIPT_URL`, `MEMED_API_KEY`, `MEMED_SECRET_KEY`.
 
+### Validação ponta a ponta em homologação (2026-10-05)
+
+- **Backend:** `check-key` OK; `GET /cidades` e `GET /especialidades` OK; `POST /sinapse-prescricao/usuarios` → **201** cria o prescritor (status "Em análise", pois o CRM fictício não passa na validação do CFM) e retorna o `token`; `GET /sinapse-prescricao/usuarios/{cpf|external_id}` recupera os dados + token (o token **muda a cada chamada**).
+- **Frontend:** uma página de teste carregou `sinapse-prescricao.min.js` com `data-token`; o módulo criou o iframe `https://v4-embedded-integrations.memed.com.br/?embedded=1&mode=fullscreen&token=...&partner=3` e **renderizou a UI de prescrição** (abas Arquivo/Modelos/Ajuda, "Adicionar à prescrição", botão "Gerar Prescrição", toggle **Assinatura Digital**).
+- **Detalhe de integração:** os eventos (`core:moduleInit`, `core:moduleShow`, `core:allmodulesareready`, `core:prescricaoImpressa`, …) chegam por **postMessage** na `window`, **não** como eventos DOM no documento pai. Abrir o módulo: `MdHub.command.send('plataforma.prescricao','show')`.
+- **Artefato de teste:** `memed-test/` (fora do repo OpenAvisio). Navegador via `agent-browser` + Chromium do sistema (`AGENT_BROWSER_EXECUTABLE_PATH=/usr/local/bin/chromium`).
+
 ## Fontes
 
 - ANVISA — SNCR: https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/controlados/sncr
