@@ -96,6 +96,22 @@ Cada fase tem critério de aceite explícito e um teste que falha sem a correç�
 - Exemplo:
   `opencode run --agent "Prometheus - Plan Builder" --model opencode/nemotron-3-ultra-free "<prompt>"`
 
+## 11. Decisão (2026-10-05): integração via Memed
+
+Escolhido: **Memed (Sinapse Prescrição)** como plataforma de prescrição + assinatura; **certificado BirdID próprio** (BYOC, plano anual com créditos); **CNPJ do SNCR = da Memed** (não abrimos CNPJ).
+
+Consequências (substitui o desenho "direto ao SNCR" das seções 5–6):
+
+- **Numeração SNCR:** obtida pela Memed (auth Gov.br do prescritor dentro do fluxo Memed). **Não** integramos a API do SNCR.
+- **Assinatura ICP-Brasil:** executada pela Memed usando o **certificado próprio** do prescritor (nosso BirdID). A Memed não cobra a assinatura; ela consome os créditos do nosso BirdID.
+- **Integração:** módulo frontend da Memed embutido (`sinapse-prescricao`) + API REST de backend (`api-key` + `secret-key`, ambientes homologação e produção).
+- **O que ainda construímos:** modelar `Prescription` no OpenAvisio, guardar o PDF assinado como `Document` (envelope encryption, **sem** disparar OCR), link de validação, autosave do rascunho, auditoria.
+- **O que sai do escopo:** integração direta ao SNCR, motor de assinatura próprio, geração de PDF própria, abertura de CNPJ.
+
+Fases afetadas: **F2/F3/F4/F5 → "integração Memed"** (credenciais, embed do módulo, callback do PDF assinado). **F1 (domínio) permanece**, simplificada.
+
+A confirmar no onboarding: preço da API de parceiro (o ToS indica licença gratuita; não há tabela pública) e o formato exato do retorno do PDF assinado.
+
 ## Fontes
 
 - ANVISA — SNCR: https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/controlados/sncr
