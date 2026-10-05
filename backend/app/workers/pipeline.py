@@ -226,7 +226,8 @@ def embedding_stage(self, doc_id: str):
             async with httpx.AsyncClient(timeout=60, headers=settings.ai_service_headers) as client:
                 resp = await client.post(f"{settings.ai_service_url}/embed", json={"texts": chunks})
                 if resp.status_code != 200:
-                    await _update_doc(doc_id, processing_status="failed", processing_error="Embedding failed")
+                    # Embedding falhou mas dados clínicos já foram salvos — marcar como completed mesmo assim
+                    await _update_doc(doc_id, processing_status="completed", pipeline_stage="done", processing_error=None)
                     return
                 embeddings = resp.json()["embeddings"]
 

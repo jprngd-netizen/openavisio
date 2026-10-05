@@ -1,0 +1,44 @@
+# OpenAvisio — limites de memória (2026-09-23)
+# Motivo: os 8 containers estavam SEM limite, enxergando o teto de 7,8 GB do VM do
+# OrbStack. Um pico de qualquer um deles pressionava o host de 16 GB a ponto de
+# travar o OrbStack (incidente de 2026-09-23, ver wiki: orbstack-wedge-tcp-sem-http).
+#
+# Tetos generosos de propósito: uso real medido em 2026-09-23 era ~490 MB no total.
+# Isto é rede de proteção, não alocação.
+#
+# Soma dos tetos: 4,5 GB (folga confortável dentro do VM de 7,8 GB)
+
+services:
+  postgres:
+    mem_limit: 512m
+    mem_reservation: 128m
+
+  redis:
+    mem_limit: 256m
+    mem_reservation: 64m
+
+  aiservice:
+    mem_limit: 512m
+    mem_reservation: 128m
+
+  backend:
+    mem_limit: 512m
+    mem_reservation: 128m
+
+  celery-worker:
+    mem_limit: 512m
+    mem_reservation: 128m
+
+  # Fila gpu: OCR/visão — o mais propenso a picos
+  celery-worker-gpu:
+    mem_limit: 1g
+    mem_reservation: 256m
+
+  celery-beat:
+    mem_limit: 256m
+    mem_reservation: 64m
+
+  # Next.js SSR pode ter picos em navegação
+  frontend:
+    mem_limit: 1g
+    mem_reservation: 256m

@@ -28,6 +28,7 @@ EXTRACTION_PROMPT = _load_prompt("extraction.md")
 
 _LANGUAGE_NAMES: dict[str, str] = {
     "en": "English", "de": "German", "fr": "French", "es": "Spanish", "it": "Italian",
+    "pt": "Portuguese (Brazilian)",
 }
 
 

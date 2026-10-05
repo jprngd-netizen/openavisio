@@ -88,7 +88,7 @@ async def init_organization(
     )
     db.add(admin)
     await db.flush()
-    valid_locales = ("de", "en")
+    valid_locales = ("de", "en", "pt")
     org = Organization(
         name=body.name,
         description=body.description,

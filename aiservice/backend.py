@@ -299,8 +299,9 @@ class VllmBackend(InferenceBackend):
             raise RuntimeError("VLLM_URL is required for vLLM backend")
         self._pool = UrlPool(parsed)
         self._clients: dict[str, OpenAI] = {}
+        api_key = os.environ.get("VLLM_API_KEY", "unused")
         for url in parsed:
-            self._clients[url] = OpenAI(base_url=url, api_key="unused")
+            self._clients[url] = OpenAI(base_url=url, api_key=api_key)
         logger.info("VllmBackend initialized with %d URL(s): %s", len(parsed), parsed)
 
     def _get_client(self):
@@ -598,15 +599,18 @@ def get_vision_backend() -> OllamaBackend | MockBackend:
         _vision_backend = MockBackend()
         return _vision_backend
 
-    # Role-specific URL so the vision model can live on its own Ollama/GPU. The
-    # URL pool is round-robin, so mixing roles into one OLLAMA_URL mis-routes.
     url = os.environ.get("OLLAMA_VISION_URL", "").strip() or os.environ.get("OLLAMA_URL", "").strip()
     if not url:
         raise RuntimeError(
             "OLLAMA_VISION_URL (or OLLAMA_URL) is required for vision OCR. "
             "When using AI_BACKEND=vllm or mistral, you must also set one for the vision model."
         )
-    _vision_backend = OllamaBackend(url)
+    # OpenAI-compat endpoint (OmniRoute, vLLM) — use VllmBackend instead of Ollama SDK
+    if "/v1" in url:
+        _vision_backend = VllmBackend(url)
+        logger.info("Vision backend using VllmBackend (OpenAI-compat) at %s", url)
+    else:
+        _vision_backend = OllamaBackend(url)
     logger.info("Vision backend using %s", url)
     return _vision_backend
 
@@ -629,8 +633,13 @@ def get_embed_backend() -> InferenceBackend:
                 "Embeddings require Ollama (nomic-embed-text, 768d). "
                 "Set OLLAMA_EMBED_URL or OLLAMA_URL, or disable embeddings."
             )
-        _embed_backend = OllamaBackend(url)
-        logger.info("Using Ollama for embeddings (%s backend cannot serve them)", backend_type)
+        # OpenAI-compat endpoint (OmniRoute) — use VllmBackend
+        if "/v1" in url:
+            _embed_backend = VllmBackend(url)
+            logger.info("Embed backend using VllmBackend (OpenAI-compat) at %s", url)
+        else:
+            _embed_backend = OllamaBackend(url)
+        logger.info("Using Ollama-compat for embeddings (%s backend)", backend_type)
     else:
         # Role-specific URL so embeddings can share the vision GPU instead of
         # competing for the LLM's VRAM. Falls back to the main backend.

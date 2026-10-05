@@ -141,7 +141,14 @@ def parse_reference_range(raw: str | None) -> tuple[float | None, float | None]:
 
     Handles '4.5-11.0', '4,5 - 11', '< 5', '> 10', 'bis 5', '≥ 2'.
     Returns (None, None) when unparseable.
-    ponytail: regex on printed strings; negative-valued ranges (never in labs) would misparse.
+
+    Safety rules:
+    - If the string contains multiple threshold markers (multiple '<', '>', or
+      category prefixes like "Normal:", "Baixo:", "Adult ...:", "Risk ...:")
+      it is a multi-category narrative and cannot be reduced to a single range
+      → returns (None, None) to avoid false flags.
+    - A simple 'X-Y' range is only accepted when there is no alphabetic word
+      immediately before the first number (avoids "18-74 years" style captures).
     """
     if not raw:
         return None, None
@@ -150,9 +157,21 @@ def parse_reference_range(raw: str | None) -> tuple[float | None, float | None]:
     def f(x: str) -> float:
         return float(x.replace(",", "."))
 
+    # Reject multi-category ranges: more than one threshold marker or colon-label
+    # patterns like "Normal: <5.7%, Risk: 5.7-6.4%" or "Baixo: <115; Alto: <70"
+    threshold_markers = len(re.findall(r"(?:<|≤|>|≥)", s))
+    category_labels = len(re.findall(r"[A-Za-zÀ-ÿ][A-Za-zÀ-ÿ\s]{2,}:\s*[<>≤≥]?\s*\d", s))
+    if threshold_markers > 1 or category_labels > 1:
+        return None, None
+
+    # Reject 'X-Y' where a word precedes X (e.g. "women 18-74" or "age 3-12")
     m = re.search(rf"({_NUM})\s*-\s*({_NUM})", s)
     if m:
-        return f(m.group(1)), f(m.group(2))
+        # Check nothing alphabetic directly precedes the first number
+        prefix = s[: m.start()].rstrip()
+        if not prefix or not re.search(r"[A-Za-zÀ-ÿ]$", prefix):
+            return f(m.group(1)), f(m.group(2))
+
     m = re.search(rf"(?:<|≤|bis|up to)\s*({_NUM})", s, re.I)
     if m:
         return None, f(m.group(1))
