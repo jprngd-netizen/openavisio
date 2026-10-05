@@ -206,6 +206,15 @@ Todos os modelos seguem `backend/app/models/base.py:11-25`: `BaseModel` (id UUID
 6. **Revisão jurídica/regulatória** da emissão de receitas dentro do OpenAvisio.
 7. **CSP:** confirmar que o domínio público pode embutir o iframe da Memed.
 
+### Respostas às checagens humanas (verificado na doc oficial, 89/89 páginas, 2026-10-05)
+1. **Número SNCR:** **não existe campo na API da Memed** — "SNCR" aparece 0× na doc inteira; o número sai no **cabeçalho/rodapé do PDF**. O payload de `prescricaoImpressa` traz por item só o booleano `controle_especial`. → o plano está correto em **não** assumir campo de SNCR.
+2. **Payload + URL do PDF:** o payload de `prescricaoImpressa` está **documentado** (`prescriptionData.medicamentos[]`); a URL do PDF é `GET /v1/prescricoes/{id}/url-document/full?token=<token>` — **confirmado**, `token` obrigatório. O adaptador defensivo segue justificado para as chaves do *id* da prescrição.
+3. **CPF do paciente:** `setPaciente` exige só `idExterno`, `nome`, `sexo`; **CPF é opcional no comando**, mas o **checklist de produção exige** nome+sobrenome, e-mail, telefone, data de nascimento e **CPF**. → **adicionar campos de contato/CPF ao `Patient`** (e enviá-los no `setPaciente`).
+4. **Credenciais de produção:** exigem **formulário de parceiro** (`/docs/obter-credenciais`) + cadastro do prescritor + `setPaciente` completo + os 2 eventos; sujeito a revisão. Custo/ToS **não publicados** — confirmar.
+5. **Limites de taxa:** **sem limite documentado** — a doc afirma "acesso **ilimitado** à API" para parceiros.
+6. **Revisão regulatória:** entra agora (decisão do owner).
+7. **CSP/embed:** possível; se ocorrer `Blocked a frame with origin`, a página que embute o módulo deve ter **`Referrer-Policy: strict-origin-when-cross-origin`** (não `same-origin`). O OpenAvisio hoje não define `Referrer-Policy` global → o default moderno já é adequado.
+
 ## Verification strategy
 > Zero intervenção humana — toda verificação é executada por agente.
 - **Test decision:** **TDD** para a máquina de estados, o adaptador de eventos e a porta/cliente Memed (lógica pura e parsing, rápidos); **tests-after** para router, arquivamento, erasure e frontend.
