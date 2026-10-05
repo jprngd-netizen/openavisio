@@ -112,6 +112,16 @@ Fases afetadas: **F2/F3/F4/F5 → "integração Memed"** (credenciais, embed do 
 
 A confirmar no onboarding: preço da API de parceiro (o ToS indica licença gratuita; não há tabela pública) e o formato exato do retorno do PDF assinado.
 
+### Integração Memed — fatos confirmados (doc oficial, 2026-10-05)
+
+- **API** — homolog: `https://integrations.api.memed.com.br/v1` · prod: `https://api.memed.com.br/`
+- **Script (frontend)** — homolog: `https://integrations.memed.com.br/modulos/plataforma.sinapse-prescricao/build/sinapse-prescricao.min.js`
+- **Chaves** — o par de homologação é **fixo e público** (está na própria doc); validadas com `GET /v1/sinapse-prescricao/check-key` → `{"code":"chave-valida"}` (HTTP 200).
+- **Disponibilidade homolog** — indisponível das 0h às 6h (seg–sex) e todo o fim de semana.
+- **Fluxo** — o backend cadastra o prescritor e recebe um `data-token`; o frontend carrega o script com `data-token` e aciona `MdHub`/`MdSinapsePrescricao` (`setPaciente`, `show`, etc.).
+- **Cadastro do prescritor exige** — id externo, nome, sobrenome, CPF, registro profissional + UF, especialidade, cidade.
+- **Armazenado em** — `.env` (gitignored) no repo: `MEMED_API_URL`, `MEMED_SCRIPT_URL`, `MEMED_API_KEY`, `MEMED_SECRET_KEY`.
+
 ## Fontes
 
 - ANVISA — SNCR: https://www.gov.br/anvisa/pt-br/assuntos/medicamentos/controlados/sncr
