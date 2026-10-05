@@ -25,6 +25,7 @@ from app.models.medication import MedicationStatement
 from app.models.observation import Observation
 from app.models.passkey import PasskeyCredential
 from app.models.patient import Patient
+from app.models.prescription import Prescriber, Prescription, PrescriptionDocument, PrescriptionItem
 from app.models.recommendation import Recommendation
 from app.models.share_link import DocumentShareLink, DocumentShareLinkItem
 from app.models.sharing import Share, ShareDecline
@@ -77,6 +78,37 @@ async def erase_patient(
     decline_ids = await _collect(ShareDecline, ShareDecline.patient_id)
     link_ids    = await _collect(DocumentShareLink, DocumentShareLink.patient_id)
 
+    # Prescription children have no patient_id — join through Prescription
+    rx_result = await db.execute(
+        select(Prescription.id).where(Prescription.patient_id == patient_id)
+    )
+    rx_ids = [str(r[0]) for r in rx_result.all()]
+    rx_item_ids: list[str] = []
+    rx_doc_ids: list[str] = []
+    rx_storage_paths: list[str] = []
+    if rx_ids:
+        doc_result = await db.execute(
+            select(PrescriptionDocument.id, PrescriptionDocument.storage_path).where(
+                PrescriptionDocument.prescription_id.in_(
+                    select(Prescription.id).where(Prescription.patient_id == patient_id)
+                )
+            )
+        )
+        for row in doc_result.all():
+            rx_doc_ids.append(str(row.id))
+            if row.storage_path:
+                rx_storage_paths.append(row.storage_path)
+        storage_paths.extend(rx_storage_paths)
+
+        item_result = await db.execute(
+            select(PrescriptionItem.id).where(
+                PrescriptionItem.prescription_id.in_(
+                    select(Prescription.id).where(Prescription.patient_id == patient_id)
+                )
+            )
+        )
+        rx_item_ids = [str(r[0]) for r in item_result.all()]
+
     # Delete all clinical data rows (hard delete)
     await db.execute(delete(DocumentChunk).where(DocumentChunk.patient_id == patient_id))
     await db.execute(delete(ChatMessage).where(ChatMessage.patient_id == patient_id))
@@ -93,6 +125,23 @@ async def erase_patient(
     await db.execute(delete(DocumentShareLinkItem).where(DocumentShareLinkItem.patient_id == patient_id))
     await db.execute(delete(DocumentShareLink).where(DocumentShareLink.patient_id == patient_id))
     await db.execute(delete(DocumentReference).where(DocumentReference.patient_id == patient_id))
+    # Prescription children (no patient_id — join through Prescription)
+    if rx_ids:
+        await db.execute(
+            delete(PrescriptionItem).where(
+                PrescriptionItem.prescription_id.in_(
+                    select(Prescription.id).where(Prescription.patient_id == patient_id)
+                )
+            )
+        )
+        await db.execute(
+            delete(PrescriptionDocument).where(
+                PrescriptionDocument.prescription_id.in_(
+                    select(Prescription.id).where(Prescription.patient_id == patient_id)
+                )
+            )
+        )
+        await db.execute(delete(Prescription).where(Prescription.patient_id == patient_id))
     # Crypto-shred (ADR-031): destroying the patient KEK renders every encrypted
     # blob / extracted_text / extraction_json unrecoverable, live and — as the
     # keystore's short-retention backup stream rolls — in backups too.
@@ -112,6 +161,7 @@ async def erase_patient(
         + doc_ids + cond_ids + med_ids + obs_ids
         + inc_ids + diary_ids + cal_ids + rec_ids
         + share_ids + decline_ids + link_ids
+        + rx_ids + rx_item_ids + rx_doc_ids
     )
     await db.execute(delete(AuditLog).where(AuditLog.entity_id.in_(all_entity_ids)))
 
@@ -220,6 +270,26 @@ async def erase_user(
     target.last_name = None
     target.is_active = False
     target.is_deleted = True
+
+    # If the erased user is the linked Prescriber, unlink and anonymise PII
+    # while preserving professional board fields (public registration data).
+    prescriber_result = await db.execute(
+        select(Prescriber).where(
+            Prescriber.user_id == user_id,
+            Prescriber.is_deleted == False,  # noqa: E712
+        )
+    )
+    linked_prescriber = prescriber_result.scalar_one_or_none()
+    if linked_prescriber:
+        linked_prescriber.user_id = None
+        linked_prescriber.given_name = "[erased]"
+        linked_prescriber.family_name = "[erased]"
+        linked_prescriber.cpf_encrypted = None
+        linked_prescriber.cpf_last4 = None
+        linked_prescriber.birth_date = None
+        linked_prescriber.email = None
+        linked_prescriber.phone = None
+        # board_code / board_number / board_state preserved intentionally
 
     # Write tombstone
     actor_name = " ".join(filter(None, [actor.first_name, actor.last_name])) or actor.email

@@ -30,6 +30,9 @@ BUILTIN_CATEGORIES: list[tuple[str, str]] = [
 ]
 
 # Purge targets — built-in code -> model. Custom categories are documentation-only.
+# Prescriptions are intentionally excluded: issued prescriptions are legal records
+# that must not be automatically purged by retention policy.  Patient erasure
+# (hard-delete cascade) is the only removal path for prescription data.
 CATEGORY_MODELS = {
     "observation": Observation,
     "condition": Condition,
