@@ -153,8 +153,18 @@ class MemedHTTPClient:
         return self._parse_json_api_prescriber(response.json())
 
     async def get_prescriber(self, external_id: str) -> PrescriberResult:
-        """Fetch a prescriber by external_id."""
-        response = await self._get(f"/sinapse-prescricao/usuarios/{external_id}")
+        """Fetch a prescriber by external_id.
+
+        Raises:
+            LookupError: if the prescriber is not found on Memed (HTTP 404).
+            httpx.HTTPStatusError: on any other HTTP error.
+        """
+        try:
+            response = await self._get(f"/sinapse-prescricao/usuarios/{external_id}")
+        except httpx.HTTPStatusError as exc:
+            if exc.response.status_code == 404:
+                raise LookupError("Prescriber not found on Memed") from exc
+            raise
         return self._parse_json_api_prescriber(response.json())
 
     async def get_prescription_pdf_url(

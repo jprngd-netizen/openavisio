@@ -304,6 +304,20 @@ class TestMemedHTTPClient:
         assert result.token == "tok_fresh"
         assert result.external_id == "ext-1"
 
+    async def test_get_prescriber_raises_lookup_error_on_404(self):
+        async def handler(request: httpx.Request) -> httpx.Response:
+            assert "/sinapse-prescricao/usuarios/missing" in str(request.url)
+            return httpx.Response(404, json={"error": "not found"})
+
+        client = MemedHTTPClient(
+            api_url="https://api.memed.test",
+            api_key="k",
+            secret_key="s",
+            _client_override=_mock_transport(handler),
+        )
+        with pytest.raises(LookupError, match="Prescriber not found on Memed"):
+            await client.get_prescriber("missing")
+
     # -- get_prescription_pdf_url ---------------------------------------------
 
     async def test_get_prescription_pdf_url_returns_url(self):
