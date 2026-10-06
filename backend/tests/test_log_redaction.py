@@ -283,3 +283,223 @@ class TestAdminPrescriberApiNoFullCpf:
 
         # The full CPF must not appear anywhere in the serialized response
         assert SENTINEL_CPF not in json.dumps(data), "Full CPF leaked in response"
+
+
+# ---------------------------------------------------------------------------
+# Redaction backstop — redact_log_message + _RedisLogHandler.emit
+# ---------------------------------------------------------------------------
+
+
+class TestRedactLogMessage:
+    """Unit tests for redact_log_message()."""
+
+    def test_redacts_token_in_query_param(self):
+        from app.core.log_handler import redact_log_message
+
+        msg = "Downloading PDF from https://storage.example.com/doc.pdf?token=abc123&sig=xyz"
+        result = redact_log_message(msg)
+        assert "abc123" not in result
+        assert "token=" in result  # param name preserved
+        assert "[REDACTED]" in result
+
+    def test_redacts_api_key_in_query_param(self):
+        from app.core.log_handler import redact_log_message
+
+        msg = "Request to https://api.example.com?api-key=sk-abc123&secret-key=xyz789"
+        result = redact_log_message(msg)
+        assert "sk-abc123" not in result
+        assert "xyz789" not in result
+
+    def test_redacts_bearer_token(self):
+        from app.core.log_handler import redact_log_message
+
+        msg = "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+        result = redact_log_message(msg)
+        assert "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" not in result
+        assert "Bearer" in result
+
+    def test_redacts_cpf_formatted(self):
+        from app.core.log_handler import redact_log_message
+
+        msg = "CPF do paciente: 123.456.789-01"
+        result = redact_log_message(msg)
+        assert "123.456.789-01" not in result
+        assert "[REDACTED-CPF]" in result
+
+    def test_redacts_cpf_bare(self):
+        from app.core.log_handler import redact_log_message
+
+        msg = "CPF: 12345678901"
+        result = redact_log_message(msg)
+        assert "12345678901" not in result
+
+    def test_preserves_diagnostic_uuids(self):
+        """UUIDs must NOT be redacted."""
+        from app.core.log_handler import redact_log_message
+
+        msg = "Patient 550e8400-e29b-41d4-a716-446655440000 status=Ativo"
+        result = redact_log_message(msg)
+        assert "550e8400-e29b-41d4-a716-446655440000" in result
+        assert "Ativo" in result
+
+    def test_preserves_file_paths(self):
+        from app.core.log_handler import redact_log_message
+
+        msg = "Memed GET /prescricoes/presc_42/url-document/full"
+        result = redact_log_message(msg)
+        assert "/prescricoes/presc_42/url-document/full" in result
+
+    def test_preserves_entity_names(self):
+        from app.core.log_handler import redact_log_message
+
+        msg = "City: São Paulo, Specialty: Pediatria"
+        result = redact_log_message(msg)
+        assert "São Paulo" in result
+        assert "Pediatria" in result
+
+    def test_empty_message(self):
+        from app.core.log_handler import redact_log_message
+
+        assert redact_log_message("") == ""
+
+    def test_no_secrets_no_change(self):
+        from app.core.log_handler import redact_log_message
+
+        msg = "Processing complete for patient 42"
+        assert redact_log_message(msg) == msg
+
+    def test_redacts_signature_param(self):
+        from app.core.log_handler import redact_log_message
+
+        msg = "URL: https://storage.example.com/doc.pdf?X-Amz-Signature=abc123def456"
+        result = redact_log_message(msg)
+        assert "abc123def456" not in result
+
+    def test_redacts_secret_param(self):
+        from app.core.log_handler import redact_log_message
+
+        msg = "URL: https://example.com?secret=super-secret-value"
+        result = redact_log_message(msg)
+        assert "super-secret-value" not in result
+
+    def test_preserves_status_codes(self):
+        from app.core.log_handler import redact_log_message
+
+        msg = "HTTP 200 OK, response took 342ms"
+        result = redact_log_message(msg)
+        assert "200" in result
+        assert "342ms" in result
+
+    def test_preserves_short_ids(self):
+        """Short alphanumeric IDs (usr_001, ext-1, presc_42) must NOT be redacted."""
+        from app.core.log_handler import redact_log_message
+
+        msg = "User usr_001, external_id ext-1, prescription presc_42"
+        result = redact_log_message(msg)
+        assert "usr_001" in result
+        assert "ext-1" in result
+        assert "presc_42" in result
+
+
+class TestRedisLogHandlerRedaction:
+    """Integration test: emit() redacts secrets before publishing to queue."""
+
+    def test_emit_redacts_secret_in_msg(self):
+        from app.core.log_handler import _RedisLogHandler
+        import queue as _queue
+
+        handler = _RedisLogHandler("redis://localhost:63799/0")
+        test_queue: _queue.SimpleQueue = _queue.SimpleQueue()
+        handler._queue = test_queue  # swap in test queue
+
+        record = logging.LogRecord(
+            name="test",
+            level=logging.DEBUG,
+            pathname=__file__,
+            lineno=1,
+            msg="Downloading PDF from https://storage.example.com/doc.pdf?token=abc123-secret-token-xyz",
+            args=(),
+            exc_info=None,
+        )
+        handler.emit(record)
+
+        payload = json.loads(test_queue.get_nowait())
+        assert "abc123-secret-token-xyz" not in payload["msg"]
+        assert "[REDACTED]" in payload["msg"]
+
+    def test_emit_preserves_clean_message(self):
+        from app.core.log_handler import _RedisLogHandler
+        import queue as _queue
+
+        handler = _RedisLogHandler("redis://localhost:63799/0")
+        test_queue: _queue.SimpleQueue = _queue.SimpleQueue()
+        handler._queue = test_queue
+
+        record = logging.LogRecord(
+            name="test",
+            level=logging.INFO,
+            pathname=__file__,
+            lineno=1,
+            msg="Prescription presc_42 captured successfully",
+            args=(),
+            exc_info=None,
+        )
+        handler.emit(record)
+
+        payload = json.loads(test_queue.get_nowait())
+        assert payload["msg"] == "Prescription presc_42 captured successfully"
+
+    def test_emit_redacts_exc_info(self):
+        from app.core.log_handler import _RedisLogHandler
+        import queue as _queue
+        import sys as _sys
+
+        handler = _RedisLogHandler("redis://localhost:63799/0")
+        test_queue: _queue.SimpleQueue = _queue.SimpleQueue()
+        handler._queue = test_queue
+
+        try:
+            raise ValueError("Failed to download https://storage.example.com/doc.pdf?token=abc123-secret")
+        except ValueError:
+            exc_info = _sys.exc_info()  # (type, value, tb) tuple
+            record = logging.LogRecord(
+                name="test",
+                level=logging.ERROR,
+                pathname=__file__,
+                lineno=1,
+                msg="Something failed",
+                args=(),
+                exc_info=exc_info,
+            )
+            handler.emit(record)
+
+        payload = json.loads(test_queue.get_nowait())
+        assert "abc123-secret" not in payload.get("exc", "")
+        assert "[REDACTED]" in payload.get("exc", "")
+
+    def test_emit_preserves_metadata(self):
+        """The envelope fields (ts, level, logger, source) must survive."""
+        from app.core.log_handler import _RedisLogHandler
+        import queue as _queue
+
+        handler = _RedisLogHandler("redis://localhost:63799/0")
+        test_queue: _queue.SimpleQueue = _queue.SimpleQueue()
+        handler._queue = test_queue
+
+        record = logging.LogRecord(
+            name="test.logger",
+            level=logging.WARNING,
+            pathname=__file__,
+            lineno=42,
+            msg="Disk space low",
+            args=(),
+            exc_info=None,
+        )
+        handler.emit(record)
+
+        payload = json.loads(test_queue.get_nowait())
+        assert payload["level"] == "WARNING"
+        assert payload["logger"] == "test.logger"
+        assert payload["msg"] == "Disk space low"
+        assert "ts" in payload
+        assert "source" in payload

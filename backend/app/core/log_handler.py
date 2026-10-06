@@ -2,9 +2,11 @@ import asyncio
 import json
 import logging
 import queue
+import re
 import threading
 from collections import deque
 from datetime import UTC, datetime
+from typing import Final
 
 _ring_buffer: deque = deque(maxlen=500)
 _db_queue: asyncio.Queue = asyncio.Queue()
@@ -12,6 +14,70 @@ REDIS_CHANNEL = "openavisio:logs"
 _handler_installed = False
 _source = "api"
 LOG_RETENTION_DAYS = 30
+
+# -- Log redaction patterns ------------------------------------------------
+
+# Sensitive URL query params whose values must be redacted.
+# Matches ?param=value or &param=value — preserves the param name and = sign.
+_SENSITIVE_QUERY_PARAMS: Final = re.compile(
+    r'(([?&])(?:token|api-key|secret-key|signature|sig|'
+    r'X-Amz-Signature|X-Amz-Credential|X-Amz-Algorithm|'
+    r'X-Amz-Date|X-Amz-Expires|X-Amz-SignedHeaders|'
+    r'X-Amz-Security-Token|access_token|refresh_token|'
+    r'api_key|secret)\s*=\s*)([^&\s"\']{4,})',
+    re.IGNORECASE,
+)
+
+# Bearer token in Authorization headers.
+_BEARER_TOKEN: Final = re.compile(
+    r'(Bearer\s+)([A-Za-z0-9._~+/=-]{8,})',
+    re.IGNORECASE,
+)
+
+# Formatted CPF: XXX.XXX.XXX-XX
+_CPF_FORMATTED: Final = re.compile(r'\b\d{3}\.\d{3}\.\d{3}-\d{2}\b')
+
+# Bare 11-digit CPF (word-bounded to avoid matching substrings of longer numbers).
+_CPF_BARE: Final = re.compile(r'\b\d{11}\b')
+
+
+def redact_log_message(message: str) -> str:
+    """Redact sensitive patterns from a log message before persistent storage.
+
+    Applied by ``_RedisLogHandler.emit`` before the entry is JSON-serialised
+    and published to Redis/DB.  Covers:
+
+    * URL query parameters whose names match known secret-bearing patterns
+      (token, api-key, secret-key, signature, sig, X-Amz-*).
+    * Bearer tokens in ``Authorization`` headers.
+    * CPF-like values (formatted ``XXX.XXX.XXX-XX`` and bare 11-digit
+      sequences).
+
+    Does **not** redact UUIDs, status codes, entity names, file paths, or
+    short identifiers — diagnostic fields are preserved.
+
+    Thread-safe: pure function with no mutable state.
+    """
+    if not message:
+        return message
+
+    # 1. Redact sensitive query-param values (preserve param name + =)
+    message = _SENSITIVE_QUERY_PARAMS.sub(
+        lambda m: m.group(1) + "[REDACTED]", message
+    )
+
+    # 2. Redact Bearer tokens
+    message = _BEARER_TOKEN.sub(
+        lambda m: m.group(1) + "[REDACTED]", message
+    )
+
+    # 3. Redact formatted CPF (XXX.XXX.XXX-XX)
+    message = _CPF_FORMATTED.sub("[REDACTED-CPF]", message)
+
+    # 4. Redact bare 11-digit CPF-like values
+    message = _CPF_BARE.sub("[REDACTED-CPF]", message)
+
+    return message
 
 
 class _RedisLogHandler(logging.Handler):
@@ -47,12 +113,13 @@ class _RedisLogHandler(logging.Handler):
                 "ts": datetime.now(UTC).isoformat(),
                 "level": record.levelname,
                 "logger": record.name,
-                "msg": record.getMessage(),
+                "msg": redact_log_message(record.getMessage()),
                 "source": _source,
             }
             if record.exc_info:
                 import traceback as _tb
-                entry["exc"] = "".join(_tb.format_exception(*record.exc_info))
+                exc_text = "".join(_tb.format_exception(*record.exc_info))
+                entry["exc"] = redact_log_message(exc_text)
             self._queue.put_nowait(json.dumps(entry, default=str))
         except Exception:
             self.handleError(record)
