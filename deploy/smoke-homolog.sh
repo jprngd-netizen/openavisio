@@ -38,6 +38,7 @@ BASE_URL="http://localhost:8000"
 ADMIN_EMAIL="admin@openavisio.dev"
 ADMIN_PASS="Admin123!Admin"
 PATIENT_ID=""
+PRESCRIPTION_ID=""
 VERBOSE=false
 
 # ── colours ────────────────────────────────────────────────────────────────────
@@ -147,7 +148,7 @@ fi
 header "4. Memed health check"
 
 # The admin health endpoint calls check-key internally
-HEALTH_CHECK=$(api GET "/api/admin/memed-health" 2>/dev/null || echo "UNKNOWN")
+HEALTH_CHECK=$(api GET "/api/admin/memed/health" 2>/dev/null || echo "UNKNOWN")
 if echo "$HEALTH_CHECK" | grep -qi "ok\|valid\|healthy"; then
   ok "Memed check-key: valid"
 elif [ "$HEALTH_CHECK" = "UNKNOWN" ] || echo "$HEALTH_CHECK" | grep -q "ERROR"; then
@@ -160,7 +161,7 @@ fi
 # ── phase 5: Reference data ────────────────────────────────────────────────────
 header "5. Reference data"
 
-CITIES=$(api GET "/api/admin/cities" 2>/dev/null || echo "ERROR")
+CITIES=$(api GET "/api/admin/memed/reference-data?kind=cities" 2>/dev/null || echo "ERROR")
 if [ "$CITIES" != "ERROR" ] && [ "$CITIES" != "[]" ]; then
   CITY_COUNT=$(echo "$CITIES" | grep -o '"id"' | wc -l)
   ok "Cities: $CITY_COUNT entries"
@@ -170,7 +171,7 @@ else
   warn "Cities endpoint not available (expected before T1.1)"
 fi
 
-SPECIALTIES=$(api GET "/api/admin/specialties" 2>/dev/null || echo "ERROR")
+SPECIALTIES=$(api GET "/api/admin/memed/reference-data?kind=specialties" 2>/dev/null || echo "ERROR")
 if [ "$SPECIALTIES" != "ERROR" ] && [ "$SPECIALTIES" != "[]" ]; then
   SPEC_COUNT=$(echo "$SPECIALTIES" | grep -o '"id"' | wc -l)
   ok "Specialties: $SPEC_COUNT entries"
