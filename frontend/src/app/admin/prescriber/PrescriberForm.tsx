@@ -48,6 +48,14 @@ export function PrescriberForm({
   const [specialtyId, setSpecialtyId] = useState<number | null>(initial?.specialty_id ?? null);
   const [userId, setUserId] = useState(initial?.user_id ?? "");
 
+  const [cep, setCep] = useState(initial?.cep ?? "");
+  const [street, setStreet] = useState(initial?.street ?? "");
+  const [streetNumber, setStreetNumber] = useState(initial?.street_number ?? "");
+  const [complement, setComplement] = useState(initial?.complement ?? "");
+  const [district, setDistrict] = useState(initial?.district ?? "");
+  const [cityName, setCityName] = useState(initial?.city_name ?? "");
+  const [stateCode, setStateCode] = useState(initial?.state_code ?? "");
+
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
@@ -79,6 +87,13 @@ export function PrescriberForm({
       sex?: string | null;
       city_id?: number | null;
       specialty_id?: number | null;
+      cep?: string | null;
+      street?: string | null;
+      street_number?: string | null;
+      complement?: string | null;
+      district?: string | null;
+      city_name?: string | null;
+      state_code?: string | null;
       user_id?: string | null;
     } = {
       given_name: givenName.trim(),
@@ -98,6 +113,13 @@ export function PrescriberForm({
     if (sex) fields.sex = sex;
     if (cityId) fields.city_id = cityId;
     if (specialtyId) fields.specialty_id = specialtyId;
+    if (cep.trim()) fields.cep = cep.trim();
+    if (street.trim()) fields.street = street.trim();
+    if (streetNumber.trim()) fields.street_number = streetNumber.trim();
+    if (complement.trim()) fields.complement = complement.trim();
+    if (district.trim()) fields.district = district.trim();
+    if (cityName.trim()) fields.city_name = cityName.trim();
+    if (stateCode.trim()) fields.state_code = stateCode.trim();
     if (userId) fields.user_id = userId;
 
     const result = await updatePrescriberAction(fields);
@@ -342,6 +364,80 @@ export function PrescriberForm({
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
+        </div>
+      </fieldset>
+
+      {/* Address */}
+      <fieldset className="rounded-lg border bg-card p-4 space-y-3">
+        <legend className="text-sm font-semibold px-1">Address</legend>
+        <div className="grid gap-3 sm:grid-cols-6">
+          <div className="space-y-1 sm:col-span-2">
+            <label className="text-sm font-medium">Postal code</label>
+            <input
+              type="text"
+              value={cep}
+              onChange={(e) => setCep(e.target.value)}
+              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="space-y-1 sm:col-span-3">
+            <label className="text-sm font-medium">Street</label>
+            <input
+              type="text"
+              value={street}
+              onChange={(e) => setStreet(e.target.value)}
+              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm font-medium">Number</label>
+            <input
+              type="text"
+              value={streetNumber}
+              onChange={(e) => setStreetNumber(e.target.value)}
+              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <label className="text-sm font-medium">Complement</label>
+            <input
+              type="text"
+              value={complement}
+              onChange={(e) => setComplement(e.target.value)}
+              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <label className="text-sm font-medium">District</label>
+            <input
+              type="text"
+              value={district}
+              onChange={(e) => setDistrict(e.target.value)}
+              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <label className="text-sm font-medium">City</label>
+            <input
+              type="text"
+              value={cityName}
+              onChange={(e) => setCityName(e.target.value)}
+              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm font-medium">State</label>
+            <select
+              value={stateCode}
+              onChange={(e) => setStateCode(e.target.value)}
+              className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
+            >
+              <option value="">—</option>
+              {UF_LIST.map((uf) => (
+                <option key={uf} value={uf}>{uf}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </fieldset>
 
