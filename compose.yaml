@@ -96,8 +96,7 @@ services:
     networks:
       - openavisio-net
     ports:
-      - "192.168.0.9:9341:8000"
-      - "100.102.64.95:9341:8000"
+      - "9341:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -213,8 +212,7 @@ services:
       API_URL: http://openavisio-backend:8000
       PREVIEW_BANNER: ${PREVIEW_BANNER:-true}
     ports:
-      - "192.168.0.9:9340:3000"
-      - "100.102.64.95:9340:3000"
+      - "9340:3000"
     networks:
       - openavisio-net
     depends_on:
