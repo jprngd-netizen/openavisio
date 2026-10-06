@@ -29,6 +29,7 @@ import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { Fragment, useEffect, useState } from "react"
 import { PATIENT_SECTIONS } from "@/lib/patientSections"
+import { ADMIN_NAV } from "@/lib/adminNav"
 import { getPatient } from "@/lib/api"
 import { useTheme } from "next-themes"
 import { useHighContrast } from "@/components/providers/HighContrastProvider"
@@ -100,19 +101,12 @@ export function AppSidebar({ orgName, userRole, userName, hasGroups, favorites =
     { href: "/settings", label: t("Settings"), icon: Settings, color: "text-slate-500 dark:text-slate-400" },
   ]
 
-  const adminItems = [
-    { href: "/admin/system", label: t("System"), icon: MonitorDot, color: "text-cyan-600 dark:text-cyan-400" },
-    { href: "/admin/organization", label: t("Organization"), icon: Building, color: "text-indigo-600 dark:text-indigo-400" },
-    { href: "/admin/users", label: t("Users"), icon: UserCog, color: "text-amber-600 dark:text-amber-400" },
-    { href: "/admin/groups", label: t("Groups"), icon: Building2, color: "text-sky-600 dark:text-sky-400" },
-    { href: "/admin/invitations", label: t("Invitations"), icon: UserPlus, color: "text-emerald-600 dark:text-emerald-400" },
-    { href: "/admin/audit", label: t("AuditLog"), icon: ClipboardList, color: "text-violet-600 dark:text-violet-400" },
-    { href: "/admin/logs", label: t("Logs"), icon: ScrollText, color: "text-slate-500 dark:text-slate-400" },
-    { href: "/admin/ollama", label: t("Ollama"), icon: Bot, color: "text-fuchsia-600 dark:text-fuchsia-400" },
-    { href: "/admin/license", label: t("License"), icon: BadgeCheck, color: "text-lime-600 dark:text-lime-400" },
-    { href: "/admin/data-governance", label: t("DataGovernance"), icon: Shield, color: "text-rose-600 dark:text-rose-400" },
-    { href: "/admin/prescriber", label: t("Prescriber"), icon: UsersRound, color: "text-teal-600 dark:text-teal-400" },
-  ]
+  const adminItems = ADMIN_NAV.map(({ href, labelKey, icon, color }) => ({
+    href,
+    label: t(labelKey),
+    icon,
+    color,
+  }))
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href)

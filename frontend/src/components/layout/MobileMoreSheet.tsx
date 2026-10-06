@@ -5,14 +5,14 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   Home, Users, UsersRound, Share2, Settings, Star, Shield, Menu,
-  Sun, Moon, Contrast, LogOut, MonitorDot, Building, UserCog, Building2,
-  UserPlus, ClipboardList, ScrollText, Bot, BadgeCheck,
+  Sun, Moon, Contrast, LogOut,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { signOut } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { useHighContrast } from "@/components/providers/HighContrastProvider";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { ADMIN_NAV } from "@/lib/adminNav";
 
 type Fav = { id: string; given_name: string; family_name: string };
 
@@ -45,18 +45,10 @@ export function MobileMoreSheet({
     ...(canShare ? [{ href: "/admin/sharing", label: t("DataSharing"), Icon: Share2 }] : []),
     { href: "/settings", label: t("Settings"), Icon: Settings },
   ];
-  const adminItems = userRole === "admin" ? [
-    { href: "/admin/system", label: t("System"), Icon: MonitorDot },
-    { href: "/admin/organization", label: t("Organization"), Icon: Building },
-    { href: "/admin/users", label: t("Users"), Icon: UserCog },
-    { href: "/admin/groups", label: t("Groups"), Icon: Building2 },
-    { href: "/admin/invitations", label: t("Invitations"), Icon: UserPlus },
-    { href: "/admin/audit", label: t("AuditLog"), Icon: ClipboardList },
-    { href: "/admin/logs", label: t("Logs"), Icon: ScrollText },
-    { href: "/admin/ollama", label: t("Ollama"), Icon: Bot },
-    { href: "/admin/license", label: t("License"), Icon: BadgeCheck },
-    { href: "/admin/data-governance", label: t("DataGovernance"), Icon: Shield },
-  ] : [];
+  const adminItems =
+    userRole === "admin"
+      ? ADMIN_NAV.map(({ href, labelKey, icon }) => ({ href, label: t(labelKey), Icon: icon }))
+      : [];
 
   const row = "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-accent";
 
