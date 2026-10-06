@@ -91,8 +91,41 @@ export const createPrescription = async (patientId: string, data?: any) =>
   api.post<any>(`/api/patients/${patientId}/prescriptions`, data);
 export const getPrescription = async (id: string) =>
   api.get<any>(`/api/prescriptions/${id}`);
-export const updatePrescription = async (id: string, data: { version: number; notes?: string | null; items?: any[] | null }) =>
-  api.patch<any>(`/api/prescriptions/${id}`, data);
+export const updatePrescription = async (
+  id: string,
+  data: { version: number; notes?: string | null; items?: any[] | null },
+): Promise<
+  | { ok: true; data: any }
+  | { ok: false; conflict: true; currentVersion: number | null }
+  | { ok: false; conflict: false; error: string }
+> => {
+  const token = await getToken();
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_URL}/api/prescriptions/${id}`, {
+    method: "PATCH",
+    cache: "no-store",
+    headers,
+    body: JSON.stringify(data),
+  });
+
+  if (res.ok) {
+    const json = await res.json();
+    return { ok: true, data: json };
+  }
+
+  if (res.status === 409) {
+    const err = await res.text();
+    let currentVersion: number | null = null;
+    const match = err.match(/current_version["']?\s*:\s*(\d+)/);
+    if (match) currentVersion = parseInt(match[1], 10);
+    return { ok: false, conflict: true, currentVersion };
+  }
+
+  const err = await res.text();
+  return { ok: false, conflict: false, error: `API error ${res.status}: ${err}` };
+};
 export const deletePrescription = async (id: string) =>
   api.delete<void>(`/api/prescriptions/${id}`);
 export const getMemedSession = async (id: string) =>
@@ -195,6 +228,14 @@ export const saveAiModelConfig = async (config: {
 
 export const getAdminPipelineTasks = async () => api.get<any[]>("/api/admin/logs/tasks");
 export const getSystemInfo = async () => api.get<any>("/api/admin/system");
+
+// Admin — Prescriber
+export const getPrescriber = async () => api.get<any>("/api/admin/prescriber");
+export const updatePrescriber = async (data: any) => api.put<any>("/api/admin/prescriber", data);
+export const getMemedReferenceData = async (kind: "cities" | "specialties", q?: string) => {
+  const params = q ? `?kind=${kind}&q=${encodeURIComponent(q)}` : `?kind=${kind}`;
+  return api.get<any[]>(`/api/admin/memed/reference-data${params}`);
+};
 
 // Data sharing — Purpose Manager (Coordinator/admin)
 export const getSharingPurposes = async () => api.get<any[]>("/api/sharing-purposes");

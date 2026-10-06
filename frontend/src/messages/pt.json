@@ -17,6 +17,7 @@
     "Settings": "Configurações",
     "DataSharing": "Compartilhamento de dados",
     "DataGovernance": "Governança de dados",
+    "Prescriber": "Prescritor",
     "Favorites": "Favoritos",
     "More": "Mais",
     "Collapse": "Recolher",
@@ -718,6 +719,20 @@
     "Items": "Itens",
     "Medication": "Medicamento",
     "Posology": "Posologia",
-    "Quantity": "Quantidade"
+    "Quantity": "Quantidade",
+    "EditorTitle": "Editar Receita",
+    "Saving": "Salvando…",
+    "Saved": "Salvo",
+    "Unsaved": "Alterações não salvas",
+    "ConflictMessage": "Esta receita foi modificada em outro lugar. Recarregue para obter a versão mais recente.",
+    "Reload": "Recarregar",
+    "Retry": "Tentar novamente",
+    "Retrying": "Tentando…",
+    "AddItem": "Adicionar item",
+    "NoItems": "Nenhum item ainda.",
+    "FailedMessage": "Esta receita falhou ao ser emitida. Você pode tentar novamente.",
+    "ReadyToIssue": "Use o editor Memed à direita para emitir esta receita.",
+    "NotPrescriber": "Apenas o prescritor designado pode emitir receitas.",
+    "Loading": "Carregando…"
   }
 }

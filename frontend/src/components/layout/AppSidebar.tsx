@@ -111,6 +111,7 @@ export function AppSidebar({ orgName, userRole, userName, hasGroups, favorites =
     { href: "/admin/ollama", label: t("Ollama"), icon: Bot, color: "text-fuchsia-600 dark:text-fuchsia-400" },
     { href: "/admin/license", label: t("License"), icon: BadgeCheck, color: "text-lime-600 dark:text-lime-400" },
     { href: "/admin/data-governance", label: t("DataGovernance"), icon: Shield, color: "text-rose-600 dark:text-rose-400" },
+    { href: "/admin/prescriber", label: t("Prescriber"), icon: UsersRound, color: "text-teal-600 dark:text-teal-400" },
   ]
 
   const isActive = (href: string) =>

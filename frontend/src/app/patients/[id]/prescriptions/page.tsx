@@ -1,5 +1,6 @@
+import { auth } from "@/auth";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { getPrescriptions, getPatient } from "@/lib/api";
+import { getPrescriptions, getPatient, getPrescription } from "@/lib/api";
 import { getTranslations, getLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { AlertCircle } from "lucide-react";
@@ -19,6 +20,23 @@ export default async function PrescriptionsPage({
   let patient: any = null;
   let prescriptions: any[] = [];
   let fetchError = false;
+  let isPrescriber = false;
+
+  try { patient = await getPatient(id); } catch {}
+  try { prescriptions = await getPrescriptions(id); } catch { fetchError = true; }
+
+  if (rx) {
+    try {
+      const rxData = await getPrescription(rx);
+      const session = await auth();
+      const userId = (session as any)?.id;
+      if (userId && rxData.prescriber?.user_id === userId) {
+        isPrescriber = true;
+      }
+    } catch {
+      // Non-fatal — the editor will show its own error
+    }
+  }
 
   try { patient = await getPatient(id); } catch {}
   try { prescriptions = await getPrescriptions(id); } catch { fetchError = true; }
@@ -40,7 +58,7 @@ export default async function PrescriptionsPage({
       />
 
       {rx ? (
-        <PrescriptionList prescriptions={prescriptions} rxPrescriptionId={rx} />
+        <PrescriptionList prescriptions={prescriptions} rxPrescriptionId={rx} isPrescriber={isPrescriber} />
       ) : fetchError ? (
         <div className="flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm">
           <AlertCircle className="size-4 shrink-0" />

@@ -17,6 +17,7 @@
     "Settings": "Einstellungen",
     "DataSharing": "Datenfreigabe",
     "DataGovernance": "Datenkontrolle",
+    "Prescriber": "Verordner",
     "Favorites": "Favoriten",
     "More": "Mehr",
     "Collapse": "Einklappen",
@@ -718,6 +719,20 @@
     "Items": "Positionen",
     "Medication": "Medikament",
     "Posology": "Posologie",
-    "Quantity": "Menge"
+    "Quantity": "Menge",
+    "EditorTitle": "Rezept bearbeiten",
+    "Saving": "Speichern…",
+    "Saved": "Gespeichert",
+    "Unsaved": "Ungespeicherte Änderungen",
+    "ConflictMessage": "Dieses Rezept wurde woanders geändert. Laden Sie neu, um die aktuelle Version zu erhalten.",
+    "Reload": "Neu laden",
+    "Retry": "Wiederholen",
+    "Retrying": "Wiederhole…",
+    "AddItem": "Position hinzufügen",
+    "NoItems": "Noch keine Positionen.",
+    "FailedMessage": "Dieses Rezept konnte nicht ausgestellt werden. Sie können es erneut versuchen.",
+    "ReadyToIssue": "Verwenden Sie den Memed-Editor auf der rechten Seite, um dieses Rezept auszustellen.",
+    "NotPrescriber": "Nur der zugewiesene Verschreiber kann Rezepte ausstellen.",
+    "Loading": "Laden…"
   }
 }

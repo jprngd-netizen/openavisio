@@ -17,6 +17,7 @@
     "Settings": "Settings",
     "DataSharing": "Data Sharing",
     "DataGovernance": "Data governance",
+    "Prescriber": "Prescriber",
     "Favorites": "Favorites",
     "More": "More",
     "Collapse": "Collapse",
@@ -718,6 +719,20 @@
     "Items": "Items",
     "Medication": "Medication",
     "Posology": "Posology",
-    "Quantity": "Quantity"
+    "Quantity": "Quantity",
+    "EditorTitle": "Edit Prescription",
+    "Saving": "Saving…",
+    "Saved": "Saved",
+    "Unsaved": "Unsaved changes",
+    "ConflictMessage": "This prescription was modified elsewhere. Reload to get the latest version.",
+    "Reload": "Reload",
+    "Retry": "Retry",
+    "Retrying": "Retrying…",
+    "AddItem": "Add item",
+    "NoItems": "No items yet.",
+    "FailedMessage": "This prescription failed to issue. You can retry.",
+    "ReadyToIssue": "Use the Memed editor on the right to issue this prescription.",
+    "NotPrescriber": "Only the assigned prescriber can issue prescriptions.",
+    "Loading": "Loading…"
   }
 }
