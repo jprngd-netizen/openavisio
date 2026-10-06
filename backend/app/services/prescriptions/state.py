@@ -53,7 +53,7 @@ class StalePrescription(ValueError):
 # Transition table: {current_status: {allowed_target_statuses}}
 _TRANSITIONS: dict[str, set[str]] = {
     "draft": {"issued", "failed", "deleted"},
-    "failed": {"draft", "deleted"},
+    "failed": {"draft", "issued", "deleted"},
     "issued": {"deleted"},
     "deleted": set(),  # terminal — no outgoing transitions
 }
@@ -127,8 +127,14 @@ def can_edit_items(prescription: Any) -> bool:
 
 
 def set_memed_id(prescription: Any, value: str) -> None:
-    """Set ``memed_prescription_id``, enforcing write-once semantics."""
+    """Set ``memed_prescription_id``, enforcing write-once semantics.
+
+    If already set to the **same** value, this is a no-op (idempotent).
+    A different value still raises ``ValueError``.
+    """
     if prescription.memed_prescription_id is not None:
+        if prescription.memed_prescription_id == value:
+            return  # Idempotent — already set to the same value
         raise ValueError("memed_prescription_id is write-once")
     prescription.memed_prescription_id = value
 

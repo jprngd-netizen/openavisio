@@ -7,7 +7,7 @@ and ``routers/admin.py`` for audit logging.
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,7 +18,8 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.encryption import decrypt_str
 from app.core.patient_keys import get_patient_kek
-from app.deps import get_current_user, get_memed_client
+from app.core.ratelimit import client_ip, enforce
+from app.deps import get_current_user, get_memed_client, get_session_factory
 from app.models.audit import AuditLog
 from app.models.patient import Patient
 from app.models.prescription import (
@@ -29,7 +30,7 @@ from app.models.prescription import (
     PrescriptionItem,
     PrescriptionStatus,
 )
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.prescription import (
     MemedSessionResponse,
     PrescriptionDto,
@@ -38,6 +39,7 @@ from app.schemas.prescription import (
 )
 from app.services.prescriptions.archive import capture_signed_pdf, read_signed_pdf
 from app.services.prescriptions.events import (
+    CaptureMetadata,
     UnparsableMemedEvent,
     parse_prescricao_excluida,
     parse_prescricao_impressa,
@@ -77,7 +79,12 @@ async def _get_prescriber_or_409(db: AsyncSession) -> Prescriber:
 
 
 async def _require_prescriber_user(prescriber: Prescriber, user: User) -> None:
-    """Require that *user* is the linked prescriber user."""
+    """Require that *user* is the linked prescriber user (default) or any admin."""
+    if settings.memed_emission_policy == "any_admin":
+        if user.role != UserRole.admin:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
+        return
+    # Default: linked_user
     if prescriber.user_id is None or prescriber.user_id != user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN)
 
@@ -95,7 +102,15 @@ async def _load_rx_with_relations(
     return result.scalar_one_or_none()
 
 
-def _audit_entry(user: User, entity_type: str, entity_id: str, action: str, changes: dict | None = None) -> AuditLog:
+def _audit_entry(
+    user: User,
+    entity_type: str,
+    entity_id: str,
+    action: str,
+    changes: dict | None = None,
+    ip_address: str | None = None,
+    user_agent: str | None = None,
+) -> AuditLog:
     """Create an AuditLog entry for the current user."""
     name = " ".join(filter(None, [user.first_name, user.last_name])) or user.email
     return AuditLog(
@@ -105,6 +120,8 @@ def _audit_entry(user: User, entity_type: str, entity_id: str, action: str, chan
         entity_id=entity_id,
         action=action,
         changes=changes,
+        ip_address=ip_address,
+        user_agent=user_agent,
     )
 
 
@@ -274,6 +291,7 @@ async def update_prescription(
 @router.delete("/prescriptions/{id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_prescription(
     id: uuid.UUID,
+    request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -289,7 +307,11 @@ async def delete_prescription(
         )
 
     rx.is_deleted = True
-    db.add(_audit_entry(user, "Prescription", str(id), "deleted"))
+    db.add(_audit_entry(
+        user, "Prescription", str(id), "deleted",
+        ip_address=client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+    ))
     await db.commit()
 
 
@@ -301,6 +323,7 @@ async def delete_prescription(
 @router.post("/prescriptions/{id}/memed-session")
 async def memed_session(
     id: uuid.UUID,
+    request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     memed: MemedClient = Depends(get_memed_client),
@@ -313,8 +336,12 @@ async def memed_session(
     prescriber = await _get_prescriber_or_409(db)
     await _require_prescriber_user(prescriber, user)
 
+    # Rate limit: 30 session requests per 5 minutes per IP
+    await enforce(f"rl:memed-session:ip:{client_ip(request)}", limit=30, window_seconds=300)
+
     # Fresh token from Memed
     token = await fresh_token(db, memed)
+    await db.commit()  # persist token_issued_at
 
     # Build patient payload for setPaciente
     patient_result = await db.execute(select(Patient).where(Patient.id == rx.patient_id))
@@ -358,9 +385,11 @@ async def memed_session(
 async def capture_prescription(
     id: uuid.UUID,
     body: dict,
+    request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     memed: MemedClient = Depends(get_memed_client),
+    session_factory=Depends(get_session_factory),
 ):
     rx = await _load_rx_with_relations(db, id)
     if not rx:
@@ -369,6 +398,23 @@ async def capture_prescription(
 
     prescriber = await _get_prescriber_or_409(db)
     await _require_prescriber_user(prescriber, user)
+
+    # Rate limit: 20 capture attempts per 5 minutes per IP
+    ip = client_ip(request)
+    ua = request.headers.get("user-agent")
+    await enforce(f"rl:capture:ip:{ip}", limit=20, window_seconds=300)
+
+    # --- Guard: only proceed if signature_state is none/None ---
+    # T2.2 hard rule: the signing path is only reachable from
+    # signature_state=none.  An already-signed or already-archived
+    # prescription must not be re-captured.
+    sig_state = rx.signature_state or "none"
+    if sig_state == "archived":
+        # Already fully captured — return as-is
+        return _to_dto(rx)
+    if sig_state == "signed":
+        # Signature confirmed but archival failed — retry endpoint handles it
+        return _to_dto(rx)
 
     # Parse the unverified event payload
     try:
@@ -379,14 +425,62 @@ async def capture_prescription(
             detail={"code": "unparsable_event", "keys": exc.keys},
         )
 
+    # --- Persist signature_state=signed + memed_prescription_id in a separate ---
+    # --- session BEFORE the download/archive attempt, so it survives rollback ---
+    # Use UPDATE (not SELECT-then-modify) because the separate session may be
+    # on a different connection where the prescription is not yet visible.
+    async with session_factory() as fail_safe_session:
+        stmt = (
+            update(Prescription)
+            .where(Prescription.id == id)
+            .values(
+                signature_state="signed",
+                memed_prescription_id=metadata.memed_prescription_id,
+            )
+        )
+        await fail_safe_session.execute(stmt)
+        await fail_safe_session.commit()
+
     # Capture and archive (commits internally)
     try:
         doc = await capture_signed_pdf(db, rx, prescriber, metadata, memed)
-    except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+    except Exception as exc:
+        # --- Persist failed state in a separate session ---
+        # The request session may have been rolled back by capture_signed_pdf,
+        # so we cannot reuse it.  Open a fresh session instead.
+        async with session_factory() as fail_session:
+            stmt = (
+                update(Prescription)
+                .where(Prescription.id == id)
+                .values(
+                    status=PrescriptionStatus.failed,
+                    failure_reason=str(exc),
+                )
+            )
+            await fail_session.execute(stmt)
+            fail_session.add(
+                _audit_entry(
+                    user, "Prescription", str(id), "failed",
+                    {"reason": str(exc)},
+                    ip_address=ip,
+                    user_agent=ua,
+                )
+            )
+            await fail_session.commit()
+
+        # Expire the rx object so the retry endpoint reloads from DB
+        # and sees the failed state written by the separate session.
+        db.expire(rx)
+
+        if isinstance(exc, ValueError):
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+        raise
+
+    # Set signature_state to archived on success
+    rx.signature_state = "archived"
 
     # Audit log (separate transaction)
-    db.add(_audit_entry(user, "Prescription", str(id), "updated", {"status": "issued"}))
+    db.add(_audit_entry(user, "Prescription", str(id), "updated", {"status": "issued"}, ip_address=ip, user_agent=ua))
     await db.commit()
 
     # Reload
@@ -403,6 +497,7 @@ async def capture_prescription(
 async def memed_deleted(
     id: uuid.UUID,
     body: dict,
+    request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -437,6 +532,8 @@ async def memed_deleted(
             str(id),
             "deleted",
             {"status": "deleted", "memed_prescription_id": memed_id},
+            ip_address=client_ip(request),
+            user_agent=request.headers.get("user-agent"),
         )
     )
     await db.commit()
@@ -450,14 +547,59 @@ async def memed_deleted(
 @router.post("/prescriptions/{id}/retry", response_model=PrescriptionDto)
 async def retry_prescription(
     id: uuid.UUID,
+    request: Request,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    memed: MemedClient = Depends(get_memed_client),
 ):
     rx = await _load_rx_with_relations(db, id)
     if not rx:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     await require_patient_access(rx.patient_id, user, db, AccessLevel.contribute)
 
+    ip = client_ip(request)
+    ua = request.headers.get("user-agent")
+
+    # Rate limit: 10 retry attempts per 5 minutes per IP
+    await enforce(f"rl:retry:ip:{ip}", limit=10, window_seconds=300)
+
+    # Determine what to do based on signature_state
+    sig_state = rx.signature_state or "none"
+
+    if sig_state == "archived":
+        # Nothing to do — return as-is
+        return _to_dto(rx)
+
+    if sig_state == "signed":
+        # Re-archive only — do NOT re-sign, do NOT transition to draft.
+        # The prescription already has memed_prescription_id set.
+        prescriber = await _get_prescriber_or_409(db)
+        await _require_prescriber_user(prescriber, user)
+
+        metadata = CaptureMetadata(
+            memed_prescription_id=rx.memed_prescription_id,
+            signed=True,
+            file_name="prescription.pdf",
+        )
+        doc = await capture_signed_pdf(db, rx, prescriber, metadata, memed)
+
+        # Set signature_state to archived
+        rx.signature_state = "archived"
+
+        db.add(
+            _audit_entry(
+                user, "Prescription", str(id), "updated",
+                {"status": "issued", "signature_state": "archived"},
+                ip_address=ip,
+                user_agent=ua,
+            )
+        )
+        await db.commit()
+
+        rx = await _load_rx_with_relations(db, id)
+        return _to_dto(rx)
+
+    # sig_state == "none" — normal retry: failed → draft
     try:
         transition(rx, PrescriptionStatus.draft)
     except InvalidTransition as exc:

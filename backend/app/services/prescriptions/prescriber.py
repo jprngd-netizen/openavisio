@@ -12,14 +12,17 @@ on the Memed Sinapse Prescrição API:
 """
 from __future__ import annotations
 
+import logging
 import time
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.prescription import PRESCRIBER_SINGLETON_ID, Prescriber
 from app.services.prescriptions.ports import MemedClient, ReferenceItem
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Reference-data cache (in-process, short TTL)
@@ -147,6 +150,11 @@ async def ensure_prescriber(
     (raises ``LookupError``) — creates it via ``create_prescriber``.
 
     Always updates ``memed_user_id`` / ``memed_status`` on the local record.
+    On success, sets ``sync_status`` to ``"ok"`` and records
+    ``token_issued_at``.  On failure (network error, etc.), sets
+    ``sync_status`` to ``"error"`` with the reason in ``sync_error`` and
+    **returns** the prescriber without updating Memed fields — the local
+    record remains valid.
 
     Idempotent by ``external_id``: a second call with the same prescriber
     (already synced) will **not** call ``create_prescriber`` again.
@@ -159,14 +167,24 @@ async def ensure_prescriber(
         raise LookupError("No prescriber configured")
 
     try:
-        result = await client.get_prescriber(prescriber.external_id)
-    except LookupError:
-        # Prescriber not found on Memed — create it
-        payload = _build_prescriber_payload(prescriber)
-        result = await client.create_prescriber(payload)
+        try:
+            result = await client.get_prescriber(prescriber.external_id)
+        except LookupError:
+            # Prescriber not found on Memed — create it
+            payload = _build_prescriber_payload(prescriber)
+            result = await client.create_prescriber(payload)
 
-    prescriber.memed_user_id = result.memed_user_id
-    prescriber.memed_status = result.status
+        prescriber.memed_user_id = result.memed_user_id
+        prescriber.memed_status = result.status
+        prescriber.sync_status = "ok"
+        prescriber.sync_error = None
+        prescriber.token_issued_at = datetime.now(timezone.utc)
+    except Exception as exc:
+        prescriber.sync_status = "error"
+        prescriber.sync_error = str(exc)
+        logger.warning("Memed sync failed: %s", exc)
+        # Local record remains valid — do not re-raise
+
     await db.flush()
     return prescriber
 
@@ -182,8 +200,10 @@ async def fresh_token(
 ) -> str:
     """Get a fresh ``data-token`` from Memed.
 
-    **Always** calls ``get_prescriber`` at call time.  Returns the token
-    **without** persisting it anywhere.
+    **Always** calls ``get_prescriber`` at call time.  Records
+    ``token_issued_at`` on the prescriber and flushes so the caller's
+    commit persists it.  Returns the token **without** persisting it
+    anywhere else.
 
     Raises:
         LookupError: if no ``Prescriber`` record exists in the database.
@@ -193,4 +213,44 @@ async def fresh_token(
         raise LookupError("No prescriber configured")
 
     result = await client.get_prescriber(prescriber.external_id)
+    prescriber.token_issued_at = datetime.now(timezone.utc)
+    await db.flush()
     return result.token
+
+
+# ---------------------------------------------------------------------------
+# is_token_expired
+# ---------------------------------------------------------------------------
+
+
+def is_token_expired(
+    prescriber: Prescriber,
+    validity_hours: int = 12,
+    now: datetime | None = None,
+) -> bool:
+    """Check whether the prescriber's BirdID token has expired.
+
+    BirdID tokens are valid in a 1–12 h window.  Since BirdID failures carry
+    no API error code (only a UI message), the only way to distinguish
+    "token expired" from "signature failure" is to track the emission
+    instant locally.
+
+    Parameters
+    ----------
+    prescriber:
+        The Prescriber record whose ``token_issued_at`` field is checked.
+    validity_hours:
+        Expected token validity in hours (default 12, the BirdID maximum).
+    now:
+        Override the current time for testing (clock control).  Defaults to
+        ``datetime.now(timezone.utc)``.
+
+    Returns
+    -------
+    bool
+        ``True`` if the token has expired or was never issued.
+    """
+    if prescriber.token_issued_at is None:
+        return True
+    now = now or datetime.now(timezone.utc)
+    return now > prescriber.token_issued_at + timedelta(hours=validity_hours)

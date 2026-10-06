@@ -99,10 +99,15 @@ class TestTransitionIllegal:
         with pytest.raises(InvalidTransition):
             transition(p, "issued")
 
-    def test_failed_to_issued_raises(self):
-        p = make_prescription(status="failed")
-        with pytest.raises(InvalidTransition):
-            transition(p, "issued")
+    def test_failed_to_issued_succeeds(self):
+        """failed → issued is legal for re-archive after a signed-but-unarchived failure."""
+        p = make_prescription(
+            status="failed",
+            memed_prescription_id="42",
+            document=object(),
+        )
+        result = transition(p, "issued")
+        assert result.status == "issued"
 
     def test_failed_to_failed_raises(self):
         p = make_prescription(status="failed")
@@ -138,6 +143,7 @@ class TestCanTransitionHelper:
         assert can_transition("draft", "failed") is True
         assert can_transition("draft", "deleted") is True
         assert can_transition("failed", "draft") is True
+        assert can_transition("failed", "issued") is True
         assert can_transition("failed", "deleted") is True
         assert can_transition("issued", "deleted") is True
 
@@ -146,7 +152,6 @@ class TestCanTransitionHelper:
         assert can_transition("issued", "draft") is False
         assert can_transition("issued", "failed") is False
         assert can_transition("issued", "issued") is False
-        assert can_transition("failed", "issued") is False
         assert can_transition("failed", "failed") is False
         assert can_transition("deleted", "draft") is False
         assert can_transition("deleted", "issued") is False

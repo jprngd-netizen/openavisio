@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 from typing import Self
+from urllib.parse import urlparse
 
 import httpx
 
@@ -202,7 +203,8 @@ class MemedHTTPClient:
         Uses the instance's ``_client`` (which may be a ``MockTransport`` in tests).
         The URL is absolute so ``base_url`` is not applied.
         """
-        _logger.debug("Downloading PDF from %s", url[:64])  # prefix only
+        _parsed = urlparse(url)
+        _logger.debug("Downloading PDF from %s://%s%s", _parsed.scheme, _parsed.netloc, _parsed.path)
         response = await self._client.get(url, params=None)
         response.raise_for_status()
         data = response.content

@@ -61,6 +61,9 @@ class Prescriber(BaseModel):
     specialty_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     memed_user_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     memed_status: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    sync_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    sync_error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    token_issued_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     prescriptions: Mapped[list["Prescription"]] = relationship(
         "Prescription", back_populates="prescriber", lazy="select",
@@ -91,6 +94,8 @@ class Prescription(OwnedResource):
     issued_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     deleted_by_memed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    failure_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    signature_state: Mapped[str | None] = mapped_column(String(20), nullable=True, server_default="none")
 
     prescriber: Mapped["Prescriber"] = relationship("Prescriber", back_populates="prescriptions")
     items: Mapped[list["PrescriptionItem"]] = relationship(
