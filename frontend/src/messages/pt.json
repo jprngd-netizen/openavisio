@@ -703,6 +703,9 @@
     "empty": "Nenhum diagnóstico registrado."
   },
   "Prescriptions": {
+    "New": "Nova receita",
+    "NeedPrescriber": "Configure o prescritor (Admin → Prescritor) antes de criar uma receita.",
+    "CreateError": "Não foi possível criar a receita. Tente novamente.",
     "Title": "Receitas",
     "Empty": "Nenhuma receita registrada.",
     "LoadError": "Falha ao carregar receitas. O servidor pode estar indisponível.",

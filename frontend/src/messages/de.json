@@ -703,6 +703,9 @@
     "empty": "Keine Diagnosen erfasst."
   },
   "Prescriptions": {
+    "New": "Neues Rezept",
+    "NeedPrescriber": "Bitte zuerst den Verordner konfigurieren (Admin → Verordner).",
+    "CreateError": "Rezept konnte nicht erstellt werden. Bitte erneut versuchen.",
     "Title": "Rezepte",
     "Empty": "Keine Rezepte erfasst.",
     "LoadError": "Rezepte konnten nicht geladen werden. Der Server ist möglicherweise nicht erreichbar.",

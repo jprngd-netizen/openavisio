@@ -703,6 +703,9 @@
     "empty": "No conditions recorded."
   },
   "Prescriptions": {
+    "New": "New prescription",
+    "NeedPrescriber": "Configure the prescriber (Admin → Prescriber) before creating a prescription.",
+    "CreateError": "Could not create the prescription. Please try again.",
     "Title": "Prescriptions",
     "Empty": "No prescriptions recorded.",
     "LoadError": "Failed to load prescriptions. The server may be unavailable.",

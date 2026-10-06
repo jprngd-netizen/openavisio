@@ -5,16 +5,18 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { AlertCircle } from "lucide-react";
 import { PrescriptionList } from "./PrescriptionList";
+import { NewPrescriptionButton } from "./NewPrescriptionButton";
+import { createPrescriptionAction } from "./actions";
 
 export default async function PrescriptionsPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ rx?: string }>;
+  searchParams: Promise<{ rx?: string; error?: string }>;
 }) {
   const { id } = await params;
-  const { rx } = await searchParams;
+  const { rx, error } = await searchParams;
   const t = await getTranslations("Prescriptions");
   const locale = await getLocale();
   let patient: any = null;
@@ -38,9 +40,6 @@ export default async function PrescriptionsPage({
     }
   }
 
-  try { patient = await getPatient(id); } catch {}
-  try { prescriptions = await getPrescriptions(id); } catch { fetchError = true; }
-
   if (!patient) {
     return (
       <AppLayout>
@@ -57,17 +56,34 @@ export default async function PrescriptionsPage({
         className=""
       />
 
+      {error && (
+        <div className="mb-4 flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm">
+          <AlertCircle className="size-4 shrink-0" />
+          {error === "no_prescriber" ? t("NeedPrescriber") : t("CreateError")}
+        </div>
+      )}
+
       {rx ? (
         <PrescriptionList prescriptions={prescriptions} rxPrescriptionId={rx} isPrescriber={isPrescriber} />
-      ) : fetchError ? (
-        <div className="flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm">
-          <AlertCircle className="size-4 shrink-0" />
-          {t("LoadError")}
-        </div>
-      ) : prescriptions.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">{t("Empty")}</div>
       ) : (
-        <PrescriptionList prescriptions={prescriptions} />
+        <>
+          <div className="mb-4 flex items-center justify-end">
+            <form action={createPrescriptionAction}>
+              <input type="hidden" name="patientId" value={id} />
+              <NewPrescriptionButton />
+            </form>
+          </div>
+          {fetchError ? (
+            <div className="flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm">
+              <AlertCircle className="size-4 shrink-0" />
+              {t("LoadError")}
+            </div>
+          ) : prescriptions.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">{t("Empty")}</div>
+          ) : (
+            <PrescriptionList prescriptions={prescriptions} />
+          )}
+        </>
       )}
     </AppLayout>
   );
