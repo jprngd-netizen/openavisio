@@ -14,7 +14,7 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     // server.js binds to $HOSTNAME, and Docker sets that to the container id — so
     // in CI it listened on a hostname nobody could reach and the port stayed shut.
-    env: { HOSTNAME: "0.0.0.0", PORT: "3000" },
+    env: { HOSTNAME: "0.0.0.0", PORT: "3000", NEXTAUTH_SECRET: "3a620d7038f3c15c4fc467055d493231554c73c526903cb8d662d18a0c6aff1b", NEXTAUTH_URL: "http://localhost:3000", API_URL: "http://localhost:8000" },
     stdout: "pipe", // otherwise a server that dies at boot leaves only a timeout
   },
 });

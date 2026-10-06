@@ -5,8 +5,15 @@ import { Breadcrumb } from "@/components/Breadcrumb";
 import { AlertCircle } from "lucide-react";
 import { PrescriptionList } from "./PrescriptionList";
 
-export default async function PrescriptionsPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PrescriptionsPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ rx?: string }>;
+}) {
   const { id } = await params;
+  const { rx } = await searchParams;
   const t = await getTranslations("Prescriptions");
   const locale = await getLocale();
   let patient: any = null;
@@ -32,7 +39,9 @@ export default async function PrescriptionsPage({ params }: { params: Promise<{ 
         className=""
       />
 
-      {fetchError ? (
+      {rx ? (
+        <PrescriptionList prescriptions={prescriptions} rxPrescriptionId={rx} />
+      ) : fetchError ? (
         <div className="flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm">
           <AlertCircle className="size-4 shrink-0" />
           {t("LoadError")}

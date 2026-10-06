@@ -65,8 +65,15 @@ def patient_access_dep(minimum: AccessLevel = AccessLevel.view):
 def get_memed_client():
     """FastAPI dependency that returns a MemedClient instance.
 
-    Override in tests with ``FakeMemedClient``.
+    When ``settings.memed_use_fake`` is ``True`` (dev/e2e), returns a
+    ``FakeMemedClient`` that requires no network or credentials.
+    Production leaves it ``False`` — the real ``MemedHTTPClient`` is used.
     """
+    if settings.memed_use_fake:
+        from app.services.prescriptions.fakes import FakeMemedClient
+
+        return FakeMemedClient()
+
     from app.services.prescriptions.memed_client import MemedHTTPClient
 
     return MemedHTTPClient(

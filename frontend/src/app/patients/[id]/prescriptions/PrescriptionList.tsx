@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { formatDate } from "@/lib/utils";
 import { FileSignature, ExternalLink } from "lucide-react";
+import { MemedEmbed } from "./MemedEmbed";
 
 function statusBadge(status: string, t: (k: string) => string) {
   const label = t(`Status${status.charAt(0).toUpperCase() + status.slice(1)}`);
@@ -20,10 +21,15 @@ function statusBadge(status: string, t: (k: string) => string) {
   );
 }
 
-export function PrescriptionList({ prescriptions }: { prescriptions: any[] }) {
+export function PrescriptionList({ prescriptions, rxPrescriptionId }: { prescriptions: any[]; rxPrescriptionId?: string }) {
   const t = useTranslations("Prescriptions");
   const locale = useLocale();
   const [revealed, setRevealed] = useState<string | null>(null);
+
+  // When a specific prescription is requested for editing, show the Memed embed
+  if (rxPrescriptionId) {
+    return <MemedEmbed prescriptionId={rxPrescriptionId} />;
+  }
 
   return (
     <>

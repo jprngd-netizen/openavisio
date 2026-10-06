@@ -78,6 +78,7 @@ class Settings(BaseSettings):
     memed_api_key: str = ""
     memed_secret_key: str = ""
     memed_environment: str = "integration"  # "integration" | "production"
+    memed_use_fake: bool = False  # dev/e2e: use FakeMemedClient instead of real HTTP
 
     @property
     def cors_origins_list(self) -> list[str]:
