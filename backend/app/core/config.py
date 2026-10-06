@@ -79,6 +79,18 @@ class Settings(BaseSettings):
     memed_secret_key: str = ""
     memed_environment: str = "integration"  # "integration" | "production"
     memed_use_fake: bool = False  # dev/e2e: use FakeMemedClient instead of real HTTP
+    memed_emission_policy: str = "linked_user"  # "linked_user" | "any_admin"
+
+    # Age encryption key for backup encryption (age binary, age-keygen to generate)
+    age_pubkey: str = ""
+
+    # Deployment mode — only "personal" is implemented in this version.
+    # "clinic" and "multi_tenant" are reserved for future use and rejected explicitly.
+    deployment_mode: str = "personal"
+
+    # Extension hooks (OFF by default, no wiring yet)
+    terms_url: str = ""
+    telemetry_enabled: bool = False
 
     @property
     def cors_origins_list(self) -> list[str]:
@@ -89,8 +101,45 @@ class Settings(BaseSettings):
         return self.environment == "development"
 
     @model_validator(mode="after")
+    def _validate_deployment_mode(self):
+        """Reject unimplemented deployment modes explicitly — never a silent no-op."""
+        valid = {"personal", "clinic", "multi_tenant"}
+        if self.deployment_mode not in valid:
+            raise ValueError(
+                f"DEPLOYMENT_MODE={self.deployment_mode!r} is invalid; "
+                f"must be one of {valid}"
+            )
+        if self.deployment_mode in ("clinic", "multi_tenant"):
+            raise ValueError(
+                f"DEPLOYMENT_MODE={self.deployment_mode!r} is not yet implemented. "
+                "Only 'personal' is supported in this version."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _validate_emission_policy(self):
+        """Reject invalid memed_emission_policy values."""
+        valid = {"linked_user", "any_admin"}
+        if self.memed_emission_policy not in valid:
+            raise ValueError(
+                f"MEMED_EMISSION_POLICY={self.memed_emission_policy!r} is invalid; "
+                f"must be one of {valid}"
+            )
+        return self
+
+    @model_validator(mode="after")
     def _guard_production(self):
-        """Fail closed: never boot a non-dev instance with dev defaults."""
+        """Fail closed: never boot a non-dev instance with dev defaults.
+
+        IMPORTANT — coherence over blanket rejection:
+        The plan originally said "abort if MEMED_ENVIRONMENT != production".
+        However, a legitimate explicit homolog deployment
+        (ENVIRONMENT=production, MEMED_ENVIRONMENT=integration, homolog URLs)
+        is a valid configuration for dry-run / staging.  We therefore enforce
+        *coherence* instead: an explicit, coherent integration config is allowed;
+        the dangerous mismatches (production env + homolog URLs, integration env
+        + production URLs) abort.  See ADR / plan §T0.1.
+        """
         if self.is_dev:
             return self
         problems = []
@@ -102,6 +151,58 @@ class Settings(BaseSettings):
             problems.append("DATABASE_URL uses the dev default password")
         if not self.rate_limit_enabled:
             problems.append("RATE_LIMIT_ENABLED=false — that switch exists for the test suite only")
+
+        # ── Memed critical vars ────────────────────────────────────────────
+        if not self.memed_api_url:
+            problems.append("MEMED_API_URL is empty — required in production")
+        if not self.memed_script_url:
+            problems.append("MEMED_SCRIPT_URL is empty — required in production")
+        if not self.memed_api_key:
+            problems.append("MEMED_API_KEY is empty — required in production")
+        if not self.memed_secret_key:
+            problems.append("MEMED_SECRET_KEY is empty — required in production")
+
+        # ── MEMED_USE_FAKE guard ───────────────────────────────────────────
+        if self.memed_use_fake:
+            problems.append("MEMED_USE_FAKE=true — that switch exists for dev/e2e only")
+
+        # ── MEMED_ENVIRONMENT validity ─────────────────────────────────────
+        if self.memed_environment not in ("integration", "production"):
+            problems.append(
+                f"MEMED_ENVIRONMENT={self.memed_environment!r} is invalid; "
+                "must be 'integration' or 'production'"
+            )
+
+        # ── AGE_PUBKEY guard ───────────────────────────────────────────────
+        if not self.age_pubkey:
+            problems.append("AGE_PUBKEY is empty — backups cannot be encrypted")
+
+        # ── Base/script coherence ──────────────────────────────────────────
+        if self.memed_environment == "production":
+            if "integrations.api.memed.com.br" in self.memed_api_url:
+                problems.append(
+                    "MEMED_API_URL points at homolog (integrations.api.memed.com.br) "
+                    "but MEMED_ENVIRONMENT=production"
+                )
+            if "integrations.memed.com.br" in self.memed_script_url:
+                problems.append(
+                    "MEMED_SCRIPT_URL points at homolog (integrations.memed.com.br) "
+                    "but MEMED_ENVIRONMENT=production"
+                )
+        elif self.memed_environment == "integration":
+            # Check for production API URL, excluding homolog URLs which contain
+            # "integrations.api.memed.com.br" (a superset of "api.memed.com.br").
+            if "api.memed.com.br" in self.memed_api_url and "integrations.api.memed.com.br" not in self.memed_api_url:
+                problems.append(
+                    "MEMED_API_URL points at production (api.memed.com.br) "
+                    "but MEMED_ENVIRONMENT=integration"
+                )
+            if "partners.memed.com.br" in self.memed_script_url:
+                problems.append(
+                    "MEMED_SCRIPT_URL points at production (partners.memed.com.br) "
+                    "but MEMED_ENVIRONMENT=integration"
+                )
+
         if problems:
             raise ValueError(
                 "Refusing to start with ENVIRONMENT=" + self.environment

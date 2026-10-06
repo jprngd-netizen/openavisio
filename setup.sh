@@ -223,6 +223,12 @@ case "$AI_BACKEND_VAL" in
     ;;
 esac
 
+# ── Memed ──────────────────────────────────────────────────────────────────
+header "Memed — Sinapse Prescrição"
+
+MEMED_ENVIRONMENT_VAL=$(ask_choice MEMED_ENVIRONMENT "Memed environment:" "integration" "production")
+set_env MEMED_ENVIRONMENT "$MEMED_ENVIRONMENT_VAL"
+
 # ── summary ───────────────────────────────────────────────────────────────────
 header "Done"
 success "Configuration written to ${ENV_FILE}"
