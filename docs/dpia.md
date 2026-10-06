@@ -65,7 +65,7 @@ All clinical data stored in OpenAvisio (Diagnoses, Medications, Measurements, La
 ### Storage limitation
 
 - **Documents and clinical data**: retained until Patient Erasure is triggered. No automatic expiry — health records may be needed indefinitely for care continuity.
-- **Audit log entries**: 30-day retention for application logs; DB audit entries purged on Patient Erasure.
+- **Audit log entries**: 30-day retention for application logs; DB audit entries purged on Patient Erasure. IP address and user-agent fields are retained for the same period as the parent audit log entry — no separate retention. They are purged automatically when the parent entry is deleted (Patient Erasure) or anonymised (User Erasure).
 - **Sessions**: access tokens expire after 15 minutes; refresh tokens after 7 days.
 - **Invite tokens**: single-use, expire on acceptance.
 
@@ -168,6 +168,20 @@ All clinical data stored in OpenAvisio (Diagnoses, Medications, Measurements, La
 - Public pages carry `no-referrer`, `noindex`, and `no-store`; app-level delivery is copy-link only (no app-sent email in v1)
 
 **Residual risk:** Medium. The link is anonymous by design — anyone who obtains the URL (e.g. via a forwarded email) can view the Documents until it expires or is revoked. The recipient's IP/user-agent are themselves personal data of the specialist and are processed for accountability (logged in the audit trail). Operators should keep expiry short and advise caregivers to share links over private channels.
+
+### Risk 8 — Prescription emission audit logging captures IP and user-agent
+
+**Likelihood:** Low (internal system operation)
+**Severity:** Low (IP address and user-agent are low-sensitivity personal data, processed for accountability under Art. 6(1)(c))
+
+**Controls in place:**
+- IP address and user-agent are captured only for write operations on prescriptions (emission, capture, deletion, retry) and for external share-link access
+- Fields are stored in the same audit log table, subject to the same retention and erasure policies
+- No separate retention — purged automatically on Patient Erasure or User Erasure
+- Admin-only access to audit logs
+- Consent basis: Art. 6(1)(c) — legal obligation (GDPR accountability principle)
+
+**Residual risk:** Low. The data is low-sensitivity, stored with the same protections as the rest of the audit log, and automatically purged on erasure.
 
 ---
 

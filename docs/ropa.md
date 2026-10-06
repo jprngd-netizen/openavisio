@@ -94,12 +94,12 @@ Required under GDPR Article 30. Maintained by the data controller operating this
 |---|---|
 | **Purpose** | Accountability — recording who changed what and when (GDPR Art. 5(2)) |
 | **Legal basis** | Art. 6(1)(c) — legal obligation (GDPR accountability principle) |
-| **Data subjects** | Users (actor), Patients (subject of the action) |
-| **Personal data** | User ID, user name, entity type, entity ID, action, before/after field values (excluding passwords) |
+| **Data subjects** | Users (actor), Patients (subject of the action); external recipients (IP address and user-agent captured for external share-link access) |
+| **Personal data** | User ID, user name, entity type, entity ID, action, before/after field values (excluding passwords); **IP address** and **user-agent** of the actor (for prescription emission audit and external share-link access) |
 | **Recipients** | Admins via admin log viewer |
 | **International transfers** | None |
-| **Retention** | 30 days for application logs. Audit log DB entries: purged on Patient Erasure (for that patient's entries); user_name scrubbed on User Erasure. Tombstone entries retained indefinitely. |
-| **Security measures** | Admin-only access. Sensitive fields (hashed_password, failed_login_attempts) excluded from diffs. |
+| **Retention** | 30 days for application logs. Audit log DB entries: purged on Patient Erasure (for that patient's entries); user_name scrubbed on User Erasure. **IP address and user-agent fields** are retained for the same period as the audit log entry they belong to — no separate retention. They are purged automatically when the parent entry is deleted (Patient Erasure) or anonymised (User Erasure). Tombstone entries retained indefinitely with IP/user-agent scrubbed. |
+| **Security measures** | Admin-only access. Sensitive fields (hashed_password, failed_login_attempts) excluded from diffs. IP address and user-agent are stored in the same database as the audit log, protected by infrastructure-level access controls. |
 
 ---
 

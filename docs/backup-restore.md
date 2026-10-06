@@ -26,6 +26,32 @@ keystore dump of the same date.** A 30-day-old clinical dump alone is not
 restorable — its keystore partner is long gone. Restores are for "the server
 burned down last night", not for "undo something from last month".
 
+## PrescriptionDocument retention
+
+The signed PDF of an issued Prescription (`PrescriptionDocument`) is a **legal
+record** and is **excluded from the automatic retention purge** that applies to
+other clinical data categories (see `governance.py`). It is retained
+indefinitely and is only removed through the **patient erasure cascade** (GDPR
+Art. 17 right-to-erasure):
+
+- The erasure cascade hard-deletes the `PrescriptionDocument` row, its storage
+  blob, and all related `Prescription` / `PrescriptionItem` rows.
+- The storage blob is deleted from disk before the DB transaction commits; if
+  storage deletion fails, the transaction is rolled back and erasure is aborted.
+- The keystore's short retention (7 days) ensures that once the erased patient's
+  KEK has aged out of every keystore backup, the clinical backups holding the
+  prescription ciphertext are permanently undecryptable — crypto-shredding
+  reaches backups within ~14 days (7 days in the mirror + up to 7 more in
+  snapshots).
+
+This policy is enforced by:
+1. `governance.py` — `CATEGORY_MODELS` explicitly excludes `prescription` from
+   the retention purge targets.
+2. `erasure.py` — the patient erasure cascade collects `PrescriptionDocument`
+   storage paths, deletes the blobs, and hard-deletes all prescription rows.
+3. `test_prescription_erasure.py` — tests verify that the blob survives the
+   normal lifecycle and is removed on erasure cascade.
+
 ## What you need to restore — and where it lives
 
 | Secret | Without it | Where it must live |
@@ -37,6 +63,86 @@ burned down last night", not for "undo something from last month".
 Losing the age key or the master KEK is unrecoverable. There is no reset, no
 support, no vendor. This is the price of the encryption that makes the product
 worth using.
+
+## Private-key guardianship
+
+The age private key (`AGE-SECRET-KEY-1…`) is the **single point of failure for
+every backup**. Losing it makes every encrypted backup permanently unreadable.
+If an attacker obtains it, they can decrypt any backup they exfiltrate.
+
+### Where the private key lives
+
+The private key **must never** enter:
+
+- A versioned `.env` file
+- A log file or console output
+- A backup artifact encrypted by itself (circular protection)
+- The server's filesystem (except transiently during a restore)
+
+It must be stored **out-of-band**, off the host it protects:
+
+| Store | Suitable for | Notes |
+|---|---|---|
+| Password manager (Bitwarden, 1Password, KeePassXC) | Primary store | Export the key as a text note; tag it with the hostname and date |
+| Encrypted USB drive in a safe | Cold backup | Write the key to a plain text file, encrypt the USB with a different key |
+| Paper printout of the base64-encoded key | Last resort | Store in a fireproof safe; test that you can retype it correctly |
+
+### Guardian
+
+The **guardian** is the person responsible for safekeeping the private key and
+for producing it during a restore. The guardian must be:
+
+- **Named explicitly** in the organization's operational records (not in this
+  repo). For the OpenAvisio homelab deployment, the guardian is the
+  **orchestrator/owner** (Gabriel Salem).
+- Reachable within the restore SLA (see Restore below).
+- The **only** person who can authorise a restore. No restore runs without the
+  guardian's explicit approval.
+
+### Restore procedure (guardian-gated)
+
+A restore requires **both** the guardian (who holds the age private key) and an
+operator (who has access to the server). They must act together:
+
+1. **Guardian** retrieves the age private key from the password manager and
+   transfers it to the operator via an out-of-band channel (encrypted message,
+   not email). The key is used once and never stored on the server.
+2. **Operator** follows the restore steps below, using the key only transiently
+   via `AGE_KEY=/path/to/age-key.txt`.
+3. **Guardian** confirms the operator has deleted the key file after the restore
+   completes.
+
+```bash
+# Guardian provides the key; operator runs:
+export AGE_KEY=/path/to/age-key.txt   # brought in by hand, deleted after restore
+D=2026-07-13                          # the date you are restoring
+
+# ... restore steps below ...
+```
+
+### AGE_PUBKEY fail-closed
+
+The backup script (`deploy/backup/backup.sh`) uses the shell idiom
+`: "${AGE_PUBKEY:?set AGE_PUBKEY (age1...) in deploy/.env}"` at line 25. This
+means:
+
+- If `AGE_PUBKEY` is **unset or empty**, the script **exits immediately** with a
+  non-zero status and a clear error message. It will not produce an unencrypted
+  backup or silently skip encryption.
+- This is verified by the `set -eu` at line 14 (exit on unset variable) combined
+  with the explicit `:?` message.
+
+**The live `.env` must have `AGE_PUBKEY` set to a valid age public key.**
+Generate one with `age-keygen` on any machine, keep the private key out-of-band
+(see above), and put the public key in `.env`:
+
+```bash
+age-keygen -o /tmp/age-key.txt       # generates key pair
+cat /tmp/age-key.txt                  # shows both public and private
+# Copy the public key line (age1...) into .env as AGE_PUBKEY=age1...
+# Store the private key in your password manager
+rm /tmp/age-key.txt                   # never leave it on the server
+```
 
 ## Restore
 
