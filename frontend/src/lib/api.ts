@@ -231,6 +231,8 @@ export const getSystemInfo = async () => api.get<any>("/api/admin/system");
 
 // Admin — Prescriber
 export const getPrescriber = async () => api.get<any>("/api/admin/prescriber");
+export const getMemedCredits = async () =>
+  api.get<{ signed_count: number; note: string }>("/api/admin/memed/credits");
 export const updatePrescriber = async (data: any) => api.put<any>("/api/admin/prescriber", data);
 export const getMemedReferenceData = async (kind: "cities" | "specialties", q?: string) => {
   const params = q ? `?kind=${kind}&q=${encodeURIComponent(q)}` : `?kind=${kind}`;

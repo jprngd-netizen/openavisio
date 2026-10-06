@@ -184,4 +184,137 @@ test.describe("Prescriptions", () => {
     // ── 17. Assert no console errors ─────────────────────────────────────
     expect(errors).toEqual([]);
   });
+
+  test("Memed postMessage origin validation — unknown origin logged but processed when not enforcing", async ({
+    page,
+    request,
+  }) => {
+    // ── 1. Seed ──────────────────────────────────────────────────────────
+    await request.post(`${BACKEND}/api/dev/seed`);
+
+    // ── 2. Login via API ─────────────────────────────────────────────────
+    const loginRes = await request.post(`${BACKEND}/api/auth/login`, {
+      data: { email: "admin@openavisio.dev", password: "Admin123!Admin" },
+    });
+    const loginBody = await loginRes.json();
+    const token = loginBody.access_token as string;
+    expect(token).toBeTruthy();
+
+    // ── 3. Get admin user id ─────────────────────────────────────────────
+    const meRes = await request.get(`${BACKEND}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const meBody = await meRes.json();
+    const userId = meBody.id as string;
+    expect(userId).toBeTruthy();
+
+    // ── 4. Configure prescriber ──────────────────────────────────────────
+    const prescriberRes = await request.put(`${BACKEND}/api/admin/prescriber`, {
+      headers: { Authorization: `Bearer ${token}` },
+      data: {
+        given_name: "Admin",
+        family_name: "User",
+        cpf: "12345678909",
+        birth_date: "1980-01-01",
+        board_code: "CRM",
+        board_number: "12345",
+        board_state: "SP",
+        user_id: userId,
+      },
+    });
+    expect(prescriberRes.ok).toBeTruthy();
+
+    // ── 5. Get first patient ─────────────────────────────────────────────
+    const patientsRes = await request.get(`${BACKEND}/api/patients`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const patients = await patientsRes.json();
+    const patientId = patients[0].id as string;
+    expect(patientId).toBeTruthy();
+
+    // ── 6. Create a prescription ─────────────────────────────────────────
+    const rxRes = await request.post(
+      `${BACKEND}/api/patients/${patientId}/prescriptions`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    const rxBody = await rxRes.json();
+    const rxId = rxBody.id as string;
+    expect(rxId).toBeTruthy();
+
+    // ── 7. Monitor console ───────────────────────────────────────────────
+    const [errors, allOutput] = monitorConsole(page);
+
+    // ── 8. Stub the Memed script URL ─────────────────────────────────────
+    await page.route("**/sinapse-prescricao*.js", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/javascript",
+        body: "window.MdSinapsePrescricao = {};",
+      });
+    });
+
+    // ── 9. Set up MdHub mock via addInitScript ───────────────────────────
+    await page.addInitScript(() => {
+      const calls: string[] = [];
+      const handlers: Record<string, (...args: unknown[]) => void> = {};
+
+      (window as any).__memedCalls = calls;
+      (window as any).__memedHandlers = handlers;
+
+      (window as any).MdHub = {
+        command: {
+          send: (module: string, command: string, ...args: unknown[]) => {
+            calls.push(`${module}.${command}`);
+          },
+        },
+        event: {
+          add: (event: string, handler: (...args: unknown[]) => void) => {
+            handlers[event] = handler;
+          },
+        },
+      };
+    });
+
+    // ── 10. Login via UI ─────────────────────────────────────────────────
+    await page.goto("/login");
+    await page.locator('input[type="email"]').fill("admin@openavisio.dev");
+    await page.locator('input[type="password"]').fill("Admin123!Admin");
+    await page.locator('button[type="submit"]').click();
+    await expect(page).toHaveURL(/\/patients$/);
+
+    // ── 11. Navigate to prescriptions page ───────────────────────────────
+    await page.goto(`/patients/${patientId}/prescriptions?rx=${rxId}`);
+    await page.waitForSelector("#memed-container", { timeout: 10000 });
+
+    // ── 12. Fire core:moduleInit from an unknown origin ───────────────────
+    // With default config (no allowlist, enforcement off), the message
+    // should be logged but still processed.
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new MessageEvent("message", {
+          origin: "https://unknown-malicious-origin.com",
+          data: {
+            type: "core:moduleInit",
+            module: { name: "plataforma.prescricao" },
+          },
+        }),
+      );
+    });
+
+    await page.waitForTimeout(1000);
+
+    // ── 13. Assert the warning was logged ────────────────────────────────
+    const originWarnings = allOutput.filter((line) =>
+      line.includes("[MemedEmbed] Ignoring message from unknown origin:"),
+    );
+    expect(originWarnings.length).toBeGreaterThanOrEqual(1);
+
+    // ── 14. Assert message was still processed (log-only, not enforced) ──
+    const calls = await page.evaluate(() => (window as any).__memedCalls);
+    expect(calls).toContain("plataforma.prescricao.setPaciente");
+    expect(calls).toContain("plataforma.prescricao.show");
+
+    // ── 15. Assert no console errors ─────────────────────────────────────
+    expect(errors).toEqual([]);
+  });
 });

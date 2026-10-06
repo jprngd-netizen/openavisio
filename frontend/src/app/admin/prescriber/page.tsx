@@ -1,6 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { auth } from "@/auth";
-import { getPrescriber, getAdminUsers, getMemedReferenceData } from "@/lib/api";
+import { getPrescriber, getAdminUsers, getMemedReferenceData, getMemedCredits } from "@/lib/api";
 import { PrescriberForm } from "./PrescriberForm";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +26,9 @@ export default async function AdminPrescriberPage() {
     getMemedReferenceData("specialties").catch(() => []),
   ]);
 
+  // Fetch signed-prescription credits — non-critical, errors are swallowed
+  const credits = await getMemedCredits().catch(() => null);
+
   return (
     <AppLayout>
       <div>
@@ -46,6 +49,14 @@ export default async function AdminPrescriberPage() {
           specialties={specialties}
         />
       </div>
+
+      {credits && (
+        <div className="rounded-xl border bg-card p-6 space-y-3">
+          <h2 className="font-medium text-sm">Memed signed prescriptions</h2>
+          <p className="text-3xl font-semibold tracking-tight">{credits.signed_count}</p>
+          <p className="text-sm text-muted-foreground">{credits.note}</p>
+        </div>
+      )}
     </AppLayout>
   );
 }

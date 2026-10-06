@@ -4,6 +4,17 @@ import { useState, useEffect } from "react";
 import Script from "next/script";
 import { getMemedSession, capturePrescription, markPrescriptionDeleted } from "@/lib/api";
 
+// ── Memed postMessage origin validation ──────────────────────────────────
+// Config-driven allowlist for iframe origins. In homolog/dev, set
+// NEXT_PUBLIC_MEMED_ALLOWED_ORIGINS to the known iframe origin(s).
+// Enforcement is opt-in: by default, unknown origins are logged but NOT blocked.
+const MEMED_ALLOWED_ORIGINS = (process.env.NEXT_PUBLIC_MEMED_ALLOWED_ORIGINS || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
+const MEMED_ENFORCE_ORIGIN =
+  process.env.NEXT_PUBLIC_MEMED_ENFORCE_ORIGIN === "true";
+
 declare const MdHub:
   | {
       command: { send: (module: string, command: string, ...args: unknown[]) => void };
@@ -54,6 +65,21 @@ export function MemedEmbed({ prescriptionId }: { prescriptionId: string }) {
     function handleMessage(event: MessageEvent) {
       const data = event.data;
       if (!data || typeof data !== "object") return;
+
+      // Origin validation: allowlist check with log-only default
+      const origin = event.origin;
+      if (
+        origin &&
+        MEMED_ALLOWED_ORIGINS.length > 0 &&
+        !MEMED_ALLOWED_ORIGINS.includes(origin)
+      ) {
+        console.log(
+          `[MemedEmbed] Ignoring message from unknown origin: ${origin}`,
+        );
+        if (MEMED_ENFORCE_ORIGIN) {
+          return; // Blocked — origin not in allowlist and enforcement is on
+        }
+      }
 
       const type = (data as Record<string, unknown>).type;
 
