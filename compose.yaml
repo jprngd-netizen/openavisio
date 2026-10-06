@@ -90,6 +90,7 @@ services:
       MEMED_API_KEY: ${MEMED_API_KEY:-}
       MEMED_SECRET_KEY: ${MEMED_SECRET_KEY:-}
       MEMED_ENVIRONMENT: ${MEMED_ENVIRONMENT:-integration}
+      AGE_PUBKEY: ${AGE_PUBKEY:-}
     volumes:
       - document-data:/data/documents
     networks:
@@ -131,6 +132,7 @@ services:
       MEMED_API_KEY: ${MEMED_API_KEY:-}
       MEMED_SECRET_KEY: ${MEMED_SECRET_KEY:-}
       MEMED_ENVIRONMENT: ${MEMED_ENVIRONMENT:-integration}
+      AGE_PUBKEY: ${AGE_PUBKEY:-}
     volumes:
       - document-data:/data/documents
     networks:
@@ -162,6 +164,7 @@ services:
       MEMED_API_KEY: ${MEMED_API_KEY:-}
       MEMED_SECRET_KEY: ${MEMED_SECRET_KEY:-}
       MEMED_ENVIRONMENT: ${MEMED_ENVIRONMENT:-integration}
+      AGE_PUBKEY: ${AGE_PUBKEY:-}
     volumes:
       - document-data:/data/documents
     networks:
@@ -186,6 +189,8 @@ services:
       AISERVICE_TOKEN: ${AISERVICE_TOKEN}
       APP_SECRET: ${APP_SECRET}
       EMBEDDING_SCHEDULER_CRON: ${EMBEDDING_SCHEDULER_CRON:-*/15 * * * *}
+      DOCUMENT_ENCRYPTION_KEY: ${DOCUMENT_ENCRYPTION_KEY}
+      AGE_PUBKEY: ${AGE_PUBKEY:-}
     networks:
       - openavisio-net
     depends_on:
