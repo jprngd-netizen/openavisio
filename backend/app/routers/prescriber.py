@@ -100,6 +100,11 @@ async def upsert_prescriber(
             existing.city_id = body.city_id
         if body.specialty_id is not None:
             existing.specialty_id = body.specialty_id
+        for _f in ("cep", "street", "street_number", "complement",
+                   "district", "city_name", "state_code"):
+            _v = getattr(body, _f)
+            if _v is not None:
+                setattr(existing, _f, _v)
         prescriber = existing
     else:
         # Create new — CPF is required
@@ -128,6 +133,13 @@ async def upsert_prescriber(
             sex=body.sex,
             city_id=body.city_id,
             specialty_id=body.specialty_id,
+            cep=body.cep,
+            street=body.street,
+            street_number=body.street_number,
+            complement=body.complement,
+            district=body.district,
+            city_name=body.city_name,
+            state_code=body.state_code,
         )
         db.add(prescriber)
 

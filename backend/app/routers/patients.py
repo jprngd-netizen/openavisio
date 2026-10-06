@@ -243,7 +243,22 @@ async def create_patient(
         birth_date=body.birth_date,
         gender=body.gender,
         identifier=body.identifier,
+        cns=body.cns,
+        email=body.email,
+        phone=body.phone,
+        cep=body.cep,
+        street=body.street,
+        street_number=body.street_number,
+        complement=body.complement,
+        district=body.district,
+        city_name=body.city_name,
+        state_code=body.state_code,
     )
+    if body.cpf:
+        from app.core.encryption import encrypt_setting
+
+        patient.cpf_encrypted = encrypt_setting(body.cpf)
+        patient.cpf_last4 = body.cpf[-4:] if len(body.cpf) >= 4 else body.cpf
     db.add(patient)
     await db.flush()
     # creator gets a normal, revocable admin grant instead of ownership (ADR 026)
@@ -272,8 +287,17 @@ async def update_patient(
     patient = result.scalar_one_or_none()
     if not patient:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
-    for field, value in body.model_dump(exclude_none=True).items():
+    data = body.model_dump(exclude_none=True)
+    # CPF is not a column: it is stored encrypted as cpf_encrypted +
+    # cpf_last4, exactly like the prescriber route does.
+    cpf = data.pop("cpf", None)
+    for field, value in data.items():
         setattr(patient, field, value)
+    if cpf:
+        from app.core.encryption import encrypt_setting
+
+        patient.cpf_encrypted = encrypt_setting(cpf)
+        patient.cpf_last4 = cpf[-4:] if len(cpf) >= 4 else cpf
     await db.commit()
     await db.refresh(patient)
     return patient

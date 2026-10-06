@@ -107,6 +107,13 @@ class PrescriberDto(OrmBase):
     memed_status: str | None
     sync_status: str | None
     sync_error: str | None
+    cep: str | None
+    street: str | None
+    street_number: str | None
+    complement: str | None
+    district: str | None
+    city_name: str | None
+    state_code: str | None
 
 
 class PrescriberUpdateRequest(BaseModel):
@@ -123,6 +130,13 @@ class PrescriberUpdateRequest(BaseModel):
     sex: str | None = None
     city_id: int | None = None
     specialty_id: int | None = None
+    cep: str | None = None
+    street: str | None = None
+    street_number: str | None = None
+    complement: str | None = None
+    district: str | None = None
+    city_name: str | None = None
+    state_code: str | None = None
 
 
 # ---------------------------------------------------------------------------

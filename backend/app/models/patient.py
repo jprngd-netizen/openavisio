@@ -27,6 +27,17 @@ class Patient(BaseModel):
     email: Mapped[str | None] = mapped_column(String(256), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(30), nullable=True)
 
+    cns: Mapped[str | None] = mapped_column(String(20))
+
+    # Address (Brazilian format)
+    cep: Mapped[str | None] = mapped_column(String(9))
+    street: Mapped[str | None] = mapped_column(String(256))
+    street_number: Mapped[str | None] = mapped_column(String(20))
+    complement: Mapped[str | None] = mapped_column(String(120))
+    district: Mapped[str | None] = mapped_column(String(120))
+    city_name: Mapped[str | None] = mapped_column(String(120))
+    state_code: Mapped[str | None] = mapped_column(String(2))
+
     # Optional patient photo — PHI, so stored envelope-encrypted like a document:
     # blob under a per-photo DEK wrapped by the patient KEK (ADR-031).
     photo_storage_path: Mapped[str | None] = mapped_column(String(1024))
