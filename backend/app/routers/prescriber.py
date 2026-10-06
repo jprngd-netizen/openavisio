@@ -4,10 +4,12 @@ Manages the singleton Prescriber record and provides Memed reference-data
 lookups (cities, specialties) for the admin UI.
 """
 
+import logging
 import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,6 +26,8 @@ from app.services.prescriptions.prescriber import (
     cached_specialties,
     ensure_prescriber,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -129,12 +133,11 @@ async def upsert_prescriber(
 
     await db.flush()
 
-    # Sync with Memed (idempotent)
+    # Sync with Memed (idempotent) — errors are persisted as sync_status/sync_error
     try:
         await ensure_prescriber(db, memed)
     except Exception:
-        # Memed sync failure is non-fatal for the local record
-        pass
+        logger.exception("Unexpected error during Memed sync")
 
     await db.commit()
     await db.refresh(prescriber)
@@ -159,3 +162,88 @@ async def memed_reference_data(
     else:
         items = await cached_specialties(memed, q=q)
     return [ReferenceDataItem(id=item.id, name=item.name) for item in items]
+
+
+# ---------------------------------------------------------------------------
+# Health check response model
+# ---------------------------------------------------------------------------
+
+
+class MemedHealthCheck(BaseModel):
+    """Health-check result for Memed API credentials and reference data."""
+
+    status: str  # "ok" | "error"
+    check_key: bool | None = None
+    cities: bool | None = None
+    specialties: bool | None = None
+    cause: str | None = None
+
+
+# ---------------------------------------------------------------------------
+# GET /api/admin/memed/health
+# ---------------------------------------------------------------------------
+
+
+@router.get("/memed/health", response_model=MemedHealthCheck)
+async def memed_health(
+    admin: User = Depends(require_admin),
+    memed: MemedClient = Depends(get_memed_client),
+):
+    """Check Memed API credentials and reference-data availability.
+
+    Calls ``check-key``, ``cidades``, and ``especialidades`` on the Memed
+    API and reports the status of each.  No keys or tokens appear in the
+    response or logs.
+    """
+    # 1. Check API key
+    try:
+        key_ok = await memed.check_key()
+    except Exception:
+        return MemedHealthCheck(
+            status="error",
+            check_key=False,
+            cause="check_key request failed",
+        )
+
+    if not key_ok:
+        return MemedHealthCheck(
+            status="error",
+            check_key=False,
+            cause="invalid_api_key",
+        )
+
+    # 2. Check reference data
+    cities_ok = False
+    specialties_ok = False
+    try:
+        await memed.list_cities()
+        cities_ok = True
+    except Exception:
+        pass
+
+    try:
+        await memed.list_specialties()
+        specialties_ok = True
+    except Exception:
+        pass
+
+    if not cities_ok or not specialties_ok:
+        failed = []
+        if not cities_ok:
+            failed.append("cities")
+        if not specialties_ok:
+            failed.append("specialties")
+        return MemedHealthCheck(
+            status="error",
+            check_key=True,
+            cities=cities_ok,
+            specialties=specialties_ok,
+            cause=f"reference_data_failed: {', '.join(failed)}",
+        )
+
+    return MemedHealthCheck(
+        status="ok",
+        check_key=True,
+        cities=True,
+        specialties=True,
+    )

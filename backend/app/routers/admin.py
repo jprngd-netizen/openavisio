@@ -639,3 +639,36 @@ async def update_notification_settings(
             await _upsert_notify(db, key, bool(body[field]))
     await db.commit()
     return await _get_notify_settings(db)
+
+
+# ---------------------------------------------------------------------------
+# Memed credits — operational visibility (T4.4)
+# ---------------------------------------------------------------------------
+
+
+@router.get("/memed/credits")
+async def get_memed_credits(
+    admin: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return the count of signed prescriptions (not attempts).
+
+    Counts distinct prescriptions with signature_state IN ('signed', 'archived').
+    A retry is NOT counted as a new emission.  For the actual BirdID/Soluti
+    balance, check the 'Meu Plano' app.
+    """
+    from app.models.prescription import Prescription
+
+    count = await db.scalar(
+        select(func.count())
+        .select_from(Prescription)
+        .where(
+            Prescription.signature_state.in_(["signed", "archived"]),
+            Prescription.is_deleted == False,  # noqa: E712
+        )
+    )
+    return {
+        "signed_count": count or 0,
+        "note": "Check your BirdID/Soluti balance in the 'Meu Plano' app. "
+                "This count tracks signed prescriptions (not attempts).",
+    }

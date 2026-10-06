@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.access import AccessLevel, require_patient_access
 from app.core.config import settings
-from app.core.database import get_db
+from app.core.database import AsyncSessionLocal, get_db
 from app.core.security import decode_token
 from app.models.user import User, UserRole
 
@@ -60,6 +60,23 @@ def patient_access_dep(minimum: AccessLevel = AccessLevel.view):
         return user
 
     return dep
+
+
+async def get_session_factory():
+    """FastAPI dependency that returns a callable session factory.
+
+    Defaults to ``AsyncSessionLocal`` from ``app.core.database``.  Tests
+    override this to provide a session on the same connection with savepoint
+    semantics, or a standalone session whose writes survive the request
+    session's rollback.
+
+    The returned callable must be awaitable and return an ``AsyncSession``::
+
+        factory = await get_session_factory()
+        async with factory() as session:
+            ...
+    """
+    return AsyncSessionLocal
 
 
 def get_memed_client():

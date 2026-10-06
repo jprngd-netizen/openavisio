@@ -69,6 +69,8 @@ class PrescriptionDto(OrmBase):
     issued_at: datetime | None
     notes: str | None
     deleted_by_memed_at: datetime | None
+    failure_reason: str | None
+    signature_state: str | None
     created_at: datetime
     updated_at: datetime
     items: list[PrescriptionItemDto] = []
@@ -103,6 +105,8 @@ class PrescriberDto(OrmBase):
     specialty_id: int | None
     memed_user_id: str | None
     memed_status: str | None
+    sync_status: str | None
+    sync_error: str | None
 
 
 class PrescriberUpdateRequest(BaseModel):
