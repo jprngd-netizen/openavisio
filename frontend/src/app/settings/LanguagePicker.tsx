@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 
 const LANGUAGES = [
+  { code: "pt", label: "Português" },
   { code: "en", label: "English" },
   { code: "de", label: "Deutsch" },
 ];
