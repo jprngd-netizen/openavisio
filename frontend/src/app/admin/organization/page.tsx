@@ -1,5 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { auth } from "@/auth";
+import { getTranslations } from "next-intl/server";
 import { OrgForm } from "./OrgForm";
 import { NotificationSettings } from "./NotificationSettings";
 
@@ -10,6 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function AdminOrganizationPage() {
   const session = await auth();
   const token = (session as any)?.accessToken;
+  const t = await getTranslations("AdminOrganization");
 
   const res = await fetch(`${API}/api/organization`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -19,8 +21,8 @@ export default async function AdminOrganizationPage() {
   if (!res.ok) {
     return (
       <AppLayout>
-        <h1 className="text-xl font-bold">Organization</h1>
-        <p className="text-sm text-destructive">Failed to load organization.</p>
+        <h1 className="text-xl font-bold">{t("Title")}</h1>
+        <p className="text-sm text-destructive">{t("FailedLoad")}</p>
       </AppLayout>
     );
   }
@@ -38,12 +40,11 @@ export default async function AdminOrganizationPage() {
 
   return (
     <AppLayout>
-      <h1 className="text-xl font-bold">Organization</h1>
+      <h1 className="text-xl font-bold">{t("Title")}</h1>
       <div className="max-w-lg space-y-4">
         <div className="rounded-xl border bg-card p-6 space-y-4">
           <div>
-            <h2 className="font-medium text-sm">Settings</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">Name, description and default language for this installation.</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{t("Subtitle")}</p>
           </div>
           <OrgForm
             initialName={org.name}

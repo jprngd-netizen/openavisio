@@ -1,26 +1,35 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { updateOrganizationAction } from "./actions";
 
 const LANGUAGES = [
   { code: "en", label: "English" },
   { code: "de", label: "Deutsch" },
+  { code: "pt", label: "Português" },
 ];
 
-const LEGAL_FIELDS = [
-  { key: "legal_name", label: "Name / Firma / Verein", hint: "Wer betreibt diese Installation?", required: true },
-  { key: "legal_street", label: "Straße und Hausnummer", required: true },
-  { key: "legal_postcode", label: "PLZ", required: true },
-  { key: "legal_city", label: "Ort", required: true },
-  { key: "legal_country", label: "Land" },
-  { key: "legal_email", label: "E-Mail", hint: "Muss tatsächlich gelesen werden (§5 DDG).", required: true },
-  { key: "legal_phone", label: "Telefon" },
-  { key: "legal_responsible", label: "Inhaltlich verantwortlich", hint: "Nur nötig, wenn redaktionelle Inhalte veröffentlicht werden." },
-  { key: "legal_vat_id", label: "USt-IdNr.", hint: "Nur eintragen, wenn vorhanden — niemals erfinden." },
-  { key: "legal_register", label: "Registereintrag", hint: "z.B. Amtsgericht Aalen, VR 1234 (Verein)." },
-  { key: "dpo_contact", label: "Datenschutzbeauftragte:r", hint: "Nur, wenn eine:r bestellt ist." },
-] as const;
+type LegalField = {
+  key: string;
+  labelKey: string;
+  hintKey?: string;
+  required?: boolean;
+};
+
+const LEGAL_FIELDS: LegalField[] = [
+  { key: "legal_name", labelKey: "LegalNameLabel", hintKey: "LegalNameHint", required: true },
+  { key: "legal_street", labelKey: "LegalStreetLabel", hintKey: "LegalStreetHint", required: true },
+  { key: "legal_postcode", labelKey: "LegalPostcodeLabel", required: true },
+  { key: "legal_city", labelKey: "LegalCityLabel", required: true },
+  { key: "legal_country", labelKey: "LegalCountryLabel" },
+  { key: "legal_email", labelKey: "LegalEmailLabel", hintKey: "LegalEmailHint", required: true },
+  { key: "legal_phone", labelKey: "LegalPhoneLabel" },
+  { key: "legal_responsible", labelKey: "LegalResponsibleLabel", hintKey: "LegalResponsibleHint" },
+  { key: "legal_vat_id", labelKey: "LegalVatIdLabel", hintKey: "LegalVatIdHint" },
+  { key: "legal_register", labelKey: "LegalRegisterLabel", hintKey: "LegalRegisterHint" },
+  { key: "dpo_contact", labelKey: "LegalDpoLabel", hintKey: "LegalDpoHint" },
+];
 
 type Org = Record<string, string | null | undefined>;
 
@@ -35,6 +44,7 @@ export function OrgForm({
   initialLanguage: string;
   org: Org;
 }) {
+  const t = useTranslations("AdminOrganization");
   const [name, setName] = useState(initialName);
   const [description, setDescription] = useState(initialDescription ?? "");
   const [language, setLanguage] = useState(initialLanguage);
@@ -68,7 +78,7 @@ export function OrgForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1">
-        <label className="text-sm font-medium">Name</label>
+        <label className="text-sm font-medium">{t("NameLabel")}</label>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -78,7 +88,7 @@ export function OrgForm({
       </div>
 
       <div className="space-y-1">
-        <label className="text-sm font-medium">Description</label>
+        <label className="text-sm font-medium">{t("DescriptionLabel")}</label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -88,8 +98,8 @@ export function OrgForm({
       </div>
 
       <div className="space-y-2">
-        <label className="text-sm font-medium">Default language</label>
-        <p className="text-xs text-muted-foreground">Used for new users and AI document extraction.</p>
+        <label className="text-sm font-medium">{t("DefaultLanguageLabel")}</label>
+        <p className="text-xs text-muted-foreground">{t("DefaultLanguageHint")}</p>
         <div className="flex flex-wrap gap-2">
           {LANGUAGES.map((l) => (
             <button
@@ -110,41 +120,39 @@ export function OrgForm({
 
       <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50/50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
         <div>
-          <h3 className="text-sm font-semibold">Betreiberangaben (Impressum &amp; Datenschutz)</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            In Deutschland nach §5 DDG verpflichtend, sobald der Dienst über den rein privaten
-            Gebrauch hinausgeht. Diese Angaben erscheinen im Impressum und als Verantwortlicher in
-            der Datenschutzerklärung. Solange sie fehlen, weisen beide Seiten offen darauf hin.
-          </p>
+          <h3 className="text-sm font-semibold">{t("LegalTitle")}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{t("LegalHint")}</p>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
           {LEGAL_FIELDS.map((f) => (
             <div key={f.key} className="space-y-1">
               <label className="text-sm font-medium">
-                {f.label}
-                {"required" in f && f.required && <span className="text-destructive"> *</span>}
+                {t(f.labelKey)}
+                {f.required && <span className="text-destructive"> *</span>}
               </label>
               <input
                 value={legal[f.key] ?? ""}
                 onChange={(e) => setLegal({ ...legal, [f.key]: e.target.value })}
                 className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
               />
-              {"hint" in f && f.hint && <p className="text-xs text-muted-foreground">{f.hint}</p>}
+              {f.hintKey && t(f.hintKey) && (
+                <p className="text-xs text-muted-foreground">{t(f.hintKey)}</p>
+              )}
             </div>
           ))}
         </div>
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
-      {saved && <p className="text-sm text-green-600">Saved.</p>}
+      {saved && <p className="text-sm text-green-600">{t("Saved")}</p>}
 
       <button
         type="submit"
         disabled={saving}
         className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
       >
-        {saving ? "Saving…" : "Save"}
+        {saving ? t("Saving") : t("Save")}
       </button>
     </form>
   );

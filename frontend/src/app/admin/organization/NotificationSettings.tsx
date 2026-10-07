@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 type Settings = {
   event_reminder: boolean;
@@ -8,25 +9,26 @@ type Settings = {
   invitation: boolean;
 };
 
-const LABELS: { key: keyof Settings; label: string; description: string }[] = [
+const LABELS: { key: keyof Settings; labelKey: string; hintKey: string }[] = [
   {
     key: "event_reminder",
-    label: "Event reminders",
-    description: "Send caregivers a reminder 24 hours before a scheduled calendar event.",
+    labelKey: "NotifyEventReminderLabel",
+    hintKey: "NotifyEventReminderHint",
   },
   {
     key: "caregiver_added",
-    label: "Caregiver access granted",
-    description: "Notify a user by email when they are granted access to a patient.",
+    labelKey: "NotifyCaregiverAddedLabel",
+    hintKey: "NotifyCaregiverAddedHint",
   },
   {
     key: "invitation",
-    label: "User invitations",
-    description: "Send the registration link by email when an invitation is created.",
+    labelKey: "NotifyInvitationLabel",
+    hintKey: "NotifyInvitationHint",
   },
 ];
 
 export function NotificationSettings({ initial }: { initial: Settings }) {
+  const t = useTranslations("AdminOrganization");
   const [settings, setSettings] = useState(initial);
   const [pending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
@@ -49,18 +51,16 @@ export function NotificationSettings({ initial }: { initial: Settings }) {
   return (
     <div className="rounded-xl border bg-card p-6 space-y-4">
       <div>
-        <h2 className="font-medium text-sm">Email notifications</h2>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          Requires SMTP to be configured. Each type can be toggled independently.
-        </p>
+        <h2 className="font-medium text-sm">{t("NotificationsTitle")}</h2>
+        <p className="text-xs text-muted-foreground mt-0.5">{t("NotificationsHint")}</p>
       </div>
 
       <div className="space-y-3">
-        {LABELS.map(({ key, label, description }) => (
+        {LABELS.map(({ key, labelKey, hintKey }) => (
           <div key={key} className="flex items-start justify-between gap-4">
             <div>
-              <div className="text-sm font-medium">{label}</div>
-              <div className="text-xs text-muted-foreground">{description}</div>
+              <div className="text-sm font-medium">{t(labelKey)}</div>
+              <div className="text-xs text-muted-foreground">{t(hintKey)}</div>
             </div>
             <button
               type="button"
@@ -82,7 +82,7 @@ export function NotificationSettings({ initial }: { initial: Settings }) {
         ))}
       </div>
 
-      {saved && <p className="text-xs text-green-600">Saved.</p>}
+      {saved && <p className="text-xs text-green-600">{t("Saved")}</p>}
     </div>
   );
 }
