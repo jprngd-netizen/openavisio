@@ -47,6 +47,7 @@ class Patient(BaseModel):
     # Relationships
     observations: Mapped[list["Observation"]] = relationship("Observation", back_populates="patient", lazy="select")  # noqa: F821
     conditions: Mapped[list["Condition"]] = relationship("Condition", back_populates="patient", lazy="select")  # noqa: F821
+    encounters: Mapped[list["Encounter"]] = relationship("Encounter", back_populates="patient", lazy="select")  # noqa: F821
     medications: Mapped[list["MedicationStatement"]] = relationship("MedicationStatement", back_populates="patient", lazy="select")  # noqa: F821
     documents: Mapped[list["DocumentReference"]] = relationship("DocumentReference", back_populates="patient", lazy="select")  # noqa: F821
     incidents: Mapped[list["Incident"]] = relationship("Incident", back_populates="patient", lazy="select")  # noqa: F821
