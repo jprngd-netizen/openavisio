@@ -193,6 +193,8 @@
     "EmptyActionAsk": "Peça a um cuidador para conceder acesso.",
     "Favorites": "Favoritos",
     "AllPatients": "Todos os pacientes",
+    "SearchPlaceholder": "Buscar paciente por nome ou identificador",
+    "SearchNoResults": "Nenhum paciente encontrado para esta busca.",
     "Measurements": "Medições",
     "LabResults": "Resultados laboratoriais",
     "Prescriptions": "Receitas",

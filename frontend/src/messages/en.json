@@ -193,6 +193,8 @@
     "EmptyActionAsk": "Ask a caregiver to grant you access.",
     "Favorites": "Favorites",
     "AllPatients": "All patients",
+    "SearchPlaceholder": "Search patients by name or identifier",
+    "SearchNoResults": "No patients found for this search.",
     "Measurements": "Measurements",
     "LabResults": "Lab Results",
     "Prescriptions": "Prescriptions",

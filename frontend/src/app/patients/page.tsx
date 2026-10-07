@@ -10,21 +10,28 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { FavoriteStar } from "@/components/FavoriteStar"
+import { PatientSearchBar } from "./PatientSearchBar"
+import { Search } from "lucide-react"
 
-export default async function PatientsPage() {
+export default async function PatientsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>
+}) {
   let patients: any[] = []
   let fetchError = false
+  const { q } = await searchParams
   const [session, t, locale] = await Promise.all([
     auth(),
     getTranslations("Patient"),
     getLocale(),
-    getPatients().then((p) => { patients = p }).catch(() => { fetchError = true }),
+    getPatients(q || undefined).then((p) => { patients = p }).catch(() => { fetchError = true }),
   ])
   const role = (session?.user as any)?.role
   const canCreate = role === "admin" || role === "manager"
   // #70: a plain user with exactly one patient jumps straight in; staff (who can
-  // create) keep the list to onboard more.
-  if (!fetchError && !canCreate && patients.length === 1) {
+  // create) keep the list to onboard more. Skip the redirect while searching.
+  if (!q && !fetchError && !canCreate && patients.length === 1) {
     redirect(`/patients/${patients[0].id}`)
   }
   const genderLabel = (g: string) =>
@@ -49,6 +56,8 @@ export default async function PatientsPage() {
         )}
       </div>
 
+      <PatientSearchBar initialQuery={q ?? ""} />
+
       {fetchError ? (
         <div className="flex flex-col items-center justify-center rounded-xl border border-destructive/30 bg-destructive/5 py-16 text-center">
           <AlertCircle className="size-10 text-destructive/50 mb-3" />
@@ -56,14 +65,21 @@ export default async function PatientsPage() {
           <p className="text-xs text-muted-foreground mt-1">{t("LoadErrorHint")}</p>
         </div>
       ) : patients.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16 text-center">
-          <User className="size-10 text-muted-foreground/40 mb-3" />
-          <p className="font-medium text-sm">{t("EmptyTitle")}</p>
-          <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-            {t("EmptyBody")}{" "}
-            {canCreate ? t("EmptyActionCreate") : t("EmptyActionAsk")}
-          </p>
-        </div>
+        q ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16 text-center">
+            <Search className="size-10 text-muted-foreground/40 mb-3" />
+            <p className="font-medium text-sm">{t("SearchNoResults")}</p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed py-16 text-center">
+            <User className="size-10 text-muted-foreground/40 mb-3" />
+            <p className="font-medium text-sm">{t("EmptyTitle")}</p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-sm">
+              {t("EmptyBody")}{" "}
+              {canCreate ? t("EmptyActionCreate") : t("EmptyActionAsk")}
+            </p>
+          </div>
+        )
       ) : (
         (() => {
           const favorites = patients.filter((p: any) => p.is_favorite)

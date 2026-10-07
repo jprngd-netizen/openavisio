@@ -193,6 +193,8 @@
     "EmptyActionAsk": "Lass dir von einem Betreuer Zugriff geben.",
     "Favorites": "Favoriten",
     "AllPatients": "Alle Patienten",
+    "SearchPlaceholder": "Patienten nach Name oder Kennung suchen",
+    "SearchNoResults": "Keine Patienten für diese Suche gefunden.",
     "Measurements": "Messungen",
     "LabResults": "Laborwerte",
     "Prescriptions": "Rezepte",
