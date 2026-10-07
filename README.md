@@ -5,6 +5,11 @@ reports and discharge summaries — OpenAvisio reads them and turns them into a
 structured record: diagnoses with their source documents, medications with their
 periods, lab values with reference ranges, appointments on a timeline.
 
+Beyond the document pipeline it also keeps the **clinical record** itself: the
+prontuário — one entry per visit, with SOAP notes, a CID-10 code and the vital signs
+taken during the consultation — and **electronic prescriptions** issued through
+Memed/SNCR with an ICP-Brasil signature.
+
 Built by a father managing his daughter's rare-disease paperwork. Everything runs on
 **your own server** — including the AI. Nothing leaves your house.
 
@@ -47,13 +52,21 @@ Upload any medical PDF, image, or scan. The Processing Pipeline automatically ru
 
 **Clinical data**
 Each Patient record tracks:
+- **Consultations (prontuário)** — one entry per visit: SOAP narrative blocks (chief complaint, history, physical exam, assessment, plan), a CID-10 code, and the **vital signs taken during the visit** (weight, height, blood pressure, temperature, oxygen saturation, heart rate, BMI). The vitals are stored as Measurements linked to the consultation, so they feed the same history and charts.
+- **Prescriptions** — electronic prescriptions issued through **Memed** (SNCR numbering + ICP-Brasil signature), stored with their signed PDF.
 - **Diagnoses** — medical conditions attributed to the patient
 - **Medications** — current and historical drugs with dosage and period
-- **Measurements** — weight, blood pressure, temperature, oxygen saturation, etc.
+- **Measurements** — weight, blood pressure, temperature, oxygen saturation, etc., shown as **interactive history charts** (unit-aware tooltip, drag-to-zoom, one colour per series); each reading is tagged with its source (consultation / extracted from a document / manual)
 - **Lab Results** — outcomes from blood tests, biopsies, and other clinical tests
 - **Incidents** — adverse events (seizures, falls, allergic reactions) with suspected triggers
 - **Events** — health timeline entries: appointments, hospital stays, therapy sessions
 - **Health Log** — patient self-reported daily record: mood, pain, sleep, medication compliance
+
+Patients are **searchable** by name or identifier from the patient list.
+
+**Localisation** — the interface ships in **Portuguese, English and German**, switchable
+from the navigation. In Portuguese the legal pages are framed for **LGPD / ANPD**
+(Lei 13.709/2018); in German they keep the original §5 DDG / DSGVO wording.
 
 **AI Health Assistant**
 Conversational interface that searches across all clinical data and documents to answer questions about a patient's health record.
@@ -83,7 +96,7 @@ A Commercial License that expires enters a 30-day grace period before falling ba
 | Auth | passlib/bcrypt + python-jose JWT + py_webauthn (passkeys) + next-auth v5 |
 | Background jobs | Celery + Redis |
 | Frontend | Next.js 16 App Router + Tailwind CSS + shadcn/ui + @simplewebauthn/browser |
-| i18n | next-intl (en, de, fr, es, it) |
+| i18n | next-intl (pt, en, de) — pt framed for LGPD/ANPD |
 | DB | PostgreSQL 17 + pgvector (768-dim HNSW embeddings) |
 | AI | Separate FastAPI microservice (Ollama / vLLM / Mistral / mock) |
 | Reverse proxy | Caddy (HTTP routing, production) |
@@ -329,7 +342,7 @@ openavisio-py/
 │       ├── app/      # 20 pages (patients, family, admin, auth)
 │       ├── components/
 │       ├── lib/      # api.ts (58 typed wrappers), utils.ts
-│       └── messages/ # i18n JSON (en, de, fr, es, it)
+│       └── messages/ # i18n JSON (pt, en, de)
 ├── aiservice/        # Python FastAPI — OCR, classify, extract, embed, chat
 └── deploy/
     ├── docker-compose.dev.yml
@@ -368,11 +381,19 @@ Full REST API documented at http://localhost:8000/docs (58 endpoints).
 Key endpoint groups:
 - `POST /api/auth/login` + `/api/auth/refresh`
 - `GET/POST /api/auth/passkey/*` — WebAuthn registration + authentication ceremonies; passkey CRUD
-- `GET/POST /api/patients` + sub-resources (documents, diagnoses, medications, measurements, lab-results, incidents, events, health-log, chat, export)
+- `GET/POST /api/patients` + sub-resources (documents, consultations/encounters, diagnoses, medications, measurements, lab-results, incidents, events, health-log, prescriptions, chat, export)
+- `GET/POST /api/patients/{id}/encounters` + `GET/PATCH/DELETE /api/encounters/{id}` — prontuário entries; the vitals of a visit travel as `measurements` and are stored as linked observations
 - `GET/POST /api/groups` + members + invite flow
 - `GET/POST /api/patients/{id}/caregivers` + invite/revoke
 - `GET /api/admin/*` — users, groups, invitations, audit, AI settings, license
 - `POST /api/dev/seed` + `/api/dev/reset` (development only)
+
+## Roadmap
+
+- **Consultation audio transcription** — optionally record the appointment and transcribe
+  it in-app, then extract the clinical data identified in the recording (history, findings,
+  vitals, prescriptions) straight into the encounter. **Off by default and opt-in**: it is
+  available during the visit, only when the patient consents to being recorded.
 
 ## Production deployment
 
