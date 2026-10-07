@@ -1,10 +1,12 @@
 "use client";
 
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { useTranslations } from "next-intl";
 
 type Point = { date: string; value: number };
 
 export function TrendChart({ data, unit }: { data: Point[]; unit?: string }) {
+  const t = useTranslations("Common");
   if (data.length < 2) return null;
   const sorted = [...data]
     .sort((a, b) => a.date.localeCompare(b.date))
@@ -17,7 +19,7 @@ export function TrendChart({ data, unit }: { data: Point[]; unit?: string }) {
       <LineChart data={sorted} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
         <XAxis dataKey="d" tick={{ fontSize: 11 }} />
         <YAxis tick={{ fontSize: 11 }} />
-        <Tooltip formatter={(v: number) => [`${v}${unit ? ` ${unit}` : ""}`, "Value"]} />
+        <Tooltip formatter={(v: number) => [`${v}${unit ? ` ${unit}` : ""}`, t("Value")]} />
         <Line
           type="monotone"
           dataKey="v"

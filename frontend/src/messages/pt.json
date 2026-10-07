@@ -128,7 +128,15 @@
     "PrivacyPolicy": "Política de Privacidade",
     "OperatedBy": "Operado por {org}",
     "BuiltWith": "Feito com",
-    "ForCaregivers": "para cuidadores"
+    "ForCaregivers": "para cuidadores",
+    "Document": "Documento",
+    "DocumentLoadError": "Não foi possível carregar o documento.",
+    "OpenFullSize": "Abrir em tamanho real",
+    "Favorite": "Favoritar",
+    "Unfavorite": "Remover dos favoritos",
+    "ToggleSidebar": "Alternar barra lateral",
+    "Sidebar": "Barra lateral",
+    "Navigation": "Navegação"
   },
   "Measurement": {
     "Title": "Medições",

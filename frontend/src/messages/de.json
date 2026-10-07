@@ -128,7 +128,15 @@
     "PrivacyPolicy": "Datenschutz",
     "OperatedBy": "Betrieben von {org}",
     "BuiltWith": "Gebaut mit",
-    "ForCaregivers": "für pflegende Angehörige"
+    "ForCaregivers": "für pflegende Angehörige",
+    "Document": "Dokument",
+    "DocumentLoadError": "Dokument konnte nicht geladen werden.",
+    "OpenFullSize": "In Originalgröße öffnen",
+    "Favorite": "Zu Favoriten hinzufügen",
+    "Unfavorite": "Aus Favoriten entfernen",
+    "ToggleSidebar": "Seitenleiste umschalten",
+    "Sidebar": "Seitenleiste",
+    "Navigation": "Navigation"
   },
   "Measurement": {
     "Title": "Messungen",

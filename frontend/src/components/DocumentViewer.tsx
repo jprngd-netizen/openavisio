@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Maximize2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface Props {
   docId: string;
@@ -12,6 +13,7 @@ interface Props {
 export function DocumentViewer({ docId, contentType, className = "" }: Props) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [error, setError] = useState(false);
+  const t = useTranslations("Common");
 
   useEffect(() => {
     let url: string | null = null;
@@ -33,7 +35,7 @@ export function DocumentViewer({ docId, contentType, className = "" }: Props) {
   if (error) {
     return (
       <div className={`flex items-center justify-center bg-muted rounded-xl text-sm text-muted-foreground ${className}`}>
-        Could not load document.
+        {t("DocumentLoadError")}
       </div>
     );
   }
@@ -41,7 +43,7 @@ export function DocumentViewer({ docId, contentType, className = "" }: Props) {
   if (!blobUrl) {
     return (
       <div className={`flex items-center justify-center bg-muted rounded-xl text-sm text-muted-foreground animate-pulse ${className}`}>
-        Loading…
+        {t("Loading")}
       </div>
     );
   }
@@ -49,7 +51,7 @@ export function DocumentViewer({ docId, contentType, className = "" }: Props) {
   if (contentType.startsWith("image/")) {
     return (
       <div className={`flex items-center justify-center bg-muted rounded-xl overflow-hidden ${className}`}>
-        <img src={blobUrl} alt="Document" className="max-w-full max-h-full object-contain" />
+        <img src={blobUrl} alt={t("Document")} className="max-w-full max-h-full object-contain" />
       </div>
     );
   }
@@ -59,15 +61,15 @@ export function DocumentViewer({ docId, contentType, className = "" }: Props) {
       <iframe
         src={blobUrl}
         className="block h-full w-full rounded-xl border bg-white"
-        title="Document"
+        title={t("Document")}
       />
       {/* the native viewer cramped into half a column zooms badly — the new tab
           gives it the whole window and working pan/zoom */}
       <button
         type="button"
         onClick={() => window.open(blobUrl, "_blank")}
-        title="Open full size"
-        aria-label="Open full size"
+        title={t("OpenFullSize")}
+        aria-label={t("OpenFullSize")}
         className="absolute right-3 top-3 rounded-md border bg-card/90 p-1.5 text-muted-foreground shadow-sm backdrop-blur hover:text-foreground"
       >
         <Maximize2 className="h-4 w-4" />

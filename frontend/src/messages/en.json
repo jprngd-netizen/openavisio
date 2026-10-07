@@ -128,7 +128,15 @@
     "PrivacyPolicy": "Privacy Policy",
     "OperatedBy": "Operated by {org}",
     "BuiltWith": "Built with",
-    "ForCaregivers": "for caregivers"
+    "ForCaregivers": "for caregivers",
+    "Document": "Document",
+    "DocumentLoadError": "Could not load document.",
+    "OpenFullSize": "Open full size",
+    "Favorite": "Favorite",
+    "Unfavorite": "Unfavorite",
+    "ToggleSidebar": "Toggle Sidebar",
+    "Sidebar": "Sidebar",
+    "Navigation": "Navigation"
   },
   "Measurement": {
     "Title": "Measurements",
