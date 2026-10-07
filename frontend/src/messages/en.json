@@ -134,7 +134,8 @@
     "typeOxygenSaturation": "Oxygen Saturation",
     "typeHeartRate": "Heart Rate",
     "typeBMI": "BMI",
-    "ValuePlaceholder": "e.g. 70"
+    "ValuePlaceholder": "e.g. 70",
+    "FromEncounter": "From consultation"
   },
   "LabResult": {
     "Title": "Lab Results",
@@ -1006,7 +1007,9 @@
       "Urgencia": "Urgency",
       "Evolucao": "Progress note",
       "Procedimento": "Procedure"
-    }
+    },
+    "Vitals": "Vital signs",
+    "VitalsHint": "Record the measurements taken during the consultation. Leave blank what was not measured."
   },
   "Legal": {
     "ImprintBack": "Back to the app",

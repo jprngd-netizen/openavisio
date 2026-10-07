@@ -5,7 +5,8 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { createEncounter, updateEncounter, deleteEncounter } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
-import { Plus, X, Pencil, Trash2 } from "lucide-react";
+import { MEASUREMENT_TYPES, measurementType, computeBmi } from "@/lib/measurementTypes";
+import { Plus, X, Pencil, Trash2, Activity } from "lucide-react";
 
 const inputCls = "w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background";
 const labelCls = "text-sm font-medium";
@@ -35,6 +36,7 @@ function toLocalInput(iso: string | null | undefined): string {
 
 export function EncountersView({ patientId, encounters }: { patientId: string; encounters: any[] }) {
   const t = useTranslations("Enc");
+  const tm = useTranslations("Measurement");
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -42,13 +44,29 @@ export function EncountersView({ patientId, encounters }: { patientId: string; e
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [form, setForm] = useState<FormState>(EMPTY);
+  const [vitals, setVitals] = useState<Record<string, string>>({});
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
+  // Vital signs live in the consultation: they are written as linked Observation
+  // rows (see the backend), so they also feed the measurements history/graphs.
+  function setVital(code: string, value: string) {
+    setVitals((v) => {
+      const next = { ...v, [code]: value };
+      // BMI is derived whenever weight and height are present and BMI is still blank.
+      if ((code === "body-weight" || code === "body-height") && !next["bmi"]) {
+        const bmi = computeBmi(parseFloat(next["body-weight"]), parseFloat(next["body-height"]));
+        if (bmi != null) next["bmi"] = String(bmi);
+      }
+      return next;
+    });
+  }
+
   function reset() {
     setForm(EMPTY);
+    setVitals({});
     setEditingId(null);
     setError("");
   }
@@ -77,6 +95,13 @@ export function EncountersView({ patientId, encounters }: { patientId: string; e
       cid10_display: e.cid10_display ?? "",
       notes: e.notes ?? "",
     });
+    setVitals(
+      Object.fromEntries(
+        (e.measurements ?? [])
+          .filter((m: any) => m.value_quantity != null)
+          .map((m: any) => [m.code, String(m.value_quantity)])
+      )
+    );
     setError("");
     setOpen(true);
   }
@@ -84,6 +109,14 @@ export function EncountersView({ patientId, encounters }: { patientId: string; e
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    const measurements = MEASUREMENT_TYPES.filter((m) => (vitals[m.code] ?? "").trim() !== "")
+      .map((m) => ({
+        code: m.code,
+        code_display: tm(m.key),
+        value_quantity: parseFloat(vitals[m.code]),
+        value_unit: m.unit,
+      }))
+      .filter((m) => !Number.isNaN(m.value_quantity));
     const payload = {
       encounter_type: form.encounter_type || null,
       encounter_date: form.encounter_date || null,
@@ -95,6 +128,7 @@ export function EncountersView({ patientId, encounters }: { patientId: string; e
       cid10_code: form.cid10_code || null,
       cid10_display: form.cid10_display || null,
       notes: form.notes || null,
+      measurements,
     };
     startTransition(async () => {
       try {
@@ -124,6 +158,11 @@ export function EncountersView({ patientId, encounters }: { patientId: string; e
     if (!raw) return "";
     if ((TYPE_KEYS as readonly string[]).includes(raw)) return t(`Types.${raw}`);
     return raw;
+  }
+
+  function vitalLabel(code: string, fallback: string | null): string {
+    const mt = measurementType(code);
+    return mt ? tm(mt.key) : (fallback ?? code);
   }
 
   const blocks: { key: keyof FormState; label: string }[] = [
@@ -213,6 +252,35 @@ export function EncountersView({ patientId, encounters }: { patientId: string; e
                 className={inputCls}
               />
             </div>
+
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-2">
+              <div className="flex items-center gap-1.5">
+                <Activity className="h-4 w-4 text-muted-foreground" />
+                <span className={labelCls}>{t("Vitals")}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">{t("VitalsHint")}</p>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {MEASUREMENT_TYPES.map((m) => (
+                  <div key={m.code} className="space-y-1">
+                    <label className="text-xs text-muted-foreground">{tm(m.key)}</label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step="any"
+                        inputMode="decimal"
+                        value={vitals[m.code] ?? ""}
+                        onChange={(e) => setVital(m.code, e.target.value)}
+                        className={`${inputCls} pr-12`}
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                        {m.unit}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-1.5">
               <label className={labelCls}>{t("Assessment")}</label>
               <textarea
@@ -289,6 +357,7 @@ export function EncountersView({ patientId, encounters }: { patientId: string; e
         <div className="space-y-3">
           {encounters.map((e: any) => {
             const nonEmpty = blocks.filter((b) => e[b.key]);
+            const vitalsRows = (e.measurements ?? []).filter((m: any) => m.value_quantity != null);
             return (
               <div key={e.id} className="rounded-xl border bg-card p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -333,6 +402,23 @@ export function EncountersView({ patientId, encounters }: { patientId: string; e
                     </button>
                   </div>
                 </div>
+
+                {vitalsRows.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-2 border-t pt-3">
+                    {vitalsRows.map((m: any) => (
+                      <span
+                        key={m.id ?? m.code}
+                        className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs"
+                      >
+                        <span className="text-muted-foreground">{vitalLabel(m.code, m.code_display)}</span>
+                        <span className="font-medium">
+                          {m.value_quantity}
+                          {m.value_unit ? ` ${m.value_unit}` : ""}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {nonEmpty.length > 0 && (
                   <div className="mt-3 space-y-2 border-t pt-3">

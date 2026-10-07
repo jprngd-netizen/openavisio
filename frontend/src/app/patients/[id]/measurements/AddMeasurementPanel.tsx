@@ -5,17 +5,7 @@ import { useRouter } from "next/navigation";
 import { createObservation } from "@/lib/api";
 import { Plus, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-
-const TYPES = [
-  { code: "body-weight", key: "typeWeight", unit: "kg" },
-  { code: "body-height", key: "typeHeight", unit: "cm" },
-  { code: "blood-pressure-systolic", key: "typeBPSystolic", unit: "mmHg" },
-  { code: "blood-pressure-diastolic", key: "typeBPDiastolic", unit: "mmHg" },
-  { code: "body-temperature", key: "typeTemperature", unit: "°C" },
-  { code: "oxygen-saturation", key: "typeOxygenSaturation", unit: "%" },
-  { code: "heart-rate", key: "typeHeartRate", unit: "bpm" },
-  { code: "bmi", key: "typeBMI", unit: "kg/m²" },
-];
+import { MEASUREMENT_TYPES as TYPES } from "@/lib/measurementTypes";
 
 const inputCls =
   "w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background";
@@ -32,7 +22,7 @@ export function AddMeasurementPanel({
   const tc = useTranslations("Common");
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
-  const [typeCode, setTypeCode] = useState(TYPES[0].code);
+  const [typeCode, setTypeCode] = useState<string>(TYPES[0].code);
   const [value, setValue] = useState("");
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [error, setError] = useState("");

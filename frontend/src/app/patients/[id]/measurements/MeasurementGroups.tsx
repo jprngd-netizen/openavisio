@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { Trash2 } from "lucide-react";
 import { deleteObservation } from "@/lib/api";
-import { TrendChart } from "@/components/TrendChart";
+import { MeasurementChart } from "@/components/MeasurementChart";
+import { measurementType } from "@/lib/measurementTypes";
 import { useTranslations } from "next-intl";
 
 type Obs = {
@@ -16,6 +17,7 @@ type Obs = {
   value_string: string | null;
   effective_date_time: string | null;
   document_reference_id: string | null;
+  encounter_id: string | null;
 };
 
 export function MeasurementGroups({ observations }: { observations: Obs[] }) {
@@ -62,7 +64,11 @@ export function MeasurementGroups({ observations }: { observations: Obs[] }) {
 
             {chartData.length >= 2 && (
               <div className="px-4 pt-4 pb-2">
-                <TrendChart data={chartData} unit={group.unit || undefined} />
+                <MeasurementChart
+                  data={chartData}
+                  unit={group.unit || undefined}
+                  color={measurementType(key)?.color ?? "#0ea5e9"}
+                />
               </div>
             )}
 
@@ -89,7 +95,7 @@ export function MeasurementGroups({ observations }: { observations: Obs[] }) {
                         : obs.value_string || "—"}
                     </td>
                     <td className="px-4 py-2 text-muted-foreground text-xs">
-                      {obs.document_reference_id ? tc("Extracted") : tc("Manual")}
+                      {obs.encounter_id ? t("FromEncounter") : obs.document_reference_id ? tc("Extracted") : tc("Manual")}
                     </td>
                     <td className="px-4 py-2">
                       <button

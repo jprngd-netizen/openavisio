@@ -134,7 +134,8 @@
     "typeOxygenSaturation": "Saturação de oxigênio",
     "typeHeartRate": "Frequência cardíaca",
     "typeBMI": "IMC",
-    "ValuePlaceholder": "ex: 70"
+    "ValuePlaceholder": "ex: 70",
+    "FromEncounter": "Da consulta"
   },
   "LabResult": {
     "Title": "Resultados laboratoriais",
@@ -1006,7 +1007,9 @@
       "Urgencia": "Urgência",
       "Evolucao": "Evolução",
       "Procedimento": "Procedimento"
-    }
+    },
+    "Vitals": "Sinais vitais",
+    "VitalsHint": "Registre aqui as medidas aferidas na consulta. Deixe em branco o que não foi medido."
   },
   "Legal": {
     "ImprintBack": "Voltar ao aplicativo",

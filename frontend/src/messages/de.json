@@ -134,7 +134,8 @@
     "typeOxygenSaturation": "Sauerstoffsättigung",
     "typeHeartRate": "Herzfrequenz",
     "typeBMI": "BMI",
-    "ValuePlaceholder": "z. B. 70"
+    "ValuePlaceholder": "z. B. 70",
+    "FromEncounter": "Aus der Konsultation"
   },
   "LabResult": {
     "Title": "Laborbefunde",
@@ -1006,7 +1007,9 @@
       "Urgencia": "Notfall",
       "Evolucao": "Verlauf",
       "Procedimento": "Eingriff"
-    }
+    },
+    "Vitals": "Vitalwerte",
+    "VitalsHint": "Hier die in der Konsultation gemessenen Werte erfassen. Leer lassen, was nicht gemessen wurde."
   },
   "Legal": {
     "ImprintBack": "Zurück zur App",
