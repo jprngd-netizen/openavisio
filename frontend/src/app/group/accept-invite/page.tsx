@@ -2,6 +2,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { auth } from "@/auth";
 import { AcceptButton } from "./AcceptButton";
 import { Users } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -19,6 +20,7 @@ export default async function AcceptInvitePage({
 }: {
   searchParams: Promise<{ token?: string }>;
 }) {
+  const t = await getTranslations("Group");
   const { token } = await searchParams;
   const session = await auth();
   const accessToken = (session as any)?.accessToken as string | undefined;
@@ -27,7 +29,7 @@ export default async function AcceptInvitePage({
     return (
       <AppLayout>
         <div className="max-w-md mx-auto mt-16 text-center space-y-2">
-          <p className="text-muted-foreground">Invalid invite link — no token found.</p>
+          <p className="text-muted-foreground">{t("InvalidInviteLink")}</p>
         </div>
       </AppLayout>
     );
@@ -48,16 +50,16 @@ export default async function AcceptInvitePage({
           {info ? (
             <>
               <div className="space-y-1">
-                <p className="text-muted-foreground text-sm">You have been invited to join</p>
+                <p className="text-muted-foreground text-sm">{t("InvitedToJoin")}</p>
                 <h1 className="text-2xl font-bold">{info.group_name}</h1>
               </div>
               <AcceptButton inviteToken={token} />
             </>
           ) : (
             <div className="space-y-2">
-              <h1 className="text-xl font-bold">Invalid or expired invite</h1>
+              <h1 className="text-xl font-bold">{t("InvalidOrExpiredInvite")}</h1>
               <p className="text-muted-foreground text-sm">
-                This invite link has already been used, has expired, or is not valid.
+                {t("InviteLinkInvalid")}
               </p>
             </div>
           )}
