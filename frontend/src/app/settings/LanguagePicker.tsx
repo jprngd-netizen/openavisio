@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 const LANGUAGES = [
   { code: "pt", label: "Português" },
@@ -10,6 +11,7 @@ const LANGUAGES = [
 ];
 
 export function LanguagePicker({ current, isSystem }: { current: string; isSystem: boolean }) {
+  const t = useTranslations("Settings");
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -33,7 +35,7 @@ export function LanguagePicker({ current, isSystem }: { current: string; isSyste
             : "hover:bg-muted"
           }`}
       >
-        System
+        {t("System")}
       </button>
       {LANGUAGES.map((l) => (
         <button

@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { changePasswordAction } from "./actions";
 
 export function PasswordForm() {
+  const t = useTranslations("Settings");
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -17,11 +19,11 @@ export function PasswordForm() {
     setSuccess(false);
 
     if (next !== confirm) {
-      setError("New passwords do not match.");
+      setError(t("PasswordsDoNotMatch"));
       return;
     }
     if (next.length < 8) {
-      setError("New password must be at least 8 characters.");
+      setError(t("PasswordMinLength"));
       return;
     }
 
@@ -48,11 +50,11 @@ export function PasswordForm() {
       )}
       {success && (
         <div className="rounded-lg bg-green-500/10 text-green-700 dark:text-green-400 px-4 py-3 text-sm">
-          Password changed successfully.
+          {t("PasswordChanged")}
         </div>
       )}
       <div className="space-y-1.5">
-        <label className="text-sm font-medium">Current password</label>
+        <label className="text-sm font-medium">{t("CurrentPassword")}</label>
         <input
           type="password"
           required
@@ -62,7 +64,7 @@ export function PasswordForm() {
         />
       </div>
       <div className="space-y-1.5">
-        <label className="text-sm font-medium">New password</label>
+        <label className="text-sm font-medium">{t("NewPassword")}</label>
         <input
           type="password"
           required
@@ -72,7 +74,7 @@ export function PasswordForm() {
         />
       </div>
       <div className="space-y-1.5">
-        <label className="text-sm font-medium">Confirm new password</label>
+        <label className="text-sm font-medium">{t("ConfirmNewPassword")}</label>
         <input
           type="password"
           required
@@ -86,7 +88,7 @@ export function PasswordForm() {
         disabled={saving}
         className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
       >
-        {saving ? "Saving…" : "Change password"}
+        {saving ? t("Saving") : t("ChangePassword")}
       </button>
     </form>
   );

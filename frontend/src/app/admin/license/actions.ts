@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { getTranslations } from "next-intl/server";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -15,9 +16,10 @@ export type LicenseInfo = {
 };
 
 export async function uploadLicenseAction(token: string): Promise<{ error?: string; info?: LicenseInfo }> {
+  const t = await getTranslations("Admin");
   const session = await auth();
   const accessToken = (session as any)?.accessToken;
-  if (!accessToken) return { error: "Not authenticated" };
+  if (!accessToken) return { error: t("NotAuthenticated") };
 
   const res = await fetch(`${API}/api/admin/license`, {
     method: "POST",
@@ -27,7 +29,7 @@ export async function uploadLicenseAction(token: string): Promise<{ error?: stri
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    return { error: data.detail || "Failed to upload license" };
+    return { error: data.detail || t("FailedToUploadLicense") };
   }
 
   revalidatePath("/admin/license");
@@ -44,9 +46,10 @@ const PERSONAL_INFO: LicenseInfo = {
 };
 
 export async function deleteLicenseAction(): Promise<{ error?: string; info?: LicenseInfo }> {
+  const t = await getTranslations("Admin");
   const session = await auth();
   const accessToken = (session as any)?.accessToken;
-  if (!accessToken) return { error: "Not authenticated" };
+  if (!accessToken) return { error: t("NotAuthenticated") };
 
   const res = await fetch(`${API}/api/admin/license`, {
     method: "DELETE",
@@ -55,7 +58,7 @@ export async function deleteLicenseAction(): Promise<{ error?: string; info?: Li
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    return { error: data.detail || "Failed to remove license" };
+    return { error: data.detail || t("FailedToRemoveLicense") };
   }
 
   revalidatePath("/admin/license");

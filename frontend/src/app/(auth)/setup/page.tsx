@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useWizardState } from "./_hooks/useWizardState";
 import { WizardShell } from "./_components/WizardShell";
 import { Step1Language } from "./_steps/Step1Language";
@@ -11,6 +12,7 @@ import { Step6Patient } from "./_steps/Step6Patient";
 import { Step7Done } from "./_steps/Step7Done";
 
 export default function SetupPage() {
+  const t = useTranslations("Setup");
   const { state, dispatch } = useWizardState();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -78,7 +80,7 @@ export default function SetupPage() {
       dispatch({ type: "SET_STEP", step: 5 });
     } else {
       const data = await res.json().catch(() => ({}));
-      setError(data.detail || "Setup failed");
+      setError(data.detail || t("SetupFailed"));
     }
   }
 

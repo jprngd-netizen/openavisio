@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -16,8 +17,9 @@ export async function createPurposeAction(input: {
   identification_mode: string;
   expires_at: string | null;
 }): Promise<{ id?: string; error?: string }> {
+  const tr = await getTranslations("Admin");
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: tr("NotAuthenticated") };
 
   const res = await fetch(`${API}/api/sharing-purposes`, {
     method: "POST",
@@ -31,7 +33,7 @@ export async function createPurposeAction(input: {
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    return { error: typeof data?.detail === "string" ? data.detail : `Failed (${res.status}).` };
+    return { error: typeof data?.detail === "string" ? data.detail : tr("Failed", { status: res.status }) };
   }
   const data = await res.json();
   revalidatePath("/admin/sharing");
@@ -39,8 +41,9 @@ export async function createPurposeAction(input: {
 }
 
 export async function closePurposeAction(purposeId: string): Promise<{ error?: string }> {
+  const tr = await getTranslations("Admin");
   const t = await token();
-  if (!t) return { error: "Not authenticated." };
+  if (!t) return { error: tr("NotAuthenticated") };
 
   const res = await fetch(`${API}/api/sharing-purposes/${purposeId}/close`, {
     method: "POST",
@@ -48,7 +51,7 @@ export async function closePurposeAction(purposeId: string): Promise<{ error?: s
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    return { error: typeof data?.detail === "string" ? data.detail : `Failed (${res.status}).` };
+    return { error: typeof data?.detail === "string" ? data.detail : tr("Failed", { status: res.status }) };
   }
   revalidatePath("/admin/sharing");
   revalidatePath(`/admin/sharing/${purposeId}`);

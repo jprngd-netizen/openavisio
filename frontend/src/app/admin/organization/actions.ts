@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { getTranslations } from "next-intl/server";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -22,9 +23,10 @@ export async function updateOrganizationAction(fields: {
   legal_register?: string | null;
   dpo_contact?: string | null;
 }): Promise<{ error?: string }> {
+  const t = await getTranslations("Admin");
   const session = await auth();
   const token = (session as any)?.accessToken;
-  if (!token) return { error: "Not authenticated" };
+  if (!token) return { error: t("NotAuthenticated") };
 
   const res = await fetch(`${API}/api/organization`, {
     method: "PUT",
@@ -34,7 +36,7 @@ export async function updateOrganizationAction(fields: {
 
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    return { error: data.detail || "Failed to update organization" };
+    return { error: data.detail || t("FailedToUpdateOrganization") };
   }
 
   revalidatePath("/admin/organization");

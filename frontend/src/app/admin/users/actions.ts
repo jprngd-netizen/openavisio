@@ -2,20 +2,22 @@
 
 import { auth } from "@/auth";
 import { revalidatePath } from "next/cache";
+import { getTranslations } from "next-intl/server";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
 async function adminFetch(path: string, body: unknown) {
+  const t = await getTranslations("Admin");
   const session = await auth();
   const token = (session as any)?.accessToken as string | undefined;
-  if (!token) return { error: "Not authenticated." };
+  if (!token) return { error: t("NotAuthenticated") };
 
   const res = await fetch(`${API}${path}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
   });
-  if (!res.ok) return { error: `Request failed (${res.status}).` };
+  if (!res.ok) return { error: t("RequestFailed", { status: res.status }) };
   revalidatePath("/admin/users");
   return {};
 }
@@ -29,9 +31,10 @@ export async function setActiveAction(userId: string, isActive: boolean) {
 }
 
 export async function eraseUserAction(userId: string, confirmEmail: string) {
+  const t = await getTranslations("Admin");
   const session = await auth();
   const token = (session as any)?.accessToken as string | undefined;
-  if (!token) return { error: "Not authenticated." };
+  if (!token) return { error: t("NotAuthenticated") };
 
   const res = await fetch(`${process.env.API_URL || "http://localhost:8000"}/api/admin/users/${userId}/erase`, {
     method: "POST",
@@ -41,15 +44,15 @@ export async function eraseUserAction(userId: string, confirmEmail: string) {
 
   if (res.status === 409) {
     const data = await res.json().catch(() => ({}));
-    return { error: data.detail?.message ?? "User owns Patients that must be erased first." };
+    return { error: data.detail?.message ?? t("UserOwnsPatients") };
   }
   if (res.status === 422) {
     const data = await res.json().catch(() => ({}));
-    return { error: data.detail ?? "Confirmation email does not match." };
+    return { error: data.detail ?? t("ConfirmationEmailMismatch") };
   }
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    return { error: data.detail ?? `Request failed (${res.status}).` };
+    return { error: data.detail ?? t("RequestFailed", { status: res.status }) };
   }
 
   revalidatePath("/admin/users");
