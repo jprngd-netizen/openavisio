@@ -24,5 +24,8 @@ class Observation(OwnedResource):
     ref_low: Mapped[float | None] = mapped_column(Float)
     ref_high: Mapped[float | None] = mapped_column(Float)
     document_reference_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("document_references.id"), nullable=True)
+    # Vitals recorded during a consultation point back at that encounter, so the
+    # measurements history and the encounter record stay one single source of truth.
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=True, index=True)
 
     patient: Mapped["Patient"] = relationship("Patient", back_populates="observations")  # noqa: F821

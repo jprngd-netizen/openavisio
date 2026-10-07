@@ -21,6 +21,7 @@ class ObservationDto(OrmBase):
     ref_low: float | None
     ref_high: float | None
     document_reference_id: uuid.UUID | None
+    encounter_id: uuid.UUID | None = None
 
 
 class ObservationCreateRequest(BaseModel):
@@ -36,3 +37,4 @@ class ObservationCreateRequest(BaseModel):
     reference_range: str | None = None
     ref_low: float | None = None
     ref_high: float | None = None
+    encounter_id: uuid.UUID | None = None

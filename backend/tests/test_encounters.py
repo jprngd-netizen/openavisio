@@ -109,3 +109,53 @@ async def test_encounter_requires_patient_access(client: AsyncClient, db: AsyncS
 
     r = await client.post(f"/api/patients/{p.id}/encounters", json={"plan": "x"}, headers=h)
     assert r.status_code in (403, 404), r.text
+
+
+async def test_encounter_vitals_are_linked_observations(client: AsyncClient, db: AsyncSession):
+    """Vitals recorded in a consultation are Observation rows linked to it, so the
+    measurements history and the encounter record share one source of truth."""
+    _, _, p = await _setup(db)
+    h = await _auth(client, OWNER_EMAIL)
+
+    body = {
+        "encounter_type": "consulta",
+        "encounter_date": "2026-10-07",
+        "measurements": [
+            {"code": "body-weight", "code_display": "Weight", "value_quantity": 107.4, "value_unit": "kg"},
+            {"code": "blood-pressure-systolic", "code_display": "BP systolic", "value_quantity": 130, "value_unit": "mmHg"},
+            {"code": "blood-pressure-diastolic", "code_display": "BP diastolic", "value_quantity": 80, "value_unit": "mmHg"},
+        ],
+    }
+    r = await client.post(f"/api/patients/{p.id}/encounters", json=body, headers=h)
+    assert r.status_code == 201, r.text
+    enc = r.json()
+    eid = enc["id"]
+    assert {m["code"] for m in enc["measurements"]} == {
+        "body-weight", "blood-pressure-systolic", "blood-pressure-diastolic"
+    }
+
+    # the same rows appear in the patient's measurement feed, tagged to the encounter
+    r = await client.get(f"/api/patients/{p.id}/observations?category=measurement", headers=h)
+    assert r.status_code == 200, r.text
+    obs = r.json()
+    assert len(obs) == 3
+    assert all(o["encounter_id"] == eid for o in obs)
+    assert all(o["effective_date_time"] == "2026-10-07" for o in obs)
+
+    # patching replaces the vitals set (old rows are soft-deleted)
+    r = await client.patch(
+        f"/api/encounters/{eid}",
+        json={"measurements": [
+            {"code": "body-temperature", "code_display": "Temperature", "value_quantity": 36.8, "value_unit": "°C"}
+        ]},
+        headers=h,
+    )
+    assert r.status_code == 200, r.text
+    assert [m["code"] for m in r.json()["measurements"]] == ["body-temperature"]
+    r = await client.get(f"/api/patients/{p.id}/observations?category=measurement", headers=h)
+    assert [o["code"] for o in r.json()] == ["body-temperature"]
+
+    # deleting the encounter soft-deletes its vitals too
+    assert (await client.delete(f"/api/encounters/{eid}", headers=h)).status_code == 204
+    r = await client.get(f"/api/patients/{p.id}/observations?category=measurement", headers=h)
+    assert r.json() == []

@@ -4,6 +4,16 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from app.schemas.common import OrmBase
+from app.schemas.observation import ObservationDto
+
+
+class EncounterMeasurement(BaseModel):
+    """A vital sign captured during the consultation (weight, BP, SpO2, ...)."""
+
+    code: str
+    code_display: str | None = None
+    value_quantity: float | None = None
+    value_unit: str | None = None
 
 
 class EncounterDto(OrmBase):
@@ -20,6 +30,7 @@ class EncounterDto(OrmBase):
     cid10_code: str | None
     cid10_display: str | None
     notes: str | None
+    measurements: list[ObservationDto] = []
     created_at: datetime
     updated_at: datetime
 
@@ -36,6 +47,7 @@ class EncounterCreateRequest(BaseModel):
     cid10_code: str | None = None
     cid10_display: str | None = None
     notes: str | None = None
+    measurements: list[EncounterMeasurement] = []
 
 
 class EncounterUpdateRequest(BaseModel):
@@ -50,3 +62,4 @@ class EncounterUpdateRequest(BaseModel):
     cid10_code: str | None = None
     cid10_display: str | None = None
     notes: str | None = None
+    measurements: list[EncounterMeasurement] | None = None
