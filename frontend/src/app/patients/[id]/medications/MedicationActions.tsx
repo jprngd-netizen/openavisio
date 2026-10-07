@@ -161,7 +161,7 @@ export function MedicationActions({ med, iconBar = false }: { med: Med; iconBar?
               <input
                 value={form.dosage_text}
                 onChange={(e) => setForm({ ...form, dosage_text: e.target.value })}
-                placeholder="1-0-1, 300 mg"
+                placeholder={t("DosagePlaceholder")}
                 className="mt-1 w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
               />
             </div>

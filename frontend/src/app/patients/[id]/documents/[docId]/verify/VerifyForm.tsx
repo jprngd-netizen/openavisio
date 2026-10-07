@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { verifyDocument } from "@/lib/api";
 import { DocumentViewer } from "@/components/DocumentViewer";
 import { Check, ChevronDown, FileText } from "lucide-react";
@@ -62,6 +63,7 @@ function toggle(setFn: React.Dispatch<React.SetStateAction<Set<number>>>, index:
 
 export function VerifyForm({ docId, patientId, extractionJson, contentType, extractedText }: Props) {
   const router = useRouter();
+  const t = useTranslations("Verify");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -133,7 +135,7 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
         // keep the transition pending and hang the "Saving…" button.
         router.push(`/patients/${patientId}/documents`);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Verification failed. Please try again.");
+        setError(e instanceof Error ? e.message : t("Failed"));
       }
     });
   }
@@ -143,9 +145,9 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
       {/* Empty state */}
       {!hasContent && (
         <div className="rounded-xl border bg-card p-8 text-center space-y-2">
-          <p className="font-medium">No structured data extracted</p>
+          <p className="font-medium">{t("NoDataTitle")}</p>
           <p className="text-sm text-muted-foreground">
-            The pipeline found no structured data in this document. You can still confirm it as reviewed.
+            {t("NoDataHint")}
           </p>
         </div>
       )}
@@ -153,7 +155,7 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
       {/* Summary */}
       {extractionJson.summary && (
         <div className="rounded-xl border bg-card p-5">
-          <h2 className="font-semibold mb-2">Summary</h2>
+          <h2 className="font-semibold mb-2">{t("Summary")}</h2>
           <p className={`text-sm text-muted-foreground leading-relaxed ${!summaryExpanded ? "line-clamp-3" : ""}`}>
             {extractionJson.summary}
           </p>
@@ -162,7 +164,7 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
               onClick={() => setSummaryExpanded((v) => !v)}
               className="mt-1 text-xs text-primary hover:underline"
             >
-              {summaryExpanded ? "Show less" : "Show more"}
+              {summaryExpanded ? t("ShowLess") : t("ShowMore")}
             </button>
           )}
         </div>
@@ -170,7 +172,7 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
 
       {/* Recommendations */}
       {recommendations.length > 0 && (
-        <SelectionSection title="Recommendations" hint="Select which follow-up actions to keep.">
+        <SelectionSection title={t("Recommendations")} hint={t("RecommendationsHint")}>
           {recommendations.map((rec, i) => (
             <EditableCheckRow
               key={i}
@@ -197,8 +199,8 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
 
       {/* Diagnoses */}
       <SelectionSection
-        title="Diagnoses"
-        action={<button onClick={addNewDx} className="text-xs text-primary hover:underline font-medium">+ Add</button>}
+        title={t("Diagnoses")}
+        action={<button onClick={addNewDx} className="text-xs text-primary hover:underline font-medium">{t("AddRow")}</button>}
       >
         {editedDx.map((dx, i) => (
             <EditableCheckRow
@@ -211,14 +213,14 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
             >
               {editingDx === i ? (
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <LabeledInput label="Name" value={editedDx[i].name ?? ""} onChange={(v) => patchDx(i, "name", v)} />
-                  <LabeledInput label="Severity" value={editedDx[i].severity ?? ""} onChange={(v) => patchDx(i, "severity", v)} />
-                  <LabeledInput label="Status" value={editedDx[i].status ?? ""} onChange={(v) => patchDx(i, "status", v)} />
-                  <LabeledInput label="Onset date" value={editedDx[i].onset_date ?? ""} onChange={(v) => patchDx(i, "onset_date", v)} />
+                  <LabeledInput label={t("FieldName")} value={editedDx[i].name ?? ""} onChange={(v) => patchDx(i, "name", v)} />
+                  <LabeledInput label={t("Severity")} value={editedDx[i].severity ?? ""} onChange={(v) => patchDx(i, "severity", v)} />
+                  <LabeledInput label={t("Status")} value={editedDx[i].status ?? ""} onChange={(v) => patchDx(i, "status", v)} />
+                  <LabeledInput label={t("OnsetDate")} value={editedDx[i].onset_date ?? ""} onChange={(v) => patchDx(i, "onset_date", v)} />
                 </div>
               ) : (
                 <div className="text-sm">
-                  <div className="font-medium">{editedDx[i].name ?? editedDx[i].code_display ?? "Unknown"}</div>
+                  <div className="font-medium">{editedDx[i].name ?? editedDx[i].code_display ?? t("Unknown")}</div>
                   <div className="text-muted-foreground">
                     {[editedDx[i].severity, editedDx[i].status, editedDx[i].onset_date].filter(Boolean).join(" · ")}
                   </div>
@@ -230,7 +232,7 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
 
       {/* Medications */}
       {medications.length > 0 && (
-        <SelectionSection title="Medications">
+        <SelectionSection title={t("Medications")}>
           {medications.map((_, i) => (
             <EditableCheckRow
               key={i}
@@ -242,12 +244,12 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
             >
               {editingMed === i ? (
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <LabeledInput label="Name" value={editedMeds[i].name ?? ""} onChange={(v) => patchMed(i, "name", v)} />
-                  <LabeledInput label="Dosage" value={editedMeds[i].dosage ?? ""} onChange={(v) => patchMed(i, "dosage", v)} />
+                  <LabeledInput label={t("FieldName")} value={editedMeds[i].name ?? ""} onChange={(v) => patchMed(i, "name", v)} />
+                  <LabeledInput label={t("Dosage")} value={editedMeds[i].dosage ?? ""} onChange={(v) => patchMed(i, "dosage", v)} />
                 </div>
               ) : (
                 <div className="text-sm">
-                  <div className="font-medium">{editedMeds[i].name ?? editedMeds[i].medication_display ?? "Unknown"}</div>
+                  <div className="font-medium">{editedMeds[i].name ?? editedMeds[i].medication_display ?? t("Unknown")}</div>
                   {editedMeds[i].dosage && <div className="text-muted-foreground">{editedMeds[i].dosage}</div>}
                 </div>
               )}
@@ -258,7 +260,7 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
 
       {/* Measurements */}
       {measurements.length > 0 && (
-        <SelectionSection title="Measurements">
+        <SelectionSection title={t("Measurements")}>
           {measurements.map((_, i) => (
             <EditableCheckRow
               key={i}
@@ -270,13 +272,13 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
             >
               {editingMeasurement === i ? (
                 <div className="grid grid-cols-3 gap-2 text-sm">
-                  <LabeledInput label="Type" value={editedMeasurements[i].type ?? ""} onChange={(v) => patchObs(editedMeasurements, setEditedMeasurements, i, "type", v)} />
-                  <LabeledInput label="Value" value={String(editedMeasurements[i].value ?? "")} onChange={(v) => patchObs(editedMeasurements, setEditedMeasurements, i, "value", v)} />
-                  <LabeledInput label="Unit" value={editedMeasurements[i].unit ?? ""} onChange={(v) => patchObs(editedMeasurements, setEditedMeasurements, i, "unit", v)} />
+                  <LabeledInput label={t("FieldType")} value={editedMeasurements[i].type ?? ""} onChange={(v) => patchObs(editedMeasurements, setEditedMeasurements, i, "type", v)} />
+                  <LabeledInput label={t("Value")} value={String(editedMeasurements[i].value ?? "")} onChange={(v) => patchObs(editedMeasurements, setEditedMeasurements, i, "value", v)} />
+                  <LabeledInput label={t("Unit")} value={editedMeasurements[i].unit ?? ""} onChange={(v) => patchObs(editedMeasurements, setEditedMeasurements, i, "unit", v)} />
                 </div>
               ) : (
                 <div className="text-sm">
-                  <div className="font-medium">{editedMeasurements[i].type ?? "Measurement"}</div>
+                  <div className="font-medium">{editedMeasurements[i].type ?? t("MeasurementFallback")}</div>
                   <div className="text-muted-foreground">
                     {editedMeasurements[i].unit ? `${editedMeasurements[i].value} ${editedMeasurements[i].unit}` : String(editedMeasurements[i].value ?? "")}
                   </div>
@@ -289,7 +291,7 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
 
       {/* Lab Results */}
       {labResults.length > 0 && (
-        <SelectionSection title="Lab Results">
+        <SelectionSection title={t("LabResults")}>
           {labResults.map((_, i) => (
             <EditableCheckRow
               key={i}
@@ -301,13 +303,13 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
             >
               {editingLab === i ? (
                 <div className="grid grid-cols-3 gap-2 text-sm">
-                  <LabeledInput label="Type" value={editedLab[i].type ?? ""} onChange={(v) => patchObs(editedLab, setEditedLab, i, "type", v)} />
-                  <LabeledInput label="Value" value={String(editedLab[i].value ?? "")} onChange={(v) => patchObs(editedLab, setEditedLab, i, "value", v)} />
-                  <LabeledInput label="Unit" value={editedLab[i].unit ?? ""} onChange={(v) => patchObs(editedLab, setEditedLab, i, "unit", v)} />
+                  <LabeledInput label={t("FieldType")} value={editedLab[i].type ?? ""} onChange={(v) => patchObs(editedLab, setEditedLab, i, "type", v)} />
+                  <LabeledInput label={t("Value")} value={String(editedLab[i].value ?? "")} onChange={(v) => patchObs(editedLab, setEditedLab, i, "value", v)} />
+                  <LabeledInput label={t("Unit")} value={editedLab[i].unit ?? ""} onChange={(v) => patchObs(editedLab, setEditedLab, i, "unit", v)} />
                 </div>
               ) : (
                 <div className="text-sm">
-                  <div className="font-medium">{editedLab[i].type ?? "Lab Result"}</div>
+                  <div className="font-medium">{editedLab[i].type ?? t("LabResultFallback")}</div>
                   <div className="text-muted-foreground">
                     {editedLab[i].unit ? `${editedLab[i].value} ${editedLab[i].unit}` : String(editedLab[i].value ?? "")}
                   </div>
@@ -320,7 +322,7 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
 
       {/* Events */}
       {appointments.length > 0 && (
-        <SelectionSection title="Events" hint="Select which appointments to add to the health timeline.">
+        <SelectionSection title={t("Events")} hint={t("EventsHint")}>
           {appointments.map((_, i) => (
             <EditableCheckRow
               key={i}
@@ -332,22 +334,22 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
             >
               {editingAppt === i ? (
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <LabeledInput label="Purpose" value={editedAppts[i].purpose ?? ""} onChange={(v) => patchAppt(i, "purpose", v)} />
-                  <LabeledInput label="Provider" value={editedAppts[i].provider ?? ""} onChange={(v) => patchAppt(i, "provider", v)} />
-                  <LabeledInput label="Date" value={editedAppts[i].date ?? ""} onChange={(v) => patchAppt(i, "date", v)} />
-                  <LabeledInput label="Location" value={editedAppts[i].location ?? ""} onChange={(v) => patchAppt(i, "location", v)} />
+                  <LabeledInput label={t("Purpose")} value={editedAppts[i].purpose ?? ""} onChange={(v) => patchAppt(i, "purpose", v)} />
+                  <LabeledInput label={t("Provider")} value={editedAppts[i].provider ?? ""} onChange={(v) => patchAppt(i, "provider", v)} />
+                  <LabeledInput label={t("Date")} value={editedAppts[i].date ?? ""} onChange={(v) => patchAppt(i, "date", v)} />
+                  <LabeledInput label={t("Location")} value={editedAppts[i].location ?? ""} onChange={(v) => patchAppt(i, "location", v)} />
                 </div>
               ) : (
                 <div className="text-sm">
                   <div className="font-medium">
-                    {editedAppts[i].purpose || (editedAppts[i].provider ? `Appointment with ${editedAppts[i].provider}` : "Appointment")}
+                    {editedAppts[i].purpose || (editedAppts[i].provider ? t("AppointmentWith", { provider: editedAppts[i].provider }) : t("Appointment"))}
                   </div>
                   <div className="text-muted-foreground">
                     {[
-                      editedAppts[i].date && (editedAppts[i].time ? `${editedAppts[i].date} at ${editedAppts[i].time}` : editedAppts[i].date),
+                      editedAppts[i].date && (editedAppts[i].time ? t("DateTime", { date: editedAppts[i].date, time: editedAppts[i].time }) : editedAppts[i].date),
                       editedAppts[i].provider,
                       editedAppts[i].location,
-                      editedAppts[i].is_future === false ? "past" : editedAppts[i].is_future === true ? "upcoming" : undefined,
+                      editedAppts[i].is_future === false ? t("Past") : editedAppts[i].is_future === true ? t("Upcoming") : undefined,
                     ].filter(Boolean).join(" · ")}
                   </div>
                 </div>
@@ -360,7 +362,7 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
       {/* Referenced Persons */}
       {mentionedPersons.length > 0 && (
         <div className="rounded-xl border bg-card p-5">
-          <h2 className="font-semibold mb-3">Referenced Persons</h2>
+          <h2 className="font-semibold mb-3">{t("ReferencedPersons")}</h2>
           <div className="space-y-2">
             {mentionedPersons.map((p, i) => (
               <div key={i} className="flex flex-wrap gap-x-3 text-sm">
@@ -381,10 +383,10 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
           disabled={isPending}
           className="px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
         >
-          {isPending ? "Saving…" : "Confirm & Save"}
+          {isPending ? t("Saving") : t("ConfirmSave")}
         </button>
         <Link href={`/patients/${patientId}/documents/${docId}`} className="text-sm text-muted-foreground hover:text-foreground">
-          Cancel
+          {t("Cancel")}
         </Link>
       </div>
     </div>
@@ -421,7 +423,7 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
           >
             <span className="flex items-center gap-2">
               <FileText className="h-4 w-4 text-muted-foreground" />
-              OCR Text
+              {t("OcrText")}
             </span>
             <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${ocrOpen ? "rotate-180" : ""}`} />
           </button>
@@ -476,6 +478,7 @@ function EditableCheckRow({
   onDone: () => void;
   children: React.ReactNode;
 }) {
+  const t = useTranslations("Verify");
   return (
     <div className={`flex items-start gap-3 transition-opacity ${!checked && !editing ? "opacity-40" : ""}`}>
       <input
@@ -486,11 +489,11 @@ function EditableCheckRow({
       />
       <div className="flex-1 min-w-0">{children}</div>
       {editing ? (
-        <button onClick={onDone} className="shrink-0 text-primary hover:text-primary/80 mt-1" aria-label="Done">
+        <button onClick={onDone} className="shrink-0 text-primary hover:text-primary/80 mt-1" aria-label={t("Done")}>
           <Check className="h-3.5 w-3.5" />
         </button>
       ) : (
-        <button onClick={onEdit} className="shrink-0 text-muted-foreground hover:text-foreground mt-1" aria-label="Edit">
+        <button onClick={onEdit} className="shrink-0 text-muted-foreground hover:text-foreground mt-1" aria-label={t("Edit")}>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
             <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
           </svg>

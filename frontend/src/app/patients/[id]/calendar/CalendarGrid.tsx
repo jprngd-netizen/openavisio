@@ -35,7 +35,11 @@ const TYPE_PILL: Record<string, string> = {
 };
 
 /** Age at which a milestone was achieved, from patient birth date and event date. */
-function achievedAge(birth?: string | null, at?: string | null): string | null {
+function achievedAge(
+  birth: string | null | undefined,
+  at: string | null | undefined,
+  t: (key: string, values?: Record<string, number>) => string,
+): string | null {
   if (!birth || !at) return null;
   const b = new Date(birth.slice(0, 10));
   const d = new Date(at.slice(0, 10));
@@ -46,9 +50,9 @@ function achievedAge(birth?: string | null, at?: string | null): string | null {
   const y = Math.floor(months / 12);
   const m = months % 12;
   const parts: string[] = [];
-  if (y) parts.push(`${y} year${y > 1 ? "s" : ""}`);
-  if (m) parts.push(`${m} month${m > 1 ? "s" : ""}`);
-  return parts.length ? parts.join(" ") : "newborn";
+  if (y) parts.push(t("AgeYears", { count: y }));
+  if (m) parts.push(t("AgeMonths", { count: m }));
+  return parts.length ? parts.join(" ") : t("Newborn");
 }
 
 const inputCls =
@@ -243,7 +247,7 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
         closeDrawer();
         refetch();
       } catch {
-        setMutError("Failed to save. Please try again.");
+        setMutError(t("SaveError"));
       }
     });
   }
@@ -257,7 +261,7 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
         setItems((prev) => prev.filter((i) => i.id !== selected.id));
         closeDrawer();
       } catch {
-        setMutError("Failed to delete. Please try again.");
+        setMutError(t("DeleteError"));
       }
     });
   }
@@ -291,6 +295,11 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
     const label = cls && KNOWN_CLASS.has(cls) ? tc(`class_${cls}`) : null;
     if (label && ev.title && ev.title !== label) return `${label} · ${ev.title}`;
     return label ?? ev.title;
+  }
+
+  function domainLabel(domain: string | null | undefined): string {
+    if (!domain) return "";
+    return (DOMAINS as readonly string[]).includes(domain) ? t(`Domain_${domain}`) : domain;
   }
 
   // The feed is sorted newest-first; an agenda reads forwards.
@@ -338,17 +347,17 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
           <button
             onClick={prevMonth}
             className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-            aria-label="Previous month"
+            aria-label={t("PreviousMonth")}
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
           <span className="text-base font-semibold w-44 text-center">
-            {MONTHS[month]} {year}
+            {t(`Month_${MONTHS[month]}`)} {year}
           </span>
           <button
             onClick={nextMonth}
             className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-            aria-label="Next month"
+            aria-label={t("NextMonth")}
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -370,7 +379,7 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-medium hover:bg-primary/90 transition-colors"
           >
             <Plus className="h-4 w-4" />
-            Add Event
+            {t("AddEvent")}
           </button>
         </div>
       </div>
@@ -379,7 +388,7 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
       <div className="grid grid-cols-7 mb-0.5">
         {WEEKDAYS.map((d) => (
           <div key={d} className="text-xs font-medium text-muted-foreground text-center py-1">
-            {d}
+            {t(`Weekday_${d}`)}
           </div>
         ))}
       </div>
@@ -387,11 +396,11 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
       {/* Grid */}
       {loading ? (
         <div className="h-96 flex items-center justify-center text-muted-foreground text-sm">
-          Loading…
+          {t("Loading")}
         </div>
       ) : fetchError ? (
         <div className="h-96 flex items-center justify-center text-destructive text-sm">
-          Failed to load calendar. The server may be unavailable.
+          {t("LoadError")}
         </div>
       ) : (
         <div className="border-l border-t rounded-xl overflow-hidden">
@@ -444,7 +453,7 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
                           <button
                             onClick={() => openCreate(dateStr)}
                             className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-muted transition-opacity"
-                            aria-label={`Add event on ${dateStr}`}
+                            aria-label={t("AddEventOn", { date: dateStr })}
                           >
                             <Plus className="h-3 w-3 text-muted-foreground" />
                           </button>
@@ -467,7 +476,7 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
                         ))}
                         {dayEvents.length > 3 && (
                           <div className="text-xs text-muted-foreground px-1.5">
-                            +{dayEvents.length - 3} more
+                            {t("MoreCount", { count: dayEvents.length - 3 })}
                           </div>
                         )}
                       </div>
@@ -525,9 +534,9 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
             <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
               <span className="font-semibold text-sm">
                 {drawerMode === "create"
-                  ? "New Event"
+                  ? t("NewEvent")
                   : drawerMode === "edit"
-                  ? "Edit Event"
+                  ? t("EditEvent")
                   : selected?.title}
               </span>
               <button
@@ -566,19 +575,19 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
                     <div className="space-y-2 text-sm">
                       {eventDetail.provider && (
                         <div>
-                          <span className="text-muted-foreground">Provider: </span>
+                          <span className="text-muted-foreground">{t("Provider")}: </span>
                           {eventDetail.provider}
                         </div>
                       )}
                       {eventDetail.location && (
                         <div>
-                          <span className="text-muted-foreground">Location: </span>
+                          <span className="text-muted-foreground">{t("Location")}: </span>
                           {eventDetail.location}
                         </div>
                       )}
                       {eventDetail.purpose && (
                         <div>
-                          <span className="text-muted-foreground">Purpose: </span>
+                          <span className="text-muted-foreground">{t("Purpose")}: </span>
                           {eventDetail.purpose}
                         </div>
                       )}
@@ -592,14 +601,14 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
                     <div className="space-y-2 text-sm">
                       {selected.developmental_domain && (
                         <div>
-                          <span className="text-muted-foreground">Domain: </span>
-                          <span className="capitalize">{selected.developmental_domain}</span>
+                          <span className="text-muted-foreground">{t("Domain")}: </span>
+                          <span className="capitalize">{domainLabel(selected.developmental_domain)}</span>
                         </div>
                       )}
-                      {achievedAge(birthDate, selected.start) && (
+                      {achievedAge(birthDate, selected.start, t) && (
                         <div>
-                          <span className="text-muted-foreground">Achieved at: </span>
-                          {achievedAge(birthDate, selected.start)}
+                          <span className="text-muted-foreground">{t("AchievedAt")}: </span>
+                          {achievedAge(birthDate, selected.start, t)}
                         </div>
                       )}
                     </div>
@@ -613,7 +622,7 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
                         className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm hover:bg-muted transition-colors disabled:opacity-50"
                       >
                         <Pencil className="h-3.5 w-3.5" />
-                        Edit
+                        {t("Edit")}
                       </button>
                       <button
                         onClick={handleDelete}
@@ -625,7 +634,7 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
                         }`}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
-                        {confirmDelete ? "Confirm delete" : "Delete"}
+                        {confirmDelete ? t("ConfirmDelete") : t("Delete")}
                       </button>
                     </div>
                   )}
@@ -637,30 +646,30 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
                 <form onSubmit={handleSave} className="space-y-3">
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium">
-                      Title <span className="text-destructive">*</span>
+                      {t("EventTitle")} <span className="text-destructive">*</span>
                     </label>
                     <input
                       required
                       value={fTitle}
                       onChange={(e) => setFTitle(e.target.value)}
                       className={inputCls}
-                      placeholder="e.g. GP appointment"
+                      placeholder={t("TitlePlaceholder")}
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium">Type</label>
+                    <label className="text-sm font-medium">{t("TypeLabel")}</label>
                     <select
                       value={fCategory}
                       onChange={(e) => setFCategory(e.target.value as "appointment" | "milestone")}
                       className={inputCls}
                     >
-                      <option value="appointment">Appointment</option>
-                      <option value="milestone">Milestone</option>
+                      <option value="appointment">{t("Appointment")}</option>
+                      <option value="milestone">{t("Milestone")}</option>
                     </select>
                   </div>
                   {fCategory === "milestone" && (
                     <div className="space-y-1.5">
-                      <label className="text-sm font-medium">Developmental domain</label>
+                      <label className="text-sm font-medium">{t("DevelopmentalDomain")}</label>
                       <select
                         value={fDomain}
                         onChange={(e) => setFDomain(e.target.value)}
@@ -668,7 +677,7 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
                       >
                         <option value="">—</option>
                         {DOMAINS.map((d) => (
-                          <option key={d} value={d} className="capitalize">{d}</option>
+                          <option key={d} value={d} className="capitalize">{t(`Domain_${d}`)}</option>
                         ))}
                       </select>
                     </div>
@@ -682,12 +691,12 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
                       className="rounded"
                     />
                     <label htmlFor="f-allday" className="text-sm">
-                      All day
+                      {t("AllDay")}
                     </label>
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium">
-                      Start <span className="text-destructive">*</span>
+                      {t("StartDate")} <span className="text-destructive">*</span>
                     </label>
                     <input
                       required
@@ -698,7 +707,7 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-sm font-medium">End</label>
+                    <label className="text-sm font-medium">{t("EndDate")}</label>
                     <input
                       type={fAllDay ? "date" : "datetime-local"}
                       value={fEnd}
@@ -709,30 +718,30 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
                   {fCategory === "appointment" && (
                     <>
                       <div className="space-y-1.5">
-                        <label className="text-sm font-medium">Provider</label>
+                        <label className="text-sm font-medium">{t("Provider")}</label>
                         <input
                           value={fProvider}
                           onChange={(e) => setFProvider(e.target.value)}
                           className={inputCls}
-                          placeholder="e.g. Dr. Smith"
+                          placeholder={t("ProviderPlaceholder")}
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-sm font-medium">Location</label>
+                        <label className="text-sm font-medium">{t("Location")}</label>
                         <input
                           value={fLocation}
                           onChange={(e) => setFLocation(e.target.value)}
                           className={inputCls}
-                          placeholder="e.g. City Hospital"
+                          placeholder={t("LocationPlaceholder")}
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-sm font-medium">Purpose</label>
+                        <label className="text-sm font-medium">{t("Purpose")}</label>
                         <input
                           value={fPurpose}
                           onChange={(e) => setFPurpose(e.target.value)}
                           className={inputCls}
-                          placeholder="e.g. Annual checkup"
+                          placeholder={t("PurposePlaceholder")}
                         />
                       </div>
                     </>
@@ -743,14 +752,14 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
                       disabled={pending}
                       className="rounded-lg bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
                     >
-                      {pending ? "Saving…" : "Save"}
+                      {pending ? t("Saving") : t("Save")}
                     </button>
                     <button
                       type="button"
                       onClick={drawerMode === "edit" ? () => setDrawerMode("detail") : closeDrawer}
                       className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
                     >
-                      Cancel
+                      {t("Cancel")}
                     </button>
                   </div>
                 </form>

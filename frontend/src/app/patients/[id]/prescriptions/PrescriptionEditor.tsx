@@ -73,7 +73,7 @@ export function PrescriptionEditor({
         setLoading(false);
       })
       .catch((e: Error) => {
-        setError(e.message ?? "Failed to load prescription");
+        setError(e.message ?? t("LoadOneError"));
         setLoading(false);
       });
   }, [prescriptionId]);
@@ -128,7 +128,7 @@ export function PrescriptionEditor({
       setConflict(null);
       setSaveError(null);
     } catch {
-      setSaveError("Failed to reload");
+      setSaveError(t("ReloadError"));
     }
   }
 
@@ -138,7 +138,7 @@ export function PrescriptionEditor({
       await retryPrescription(prescriptionId);
       router.refresh();
     } catch (err: any) {
-      setSaveError(err.message ?? "Retry failed");
+      setSaveError(err.message ?? t("RetryError"));
     } finally {
       setRetrying(false);
     }

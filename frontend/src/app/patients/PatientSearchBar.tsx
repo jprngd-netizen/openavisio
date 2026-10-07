@@ -46,7 +46,7 @@ export function PatientSearchBar({ initialQuery }: { initialQuery: string }) {
         <button
           type="button"
           onClick={() => setValue("")}
-          aria-label="Clear"
+          aria-label={t("Clear")}
           className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:text-foreground"
         >
           <X className="size-4" />

@@ -215,7 +215,7 @@ export function UploadPanel({ patientId, demoMode = false }: { patientId: string
         >
           <Upload className="h-7 w-7 text-muted-foreground shrink-0" />
           <span className="text-sm font-medium">{t("dropHint")}</span>
-          <span className="text-xs text-muted-foreground">PDF, JPG, PNG</span>
+          <span className="text-xs text-muted-foreground">{t("acceptedFormats")}</span>
           <input
             ref={inputRef}
             type="file"

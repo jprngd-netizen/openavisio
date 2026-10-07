@@ -21,7 +21,7 @@ export default async function DocumentsPage({ params }: { params: Promise<{ id: 
   if (!patient) {
     return (
       <AppLayout>
-        <div className="text-center py-12 text-muted-foreground">Patient not found.</div>
+        <div className="text-center py-12 text-muted-foreground">{t("patientNotFound")}</div>
       </AppLayout>
     );
   }

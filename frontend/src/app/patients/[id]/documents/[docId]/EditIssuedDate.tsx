@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { updateIssuedDateAction } from "./actions";
 
 export function EditIssuedDate({
@@ -12,6 +13,7 @@ export function EditIssuedDate({
   patientId: string;
   value: string | null;
 }) {
+  const t = useTranslations("DocDetail");
   const [editing, setEditing] = useState(false);
   const [date, setDate] = useState(value ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -32,12 +34,12 @@ export function EditIssuedDate({
   if (!editing) {
     return (
       <div className="flex items-center gap-2">
-        <span className="font-medium">{value ?? <span className="text-muted-foreground italic">not set</span>}</span>
+        <span className="font-medium">{value ?? <span className="text-muted-foreground italic">{t("issuedNotSet")}</span>}</span>
         <button
           onClick={() => setEditing(true)}
           className="text-xs text-muted-foreground hover:text-foreground underline"
         >
-          edit
+          {t("issuedEdit")}
         </button>
       </div>
     );
@@ -57,13 +59,13 @@ export function EditIssuedDate({
         disabled={pending}
         className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
       >
-        {pending ? "Saving…" : "Save"}
+        {pending ? t("issuedSaving") : t("issuedSave")}
       </button>
       <button
         onClick={() => { setEditing(false); setDate(value ?? ""); setError(null); }}
         className="text-xs text-muted-foreground hover:text-foreground"
       >
-        Cancel
+        {t("issuedCancel")}
       </button>
       {error && <span className="text-xs text-destructive">{error}</span>}
     </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Script from "next/script";
+import { useTranslations } from "next-intl";
 import { getMemedSession, capturePrescription, markPrescriptionDeleted } from "@/lib/api";
 
 // ── Memed postMessage origin validation ──────────────────────────────────
@@ -29,6 +30,7 @@ interface MemedSession {
 }
 
 export function MemedEmbed({ prescriptionId }: { prescriptionId: string }) {
+  const t = useTranslations("Prescriptions");
   const [session, setSession] = useState<MemedSession | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +47,7 @@ export function MemedEmbed({ prescriptionId }: { prescriptionId: string }) {
       })
       .catch((e: Error) => {
         if (!cancelled) {
-          setError(e.message ?? "Failed to load prescription editor");
+          setError(e.message ?? t("MemedLoadError"));
           setState("error");
         }
       });
@@ -136,13 +138,13 @@ export function MemedEmbed({ prescriptionId }: { prescriptionId: string }) {
   }, [session, prescriptionId]);
 
   if (state === "loading") {
-    return <div className="text-center py-8 text-muted-foreground">Loading prescription editor...</div>;
+    return <div className="text-center py-8 text-muted-foreground">{t("MemedLoading")}</div>;
   }
 
   if (state === "error" || !session) {
     return (
       <div className="rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm">
-        {error ?? "Failed to load prescription editor"}
+        {error ?? t("MemedLoadError")}
       </div>
     );
   }

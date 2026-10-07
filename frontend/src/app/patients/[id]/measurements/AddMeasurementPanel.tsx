@@ -7,14 +7,14 @@ import { Plus, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 const TYPES = [
-  { code: "body-weight", display: "Weight", unit: "kg" },
-  { code: "body-height", display: "Height", unit: "cm" },
-  { code: "blood-pressure-systolic", display: "Blood Pressure (systolic)", unit: "mmHg" },
-  { code: "blood-pressure-diastolic", display: "Blood Pressure (diastolic)", unit: "mmHg" },
-  { code: "body-temperature", display: "Temperature", unit: "°C" },
-  { code: "oxygen-saturation", display: "Oxygen Saturation", unit: "%" },
-  { code: "heart-rate", display: "Heart Rate", unit: "bpm" },
-  { code: "bmi", display: "BMI", unit: "kg/m²" },
+  { code: "body-weight", key: "typeWeight", unit: "kg" },
+  { code: "body-height", key: "typeHeight", unit: "cm" },
+  { code: "blood-pressure-systolic", key: "typeBPSystolic", unit: "mmHg" },
+  { code: "blood-pressure-diastolic", key: "typeBPDiastolic", unit: "mmHg" },
+  { code: "body-temperature", key: "typeTemperature", unit: "°C" },
+  { code: "oxygen-saturation", key: "typeOxygenSaturation", unit: "%" },
+  { code: "heart-rate", key: "typeHeartRate", unit: "bpm" },
+  { code: "bmi", key: "typeBMI", unit: "kg/m²" },
 ];
 
 const inputCls =
@@ -54,7 +54,7 @@ export function AddMeasurementPanel({
         await createObservation(patientId, {
           category: "measurement",
           code: selectedType.code,
-          code_display: selectedType.display,
+          code_display: t(selectedType.key),
           value_quantity: parseFloat(value),
           value_unit: selectedType.unit,
           effective_date_time: date,
@@ -110,8 +110,8 @@ export function AddMeasurementPanel({
                   onChange={(e) => setTypeCode(e.target.value)}
                   className={inputCls}
                 >
-                  {TYPES.map((t) => (
-                    <option key={t.code} value={t.code}>{t.display}</option>
+                  {TYPES.map((opt) => (
+                    <option key={opt.code} value={opt.code}>{t(opt.key)}</option>
                   ))}
                 </select>
               </div>
@@ -126,7 +126,7 @@ export function AddMeasurementPanel({
                   value={value}
                   onChange={(e) => setValue(e.target.value)}
                   className={inputCls}
-                  placeholder="e.g. 70"
+                  placeholder={t("ValuePlaceholder")}
                 />
               </div>
             </div>

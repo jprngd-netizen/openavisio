@@ -1,5 +1,6 @@
 import { AppLayout } from "@/components/layout/AppLayout"
 import { getDashboard, getPatient } from "@/lib/api"
+import { getTranslations } from "next-intl/server"
 import { Breadcrumb } from "@/components/Breadcrumb"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge, badgeVariants } from "@/components/ui/badge"
@@ -25,6 +26,7 @@ function statusVariant(status: string): BadgeVariant {
 
 export default async function DashboardPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
+  const t = await getTranslations("Dashboard")
   const [patient, dashboard] = await Promise.all([
     getPatient(id).catch(() => null),
     getDashboard(id).catch(() => null),
@@ -34,23 +36,23 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
     <AppLayout>
       <Breadcrumb
         crumbs={patient ? [{ label: `${patient.given_name} ${patient.family_name}`, href: `/patients/${id}` }] : []}
-        current="Dashboard"
+        current={t("title")}
       />
 
       {!dashboard ? (
-        <p className="text-sm text-muted-foreground">Failed to load dashboard data.</p>
+        <p className="text-sm text-muted-foreground">{t("loadError")}</p>
       ) : (
         <div className="space-y-6">
           {/* Stats */}
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <StatCard label="Documents" value={dashboard.total_documents} />
-            <StatCard label="Verified" value={dashboard.verified_documents} />
+            <StatCard label={t("documents")} value={dashboard.total_documents} />
+            <StatCard label={t("verified")} value={dashboard.verified_documents} />
             <StatCard
-              label="Active Conditions"
+              label={t("activeConditions")}
               value={dashboard.condition_timeline?.filter((c: any) => c.status === "active").length ?? 0}
             />
             <StatCard
-              label="Active Medications"
+              label={t("activeMedications")}
               value={dashboard.medication_timeline?.filter((m: any) => m.status === "active").length ?? 0}
             />
           </div>
@@ -59,7 +61,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
           {dashboard.condition_timeline?.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Condition Timeline</CardTitle>
+                <CardTitle className="text-base">{t("conditionTimeline")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {dashboard.condition_timeline.map((c: any) => (
@@ -68,7 +70,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
                       <p className="text-sm font-medium truncate">{c.display}</p>
                       {c.onset && (
                         <p className="text-xs text-muted-foreground">
-                          Onset {c.onset?.slice(0, 10)}
+                          {t("onset", { date: c.onset?.slice(0, 10) })}
                         </p>
                       )}
                     </div>
@@ -88,7 +90,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ id: 
           {dashboard.medication_timeline?.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Medication Timeline</CardTitle>
+                <CardTitle className="text-base">{t("medicationTimeline")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 {dashboard.medication_timeline.map((m: any) => (

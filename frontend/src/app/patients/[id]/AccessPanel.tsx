@@ -393,7 +393,7 @@ function InviteForm({ patientId }: { patientId: string }) {
         <div className="space-y-1">
           <label className="text-xs font-medium">{t("EmailOptional")}</label>
           <input
-            type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="user@example.com"
+            type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("EmailPlaceholder")}
             className="w-full rounded-lg border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background"
           />
         </div>

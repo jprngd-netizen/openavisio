@@ -10,10 +10,11 @@ const inputCls =
   "w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background";
 
 // Common CBC parameter names for quick manual entry (datalist hint only, not enforced).
+// Entries prefixed with "cbc_" are translation keys; bare entries are language-neutral acronyms.
 const CBC_NAMES = [
-  "Hämoglobin", "Hämatokrit", "Erythrozyten", "Leukozyten", "Thrombozyten",
+  "cbc_hemoglobin", "cbc_hematocrit", "cbc_erythrocytes", "cbc_leukocytes", "cbc_platelets",
   "MCV", "MCH", "MCHC", "RDW", "MPV",
-  "Neutrophile", "Lymphozyten", "Monozyten", "Eosinophile", "Basophile",
+  "cbc_neutrophils", "cbc_lymphocytes", "cbc_monocytes", "cbc_eosinophils", "cbc_basophils",
 ];
 
 export function AddLabResultPanel({
@@ -120,7 +121,7 @@ export function AddLabResultPanel({
                 placeholder={t("TestNamePlaceholder")}
               />
               <datalist id="cbc-names">
-                {CBC_NAMES.map((n) => <option key={n} value={n} />)}
+                {CBC_NAMES.map((n) => <option key={n} value={n.startsWith("cbc_") ? t(n) : n} />)}
               </datalist>
             </div>
 
@@ -155,7 +156,7 @@ export function AddLabResultPanel({
                     value={valueNum}
                     onChange={(e) => setValueNum(e.target.value)}
                     className={inputCls}
-                    placeholder="e.g. 5.2"
+                    placeholder={t("ValuePlaceholder")}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -165,7 +166,7 @@ export function AddLabResultPanel({
                     value={unit}
                     onChange={(e) => setUnit(e.target.value)}
                     className={inputCls}
-                    placeholder="e.g. mmol/L"
+                    placeholder={t("UnitPlaceholder")}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -176,7 +177,7 @@ export function AddLabResultPanel({
                     value={refLow}
                     onChange={(e) => setRefLow(e.target.value)}
                     className={inputCls}
-                    placeholder="e.g. 4.5"
+                    placeholder={t("RefLowPlaceholder")}
                   />
                 </div>
                 <div className="space-y-1.5">
@@ -187,7 +188,7 @@ export function AddLabResultPanel({
                     value={refHigh}
                     onChange={(e) => setRefHigh(e.target.value)}
                     className={inputCls}
-                    placeholder="e.g. 11.0"
+                    placeholder={t("RefHighPlaceholder")}
                   />
                 </div>
               </div>
@@ -202,7 +203,7 @@ export function AddLabResultPanel({
                   value={valueText}
                   onChange={(e) => setValueText(e.target.value)}
                   className={inputCls}
-                  placeholder="e.g. positive, negative, detected"
+                  placeholder={t("ResultPlaceholder")}
                 />
               </div>
             )}
