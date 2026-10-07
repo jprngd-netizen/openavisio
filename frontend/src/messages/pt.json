@@ -21,7 +21,13 @@
     "Favorites": "Favoritos",
     "More": "Mais",
     "Collapse": "Recolher",
-    "Expand": "Expandir"
+    "Expand": "Expandir",
+    "Language": "Idioma",
+    "HealthPortal": "Portal de Saúde",
+    "LightMode": "Modo claro",
+    "DarkMode": "Modo escuro",
+    "StandardContrast": "Contraste padrão",
+    "HighContrast": "Alto contraste"
   },
   "Auth": {
     "Login": "Entrar",
@@ -51,7 +57,8 @@
     "SignInWithPasskey": "Entrar com chave de acesso",
     "PasskeyError": "Falha na autenticação. Tente novamente.",
     "PasskeyNotSupported": "Seu navegador não suporta chaves de acesso.",
-    "OpenInApp": "Abrir no app OpenAvisio"
+    "OpenInApp": "Abrir no app OpenAvisio",
+    "Or": "ou"
   },
   "Common": {
     "Save": "Salvar",
@@ -106,7 +113,12 @@
     "SaveError": "Falha ao salvar. Tente novamente.",
     "PatientNotFound": "Paciente não encontrado.",
     "Value": "Valor",
-    "Result": "Resultado"
+    "Result": "Resultado",
+    "Impressum": "Informações do responsável",
+    "PrivacyPolicy": "Política de Privacidade",
+    "OperatedBy": "Operado por {org}",
+    "BuiltWith": "Feito com",
+    "ForCaregivers": "para cuidadores"
   },
   "Measurement": {
     "Title": "Medições",
@@ -777,7 +789,7 @@
     "NotPrescriber": "Apenas o prescritor designado pode emitir receitas.",
     "Loading": "Carregando…"
   },
-"AdminOrganization":   {
+  "AdminOrganization": {
     "Title": "Organização",
     "Subtitle": "Nome, descrição e idioma padrão desta instalação.",
     "FailedLoad": "Falha ao carregar a organização.",

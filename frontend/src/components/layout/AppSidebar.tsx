@@ -35,6 +35,7 @@ import { useTheme } from "next-themes"
 import { useHighContrast } from "@/components/providers/HighContrastProvider"
 import { signOut } from "next-auth/react"
 import { useTranslations } from "next-intl"
+import { LocaleSwitcher } from "@/components/layout/LocaleSwitcher"
 
 import {
   Sidebar,
@@ -126,7 +127,7 @@ export function AppSidebar({ orgName, userRole, userName, hasGroups, favorites =
           />
           <div className="grid flex-1 leading-tight group-data-[collapsible=icon]/sidebar:hidden">
             <span className="truncate text-sm font-semibold">{orgName}</span>
-            <span className="truncate text-xs text-sidebar-foreground/60">Health Portal</span>
+            <span className="truncate text-xs text-sidebar-foreground/60">{t("HealthPortal")}</span>
           </div>
         </div>
       </SidebarHeader>
@@ -287,13 +288,13 @@ export function AppSidebar({ orgName, userRole, userName, hasGroups, favorites =
           <SidebarMenuItem>
             <SidebarMenuButton onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}>
               {resolvedTheme === "dark" ? <Sun className="size-4" /> : <Moon className="size-4" />}
-              <span>{resolvedTheme === "dark" ? "Light mode" : "Dark mode"}</span>
+              <span>{resolvedTheme === "dark" ? t("LightMode") : t("DarkMode")}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton onClick={toggleHighContrast}>
               <Contrast className="size-4" />
-              <span>{highContrast ? "Standard contrast" : "High contrast"}</span>
+              <span>{highContrast ? t("StandardContrast") : t("HighContrast")}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
@@ -306,6 +307,13 @@ export function AppSidebar({ orgName, userRole, userName, hasGroups, favorites =
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+
+        <div className="flex items-center justify-between gap-2 px-2 py-1 group-data-[collapsible=icon]/sidebar:justify-center">
+          <span className="truncate text-xs text-sidebar-foreground/60 group-data-[collapsible=icon]/sidebar:hidden">
+            {t("Language")}
+          </span>
+          <LocaleSwitcher />
+        </div>
 
         {userName && (
           <div className="flex items-center gap-2 px-2 pb-1 group-data-[collapsible=icon]/sidebar:justify-center">

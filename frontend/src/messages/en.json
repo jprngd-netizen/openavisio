@@ -21,7 +21,13 @@
     "Favorites": "Favorites",
     "More": "More",
     "Collapse": "Collapse",
-    "Expand": "Expand"
+    "Expand": "Expand",
+    "Language": "Language",
+    "HealthPortal": "Health Portal",
+    "LightMode": "Light mode",
+    "DarkMode": "Dark mode",
+    "StandardContrast": "Standard contrast",
+    "HighContrast": "High contrast"
   },
   "Auth": {
     "Login": "Login",
@@ -51,7 +57,8 @@
     "SignInWithPasskey": "Sign in with a passkey",
     "PasskeyError": "Passkey sign-in failed. Please try again.",
     "PasskeyNotSupported": "Your browser doesn't support passkeys.",
-    "OpenInApp": "Open in the OpenAvisio app"
+    "OpenInApp": "Open in the OpenAvisio app",
+    "Or": "or"
   },
   "Common": {
     "Save": "Save",
@@ -106,7 +113,12 @@
     "SaveError": "Failed to save. Please try again.",
     "PatientNotFound": "Patient not found.",
     "Value": "Value",
-    "Result": "Result"
+    "Result": "Result",
+    "Impressum": "Imprint",
+    "PrivacyPolicy": "Privacy Policy",
+    "OperatedBy": "Operated by {org}",
+    "BuiltWith": "Built with",
+    "ForCaregivers": "for caregivers"
   },
   "Measurement": {
     "Title": "Measurements",
@@ -777,7 +789,7 @@
     "NotPrescriber": "Only the assigned prescriber can issue prescriptions.",
     "Loading": "Loading…"
   },
-"AdminOrganization":   {
+  "AdminOrganization": {
     "Title": "Organization",
     "Subtitle": "Name, description and default language for this installation.",
     "FailedLoad": "Failed to load organization.",

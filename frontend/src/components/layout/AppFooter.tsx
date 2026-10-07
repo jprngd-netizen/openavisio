@@ -1,17 +1,19 @@
 import Link from "next/link";
 import { Heart } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
-// Every page needs a route to the Impressum (§5 DDG) and the privacy policy —
-// a link buried in the login screen does not count. This is also the honest place
+// Every page needs a route to the imprint and the privacy policy — a link
+// buried in the login screen does not count. This is also the honest place
 // to say who runs the instance and under what licence the software is used.
-export function AppFooter({ orgName }: { orgName?: string }) {
+export async function AppFooter({ orgName }: { orgName?: string }) {
+  const t = await getTranslations("Common");
   return (
     <footer className="mt-auto shrink-0 border-t px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-xs text-muted-foreground lg:pb-4">
       <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-2 sm:flex-row">
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-          <Link href="/imprint" className="hover:text-foreground hover:underline">Impressum</Link>
+          <Link href="/imprint" className="hover:text-foreground hover:underline">{t("Impressum")}</Link>
           <span aria-hidden>·</span>
-          <Link href="/privacy" className="hover:text-foreground hover:underline">Datenschutz</Link>
+          <Link href="/privacy" className="hover:text-foreground hover:underline">{t("PrivacyPolicy")}</Link>
           <span aria-hidden>·</span>
           {/* AGPL-3.0 §13: anyone who USES this over a network may demand the
               source. Both repositories are private today, so this points at the
@@ -31,14 +33,14 @@ export function AppFooter({ orgName }: { orgName?: string }) {
         <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
           {orgName && (
             <>
-              <span>Betrieben von {orgName}</span>
+              <span>{t("OperatedBy", { org: orgName })}</span>
               <span aria-hidden>·</span>
             </>
           )}
           <span className="inline-flex items-center gap-1">
-            Gebaut mit
-            <Heart className="size-3 fill-rose-500 text-rose-500" aria-label="Liebe" />
-            für pflegende Angehörige
+            {t("BuiltWith")}
+            <Heart className="size-3 fill-rose-500 text-rose-500" aria-hidden />
+            {t("ForCaregivers")}
           </span>
         </div>
       </div>

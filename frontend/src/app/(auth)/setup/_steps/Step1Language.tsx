@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { WizardState } from "../_hooks/useWizardState";
 
 const LOCALES = [
+  { code: "pt", label: "Português", flag: "🇧🇷" },
   { code: "en", label: "English", flag: "🇬🇧" },
   { code: "de", label: "Deutsch", flag: "🇩🇪" },
 ];

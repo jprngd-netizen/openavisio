@@ -9,6 +9,7 @@ import { PasskeyButton } from "./PasskeyButton";
 
 function LoginForm() {
   const t = useTranslations("Auth");
+  const tc = useTranslations("Common");
   const router = useRouter();
   const params = useSearchParams();
   const [email, setEmail] = useState("");
@@ -98,16 +99,16 @@ function LoginForm() {
               <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">or</span>
+              <span className="bg-card px-2 text-muted-foreground">{t("Or")}</span>
             </div>
           </div>
 
           <PasskeyButton />
 
           <p className="text-center text-xs text-muted-foreground pt-2">
-            <a href="/privacy" className="underline hover:text-foreground">Datenschutzerklärung</a>
+            <a href="/privacy" className="underline hover:text-foreground">{tc("PrivacyPolicy")}</a>
             {" · "}
-            <a href="/imprint" className="underline hover:text-foreground">Impressum</a>
+            <a href="/imprint" className="underline hover:text-foreground">{tc("Impressum")}</a>
           </p>
         </div>
       </div>

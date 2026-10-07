@@ -21,7 +21,13 @@
     "Favorites": "Favoriten",
     "More": "Mehr",
     "Collapse": "Einklappen",
-    "Expand": "Ausklappen"
+    "Expand": "Ausklappen",
+    "Language": "Sprache",
+    "HealthPortal": "Gesundheitsportal",
+    "LightMode": "Heller Modus",
+    "DarkMode": "Dunkler Modus",
+    "StandardContrast": "Standardkontrast",
+    "HighContrast": "Hoher Kontrast"
   },
   "Auth": {
     "Login": "Anmelden",
@@ -51,7 +57,8 @@
     "SignInWithPasskey": "Mit Passkey anmelden",
     "PasskeyError": "Passkey-Anmeldung fehlgeschlagen. Bitte erneut versuchen.",
     "PasskeyNotSupported": "Ihr Browser unterstützt keine Passkeys.",
-    "OpenInApp": "In der OpenAvisio-App öffnen"
+    "OpenInApp": "In der OpenAvisio-App öffnen",
+    "Or": "oder"
   },
   "Common": {
     "Save": "Speichern",
@@ -106,7 +113,12 @@
     "SaveError": "Speichern fehlgeschlagen. Bitte erneut versuchen.",
     "PatientNotFound": "Patient nicht gefunden.",
     "Value": "Wert",
-    "Result": "Ergebnis"
+    "Result": "Ergebnis",
+    "Impressum": "Impressum",
+    "PrivacyPolicy": "Datenschutz",
+    "OperatedBy": "Betrieben von {org}",
+    "BuiltWith": "Gebaut mit",
+    "ForCaregivers": "für pflegende Angehörige"
   },
   "Measurement": {
     "Title": "Messungen",
@@ -777,7 +789,7 @@
     "NotPrescriber": "Nur der zugewiesene Verschreiber kann Rezepte ausstellen.",
     "Loading": "Laden…"
   },
-"AdminOrganization":   {
+  "AdminOrganization": {
     "Title": "Organisation",
     "Subtitle": "Name, Beschreibung und Standardsprache dieser Installation.",
     "FailedLoad": "Organisation konnte nicht geladen werden.",
