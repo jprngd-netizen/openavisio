@@ -144,6 +144,13 @@ export const updateCondition = async (id: string, data: any) => api.put<any>(`/a
 export const deleteCondition = async (id: string) => api.delete<void>(`/api/conditions/${id}`);
 export const mergeCondition = async (winnerId: string, otherId: string) => api.post<any>(`/api/conditions/${winnerId}/merge`, { other_id: otherId });
 
+// Encounters
+export const getEncounters = async (patientId: string) => api.get<any[]>(`/api/patients/${patientId}/encounters`);
+export const getEncounter = async (id: string) => api.get<any>(`/api/encounters/${id}`);
+export const createEncounter = async (patientId: string, data: any) => api.post<any>(`/api/patients/${patientId}/encounters`, data);
+export const updateEncounter = async (id: string, data: any) => api.patch<any>(`/api/encounters/${id}`, data);
+export const deleteEncounter = async (id: string) => api.delete<void>(`/api/encounters/${id}`);
+
 // Incidents
 export const getIncidents = async (patientId: string) => api.get<any[]>(`/api/patients/${patientId}/incidents`);
 export const getIncidentSummary = async (patientId: string) => api.get<any>(`/api/patients/${patientId}/incidents/summary`);

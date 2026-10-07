@@ -7,6 +7,7 @@ import {
   FlaskConical,
   Calendar,
   FileSignature,
+  Stethoscope,
   type LucideIcon,
 } from "lucide-react";
 
@@ -16,6 +17,7 @@ import {
 // clinical (tester feedback). Full static class strings so Tailwind keeps them.
 export const PATIENT_SECTIONS: { key: string; segment: string; Icon: LucideIcon; tint: string }[] = [
   { key: "Dashboard", segment: "dashboard", Icon: Activity, tint: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
+  { key: "Encounters", segment: "encounters", Icon: Stethoscope, tint: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400" },
   { key: "Documents", segment: "documents", Icon: FileText, tint: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
   { key: "Medications", segment: "medications", Icon: Pill, tint: "bg-orange-500/10 text-orange-600 dark:text-orange-400" },
   { key: "Conditions", segment: "conditions", Icon: ClipboardList, tint: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
