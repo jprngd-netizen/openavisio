@@ -3,8 +3,10 @@
 import { useState, useTransition } from "react";
 import { Plus, ChevronDown } from "lucide-react";
 import { createPurposeAction } from "./sharing-admin-actions";
+import { useTranslations } from "next-intl";
 
 export function CreatePurposeForm() {
+  const t = useTranslations("Sharing");
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -38,7 +40,7 @@ export function CreatePurposeForm() {
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium hover:bg-muted/50 transition-colors"
       >
-        <span className="flex items-center gap-2"><Plus className="size-4 text-muted-foreground" /> New sharing purpose</span>
+        <span className="flex items-center gap-2"><Plus className="size-4 text-muted-foreground" /> {t("newPurpose")}</span>
         <ChevronDown className={`size-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
@@ -46,32 +48,32 @@ export function CreatePurposeForm() {
           {error && <p className="text-sm text-destructive">{error}</p>}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs font-medium">Name</label>
-              <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Epilepsy Study 2026"
+              <label className="text-xs font-medium">{t("name")}</label>
+              <input required value={name} onChange={(e) => setName(e.target.value)} placeholder={t("namePlaceholder")}
                 className="w-full rounded-lg border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary" />
             </div>
             <div className="space-y-1 sm:col-span-2">
-              <label className="text-xs font-medium">What data is requested?</label>
-              <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="e.g. EEG recordings"
+              <label className="text-xs font-medium">{t("dataRequested")}</label>
+              <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t("dataRequestedPlaceholder")}
                 className="w-full rounded-lg border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary" />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium">Identification</label>
+              <label className="text-xs font-medium">{t("identification")}</label>
               <select value={mode} onChange={(e) => setMode(e.target.value)}
                 className="w-full rounded-lg border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary">
-                <option value="identified">Identified — show patient name</option>
-                <option value="anonymous">Anonymous — pseudonym only</option>
+                <option value="identified">{t("modeIdentified")}</option>
+                <option value="anonymous">{t("modeAnonymous")}</option>
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium">Expires (optional)</label>
+              <label className="text-xs font-medium">{t("expiresOptional")}</label>
               <input type="date" value={expires} onChange={(e) => setExpires(e.target.value)}
                 className="w-full rounded-lg border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary" />
             </div>
           </div>
           <button type="submit" disabled={pending}
             className="flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-50">
-            <Plus className="size-3.5" /> {pending ? "Creating…" : "Create"}
+            <Plus className="size-3.5" /> {pending ? t("creating") : t("create")}
           </button>
         </form>
       )}

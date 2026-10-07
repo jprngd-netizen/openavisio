@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { updatePrescriberAction } from "./actions";
 import { getMemedReferenceData } from "@/lib/api";
+import { useTranslations } from "next-intl";
 
 const UF_LIST = [
   "AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS",
@@ -11,9 +12,9 @@ const UF_LIST = [
 ];
 
 const SEX_OPTIONS = [
-  { value: "M", label: "Male" },
-  { value: "F", label: "Female" },
-  { value: "O", label: "Other" },
+  { value: "M", labelKey: "Male" },
+  { value: "F", labelKey: "Female" },
+  { value: "O", labelKey: "Other" },
 ];
 
 interface ReferenceItem {
@@ -34,6 +35,8 @@ export function PrescriberForm({
   cities?: { id: number; name: string }[];
   specialties?: { id: number; name: string }[];
 }) {
+  const t = useTranslations("Admin");
+  const tc = useTranslations("Common");
   const [givenName, setGivenName] = useState(initial?.given_name ?? "");
   const [familyName, setFamilyName] = useState(initial?.family_name ?? "");
   const [cpf, setCpf] = useState("");
@@ -154,15 +157,15 @@ export function PrescriberForm({
       {/* Saved indicator */}
       {saved && savedData && (
         <div className="rounded-lg border border-green-500 bg-green-50/30 dark:bg-green-950/20 px-4 py-3 text-sm">
-          <p className="font-medium text-green-700 dark:text-green-300">Prescriber saved.</p>
+          <p className="font-medium text-green-700 dark:text-green-300">{t("PrescriberSaved")}</p>
           {savedData.cpf_last4 && (
             <p className="text-xs text-muted-foreground mt-1">
-              CPF: ***{savedData.cpf_last4}
+              {t("CpfMasked", { last4: savedData.cpf_last4 })}
             </p>
           )}
           {savedData.memed_status && (
             <p className="text-xs text-muted-foreground mt-1">
-              Memed status: {savedData.memed_status}
+              {t("MemedStatus", { status: savedData.memed_status })}
             </p>
           )}
         </div>
@@ -172,7 +175,7 @@ export function PrescriberForm({
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1">
           <label className="text-sm font-medium">
-            Given name <span className="text-destructive">*</span>
+            {t("GivenName")} <span className="text-destructive">*</span>
           </label>
           <input
             type="text"
@@ -184,7 +187,7 @@ export function PrescriberForm({
         </div>
         <div className="space-y-1">
           <label className="text-sm font-medium">
-            Family name <span className="text-destructive">*</span>
+            {t("FamilyName")} <span className="text-destructive">*</span>
           </label>
           <input
             type="text"
@@ -201,22 +204,22 @@ export function PrescriberForm({
         <div className="space-y-1">
           <label className="text-sm font-medium">
             CPF {isNew && <span className="text-destructive">*</span>}
-            {!isNew && <span className="text-xs text-muted-foreground"> (leave blank to keep existing)</span>}
+            {!isNew && <span className="text-xs text-muted-foreground">{t("LeaveBlankKeep")}</span>}
           </label>
           <input
             type="text"
             value={cpf}
             onChange={(e) => setCpf(e.target.value)}
-            placeholder={isNew ? "" : "Leave blank to preserve"}
+            placeholder={isNew ? "" : t("LeaveBlankPreserve")}
             className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
           />
           {!isNew && initial?.cpf_last4 && (
-            <p className="text-xs text-muted-foreground">Current: ***{initial.cpf_last4}</p>
+            <p className="text-xs text-muted-foreground">{t("CurrentMasked", { last4: initial.cpf_last4 })}</p>
           )}
         </div>
         <div className="space-y-1">
           <label className="text-sm font-medium">
-            Birth date {isNew && <span className="text-destructive">*</span>}
+            {t("BirthDate")} {isNew && <span className="text-destructive">*</span>}
           </label>
           <input
             type="date"
@@ -229,11 +232,11 @@ export function PrescriberForm({
 
       {/* Board fields */}
       <fieldset className="rounded-lg border bg-card p-4 space-y-3">
-        <legend className="text-sm font-semibold px-1">Professional board</legend>
+        <legend className="text-sm font-semibold px-1">{t("ProfessionalBoard")}</legend>
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="space-y-1">
             <label className="text-sm font-medium">
-              Code <span className="text-destructive">*</span>
+              {t("Code")} <span className="text-destructive">*</span>
             </label>
             <input
               type="text"
@@ -246,7 +249,7 @@ export function PrescriberForm({
           </div>
           <div className="space-y-1">
             <label className="text-sm font-medium">
-              Number <span className="text-destructive">*</span>
+              {t("Number")} <span className="text-destructive">*</span>
             </label>
             <input
               type="text"
@@ -259,7 +262,7 @@ export function PrescriberForm({
           </div>
           <div className="space-y-1">
             <label className="text-sm font-medium">
-              State <span className="text-destructive">*</span>
+              {t("State")} <span className="text-destructive">*</span>
             </label>
             <select
               value={boardState}
@@ -278,15 +281,15 @@ export function PrescriberForm({
 
       {/* Memed reference data */}
       <fieldset className="rounded-lg border bg-card p-4 space-y-3">
-        <legend className="text-sm font-semibold px-1">Memed reference data</legend>
+        <legend className="text-sm font-semibold px-1">{t("MemedReferenceData")}</legend>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
-            <label className="text-sm font-medium">City</label>
+            <label className="text-sm font-medium">{t("City")}</label>
             <input
               type="text"
               value={citySearch}
               onChange={(e) => searchCities(e.target.value)}
-              placeholder="Search city…"
+              placeholder={t("SearchCity")}
               className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
             />
 {mutableCities.length > 0 && (
@@ -304,12 +307,12 @@ export function PrescriberForm({
             )}
           </div>
           <div className="space-y-1">
-            <label className="text-sm font-medium">Specialty</label>
+            <label className="text-sm font-medium">{t("Specialty")}</label>
             <input
               type="text"
               value={specialtySearch}
               onChange={(e) => searchSpecialties(e.target.value)}
-              placeholder="Search specialty…"
+              placeholder={t("SearchSpecialty")}
               className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
             />
 {mutableSpecialties.length > 0 && (
@@ -331,10 +334,10 @@ export function PrescriberForm({
 
       {/* Contact fields */}
       <fieldset className="rounded-lg border bg-card p-4 space-y-3">
-        <legend className="text-sm font-semibold px-1">Contact</legend>
+        <legend className="text-sm font-semibold px-1">{t("Contact")}</legend>
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="space-y-1">
-            <label className="text-sm font-medium">Email</label>
+            <label className="text-sm font-medium">{t("Email")}</label>
             <input
               type="email"
               value={email}
@@ -343,7 +346,7 @@ export function PrescriberForm({
             />
           </div>
           <div className="space-y-1">
-            <label className="text-sm font-medium">Phone</label>
+            <label className="text-sm font-medium">{t("Phone")}</label>
             <input
               type="text"
               value={phone}
@@ -353,7 +356,7 @@ export function PrescriberForm({
           </div>
         </div>
         <div className="space-y-1">
-          <label className="text-sm font-medium">Sex</label>
+          <label className="text-sm font-medium">{t("Sex")}</label>
           <select
             value={sex}
             onChange={(e) => setSex(e.target.value)}
@@ -361,7 +364,7 @@ export function PrescriberForm({
           >
             <option value="">—</option>
             {SEX_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
+              <option key={o.value} value={o.value}>{t(o.labelKey)}</option>
             ))}
           </select>
         </div>
@@ -369,10 +372,10 @@ export function PrescriberForm({
 
       {/* Address */}
       <fieldset className="rounded-lg border bg-card p-4 space-y-3">
-        <legend className="text-sm font-semibold px-1">Address</legend>
+        <legend className="text-sm font-semibold px-1">{t("Address")}</legend>
         <div className="grid gap-3 sm:grid-cols-6">
           <div className="space-y-1 sm:col-span-2">
-            <label className="text-sm font-medium">Postal code</label>
+            <label className="text-sm font-medium">{t("PostalCode")}</label>
             <input
               type="text"
               value={cep}
@@ -381,7 +384,7 @@ export function PrescriberForm({
             />
           </div>
           <div className="space-y-1 sm:col-span-3">
-            <label className="text-sm font-medium">Street</label>
+            <label className="text-sm font-medium">{t("Street")}</label>
             <input
               type="text"
               value={street}
@@ -390,7 +393,7 @@ export function PrescriberForm({
             />
           </div>
           <div className="space-y-1">
-            <label className="text-sm font-medium">Number</label>
+            <label className="text-sm font-medium">{t("Number")}</label>
             <input
               type="text"
               value={streetNumber}
@@ -399,7 +402,7 @@ export function PrescriberForm({
             />
           </div>
           <div className="space-y-1 sm:col-span-2">
-            <label className="text-sm font-medium">Complement</label>
+            <label className="text-sm font-medium">{t("Complement")}</label>
             <input
               type="text"
               value={complement}
@@ -408,7 +411,7 @@ export function PrescriberForm({
             />
           </div>
           <div className="space-y-1 sm:col-span-2">
-            <label className="text-sm font-medium">District</label>
+            <label className="text-sm font-medium">{t("District")}</label>
             <input
               type="text"
               value={district}
@@ -417,7 +420,7 @@ export function PrescriberForm({
             />
           </div>
           <div className="space-y-1 sm:col-span-2">
-            <label className="text-sm font-medium">City</label>
+            <label className="text-sm font-medium">{t("City")}</label>
             <input
               type="text"
               value={cityName}
@@ -426,7 +429,7 @@ export function PrescriberForm({
             />
           </div>
           <div className="space-y-1">
-            <label className="text-sm font-medium">State</label>
+            <label className="text-sm font-medium">{t("State")}</label>
             <select
               value={stateCode}
               onChange={(e) => setStateCode(e.target.value)}
@@ -443,8 +446,8 @@ export function PrescriberForm({
 
       {/* User selection */}
       <div className="space-y-1">
-        <label className="text-sm font-medium">Linked user (authorized issuer)</label>
-        <p className="text-xs text-muted-foreground">Only this user can issue prescriptions through Memed.</p>
+        <label className="text-sm font-medium">{t("LinkedUser")}</label>
+        <p className="text-xs text-muted-foreground">{t("LinkedUserHint")}</p>
         <select
           value={userId}
           onChange={(e) => setUserId(e.target.value)}
@@ -469,7 +472,7 @@ export function PrescriberForm({
         disabled={saving}
         className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
       >
-        {saving ? "Saving…" : (isNew ? "Create prescriber" : "Save prescriber")}
+        {saving ? tc("Saving") : (isNew ? t("CreatePrescriber") : t("SavePrescriber"))}
       </button>
     </form>
   );

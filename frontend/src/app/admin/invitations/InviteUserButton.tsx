@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { UserPlus, Copy, Check, X } from "lucide-react";
 import { createInvitation } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
 export function InviteUserButton() {
+  const t = useTranslations("Admin");
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [inviteUrl, setInviteUrl] = useState("");
@@ -25,7 +27,7 @@ export function InviteUserButton() {
         setEmail("");
         router.refresh();
       } catch (err: any) {
-        setError(err?.message ?? "Failed to create invitation.");
+        setError(err?.message ?? t("CreateInvitationError"));
       }
     });
   }
@@ -51,7 +53,7 @@ export function InviteUserButton() {
         className="flex items-center gap-1.5 rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-medium hover:bg-primary/90"
       >
         <UserPlus className="size-4" />
-        Invite user
+        {t("InviteUser")}
       </button>
     );
   }
@@ -59,7 +61,7 @@ export function InviteUserButton() {
   return (
     <div className="flex flex-col gap-3 rounded-lg border bg-card p-4 w-full sm:w-auto sm:min-w-80">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">Invite a new user</p>
+        <p className="text-sm font-medium">{t("InviteNewUser")}</p>
         <button onClick={close} className="text-muted-foreground hover:text-foreground">
           <X className="size-4" />
         </button>
@@ -73,7 +75,7 @@ export function InviteUserButton() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="user@example.com"
+            placeholder={t("EmailPlaceholder")}
             className="flex-1 rounded-lg border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background"
           />
           <button
@@ -81,12 +83,12 @@ export function InviteUserButton() {
             disabled={pending}
             className="rounded-lg bg-primary text-primary-foreground px-3 py-1.5 text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
           >
-            {pending ? "Sending…" : "Send"}
+            {pending ? t("Sending") : t("Send")}
           </button>
         </form>
       ) : (
         <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">Invitation created. Share this link:</p>
+          <p className="text-xs text-muted-foreground">{t("InvitationCreated")}</p>
           <div className="flex items-center gap-2 rounded-md border bg-muted/30 px-3 py-2">
             <code className="flex-1 truncate text-xs">{inviteUrl}</code>
             <button onClick={copy} className="shrink-0 text-muted-foreground hover:text-foreground">
@@ -97,7 +99,7 @@ export function InviteUserButton() {
             onClick={() => { setInviteUrl(""); setEmail(""); }}
             className="text-xs text-primary hover:underline"
           >
-            Invite another
+            {t("InviteAnother")}
           </button>
         </div>
       )}

@@ -1,56 +1,57 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { getOllamaStatus } from "@/lib/api";
 import { AiModelConfig } from "./AiModelConfig";
+import { getTranslations } from "next-intl/server";
 
 export default async function AdminOllamaPage() {
+  const t = await getTranslations("Admin");
+  const tc = await getTranslations("Common");
   const status = await getOllamaStatus().catch(() => null);
 
   return (
     <AppLayout>
-      <h1 className="text-xl font-bold mb-6">Ollama / AI Backend</h1>
+      <h1 className="text-xl font-bold mb-6">{t("OllamaTitle")}</h1>
 
       {status?.backend_type === "mistral" && (
         <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-5 py-4 text-sm text-amber-900">
-          <strong>Data processor notice:</strong> AI_BACKEND is set to <span className="font-mono">mistral</span>.
-          Patient document text is sent to Mistral AI (Mistral AI SAS, Paris, France — EU).
-          A written Data Processor Agreement (Auftragsverarbeitungsvertrag) is required before processing real patient data.{" "}
+          <strong>{t("ProcessorNotice")}</strong> {t("ProcessorNoticeBefore")} <span className="font-mono">mistral</span>{t("ProcessorNoticeAfter")}{" "}
           <a
             href="https://mistral.ai/terms/dpa"
             target="_blank"
             rel="noopener noreferrer"
             className="underline font-medium"
           >
-            Sign the Mistral DPA
+            {t("SignMistralDpa")}
           </a>
         </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
         <div className="rounded-xl border bg-card p-5">
-          <div className="text-xs text-muted-foreground mb-1">Backend</div>
+          <div className="text-xs text-muted-foreground mb-1">{t("Backend")}</div>
           <div className="text-sm font-mono truncate">{status?.backend ?? "—"}</div>
         </div>
         <div className="rounded-xl border bg-card p-5">
-          <div className="text-xs text-muted-foreground mb-1">Status</div>
+          <div className="text-xs text-muted-foreground mb-1">{tc("Status")}</div>
           <div className={`text-lg font-semibold ${status?.connected ? "text-green-600" : "text-red-500"}`}>
-            {status?.connected ? "Connected" : "Disconnected"}
+            {status?.connected ? t("Connected") : t("Disconnected")}
           </div>
         </div>
         <div className="rounded-xl border bg-card p-5">
-          <div className="text-xs text-muted-foreground mb-1">URL</div>
+          <div className="text-xs text-muted-foreground mb-1">{t("URL")}</div>
           <div className="text-sm font-mono truncate">{status?.url ?? "—"}</div>
         </div>
       </div>
 
       {status?.models && status.models.length > 0 && (
         <div className="rounded-xl border bg-card overflow-hidden">
-          <div className="px-4 py-3 border-b bg-muted/50 font-medium text-sm">Available Models</div>
+          <div className="px-4 py-3 border-b bg-muted/50 font-medium text-sm">{t("AvailableModels")}</div>
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/30">
               <tr>
-                <th className="px-4 py-2 text-left font-medium text-xs">Model</th>
-                <th className="px-4 py-2 text-left font-medium text-xs">Size</th>
-                <th className="px-4 py-2 text-left font-medium text-xs">Modified</th>
+                <th className="px-4 py-2 text-left font-medium text-xs">{t("Model")}</th>
+                <th className="px-4 py-2 text-left font-medium text-xs">{t("Size")}</th>
+                <th className="px-4 py-2 text-left font-medium text-xs">{t("Modified")}</th>
               </tr>
             </thead>
             <tbody className="divide-y">

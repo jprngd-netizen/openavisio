@@ -1,6 +1,7 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { auth } from "@/auth";
 import { LicenseForm } from "./LicenseForm";
+import { getTranslations } from "next-intl/server";
 
 const API = process.env.API_URL || "http://localhost:8000";
 
@@ -24,6 +25,7 @@ const THIRD_PARTY = [
 
 export default async function LicensePage() {
   const session = await auth();
+  const t = await getTranslations("Admin");
   const accessToken = (session as any)?.accessToken;
 
   let licenseInfo = {
@@ -52,9 +54,9 @@ export default async function LicensePage() {
   return (
     <AppLayout>
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">License</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("LicenseTitle")}</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Entitlement tier and open-source license information.
+          {t("LicenseSubtitle")}
         </p>
       </div>
 
@@ -63,27 +65,22 @@ export default async function LicensePage() {
       <div className="rounded-xl border bg-card p-6 space-y-3">
         <h2 className="font-medium text-sm">OpenAvisio</h2>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Copyright © 2024–2026 OpenAvisio Contributors. This program is free software: you can
-          redistribute it and/or modify it under the terms of the GNU Affero General Public License
-          as published by the Free Software Foundation, either version 3 of the License, or (at
-          your option) any later version.
+          {t("AgplCopyright")}
         </p>
         <p className="text-sm text-muted-foreground leading-relaxed">
-          This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
-          without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-          See the GNU Affero General Public License for more details.
+          {t("AgplWarranty")}
         </p>
       </div>
 
       <div className="rounded-xl border bg-card overflow-hidden">
         <div className="px-4 py-3 border-b bg-muted/50 font-medium text-sm">
-          Third-party Open Source Components
+          {t("ThirdPartyComponents")}
         </div>
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/30">
             <tr>
-              <th className="px-4 py-2 text-left font-medium text-xs">Component</th>
-              <th className="px-4 py-2 text-left font-medium text-xs">License</th>
+              <th className="px-4 py-2 text-left font-medium text-xs">{t("Component")}</th>
+              <th className="px-4 py-2 text-left font-medium text-xs">{t("LicenseColumn")}</th>
             </tr>
           </thead>
           <tbody className="divide-y">

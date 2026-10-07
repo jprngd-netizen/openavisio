@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { deleteLicenseAction, uploadLicenseAction, type LicenseInfo } from "./actions";
 
 function formatDate(iso: string | null) {
@@ -14,28 +15,31 @@ function daysRemaining(iso: string | null): number | null {
 }
 
 function TierBadge({ info }: { info: LicenseInfo }) {
+  const t = useTranslations("Admin");
   if (info.tier === "commercial" && !info.is_grace_period) {
     return (
       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-        Commercial
+        {t("LicCommercial")}
       </span>
     );
   }
   if (info.tier === "commercial" && info.is_grace_period) {
     return (
       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
-        Commercial (grace period)
+        {t("LicCommercialGrace")}
       </span>
     );
   }
   return (
     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
-      Personal
+      {t("LicPersonal")}
     </span>
   );
 }
 
 export function LicenseForm({ initialInfo }: { initialInfo: LicenseInfo }) {
+  const t = useTranslations("Admin");
+  const tc = useTranslations("Common");
   const [info, setInfo] = useState(initialInfo);
   const [token, setToken] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -54,13 +58,13 @@ export function LicenseForm({ initialInfo }: { initialInfo: LicenseInfo }) {
       setError(result.error);
     } else {
       setToken("");
-      setSuccess("License uploaded successfully.");
+      setSuccess(t("LicenseUploaded"));
       if (result.info) setInfo(result.info);
     }
   }
 
   async function handleDelete() {
-    if (!confirm("Remove the current license? The installation will revert to Personal tier limits.")) return;
+    if (!confirm(t("LicenseRemoveConfirm"))) return;
     setDeleting(true);
     setError("");
     setSuccess("");
@@ -69,7 +73,7 @@ export function LicenseForm({ initialInfo }: { initialInfo: LicenseInfo }) {
     if (result.error) {
       setError(result.error);
     } else {
-      setSuccess("License removed.");
+      setSuccess(t("LicenseRemoved"));
       if (result.info) setInfo(result.info);
     }
   }
@@ -81,9 +85,9 @@ export function LicenseForm({ initialInfo }: { initialInfo: LicenseInfo }) {
       <div className="rounded-xl border bg-card p-6 space-y-4">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <h2 className="font-medium text-sm">Current tier</h2>
+            <h2 className="font-medium text-sm">{t("CurrentTier")}</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Determines Patient and User limits for this installation.
+              {t("TierHint")}
             </p>
           </div>
           <TierBadge info={info} />
@@ -93,23 +97,23 @@ export function LicenseForm({ initialInfo }: { initialInfo: LicenseInfo }) {
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             {info.issued_to && (
               <>
-                <dt className="text-muted-foreground">Issued to</dt>
+                <dt className="text-muted-foreground">{t("IssuedTo")}</dt>
                 <dd className="font-medium">{info.issued_to}</dd>
               </>
             )}
             {info.expires_at && (
               <>
-                <dt className="text-muted-foreground">Expires</dt>
+                <dt className="text-muted-foreground">{t("Expires")}</dt>
                 <dd className="font-medium">{formatDate(info.expires_at)}</dd>
-                <dt className="text-muted-foreground">Days remaining</dt>
+                <dt className="text-muted-foreground">{t("DaysRemaining")}</dt>
                 <dd className={`font-medium ${days !== null && days <= 30 ? "text-yellow-700 dark:text-yellow-300" : ""}`}>
-                  {days !== null && days > 0 ? `${days} days` : "Expired"}
+                  {days !== null && days > 0 ? t("DaysCount", { count: days }) : t("StatusExpired")}
                 </dd>
               </>
             )}
             {info.is_grace_period && info.grace_ends_at && (
               <>
-                <dt className="text-muted-foreground">Grace period ends</dt>
+                <dt className="text-muted-foreground">{t("GracePeriodEnds")}</dt>
                 <dd className="font-medium text-yellow-700 dark:text-yellow-300">
                   {formatDate(info.grace_ends_at)}
                 </dd>
@@ -117,8 +121,8 @@ export function LicenseForm({ initialInfo }: { initialInfo: LicenseInfo }) {
             )}
             {!info.is_grace_period && info.tier === "personal" && info.expires_at && (
               <>
-                <dt className="text-muted-foreground text-destructive">Status</dt>
-                <dd className="font-medium text-destructive">Expired — reverted to Personal tier</dd>
+                <dt className="text-muted-foreground text-destructive">{tc("Status")}</dt>
+                <dd className="font-medium text-destructive">{t("RevertedToPersonal")}</dd>
               </>
             )}
           </dl>
@@ -126,7 +130,7 @@ export function LicenseForm({ initialInfo }: { initialInfo: LicenseInfo }) {
 
         {!info.has_license && (
           <p className="text-xs text-muted-foreground">
-            No license installed. Limited to {10} Patients and {3} Users.
+            {t("NoLicenseLimits", { patients: 10, users: 3 })}
           </p>
         )}
 
@@ -140,16 +144,16 @@ export function LicenseForm({ initialInfo }: { initialInfo: LicenseInfo }) {
             disabled={deleting}
             className="text-sm text-destructive hover:underline disabled:opacity-50"
           >
-            {deleting ? "Removing…" : "Remove license"}
+            {deleting ? t("Removing") : t("RemoveLicense")}
           </button>
         )}
       </div>
 
       <div className="rounded-xl border bg-card p-6 space-y-4">
         <div>
-          <h2 className="font-medium text-sm">Upload license</h2>
+          <h2 className="font-medium text-sm">{t("UploadLicenseTitle")}</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Paste the signed license token provided by OpenAvisio.
+            {t("UploadLicenseHint")}
           </p>
         </div>
 
@@ -168,7 +172,7 @@ export function LicenseForm({ initialInfo }: { initialInfo: LicenseInfo }) {
             disabled={uploading || !token.trim()}
             className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
           >
-            {uploading ? "Uploading…" : "Upload license"}
+            {uploading ? t("Uploading") : t("UploadLicense")}
           </button>
         </form>
       </div>

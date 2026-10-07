@@ -2,11 +2,13 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { auth } from "@/auth";
 import { getPrescriber, getAdminUsers, getMemedReferenceData, getMemedCredits } from "@/lib/api";
 import { PrescriberForm } from "./PrescriberForm";
+import { getTranslations } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPrescriberPage() {
   const session = await auth();
+  const t = await getTranslations("Admin");
 
   let prescriber: any = null;
   let isNew = false;
@@ -32,11 +34,11 @@ export default async function AdminPrescriberPage() {
   return (
     <AppLayout>
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Prescriber</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("PrescriberTitle")}</h1>
         <p className="text-sm text-muted-foreground mt-1">
           {isNew
-            ? "Configure the healthcare professional authorized to issue prescriptions."
-            : "Edit the registered prescriber details."}
+            ? t("PrescriberNewSubtitle")
+            : t("PrescriberEditSubtitle")}
         </p>
       </div>
 
@@ -52,7 +54,7 @@ export default async function AdminPrescriberPage() {
 
       {credits && (
         <div className="rounded-xl border bg-card p-6 space-y-3">
-          <h2 className="font-medium text-sm">Memed signed prescriptions</h2>
+          <h2 className="font-medium text-sm">{t("MemedSignedPrescriptions")}</h2>
           <p className="text-3xl font-semibold tracking-tight">{credits.signed_count}</p>
           <p className="text-sm text-muted-foreground">{credits.note}</p>
         </div>

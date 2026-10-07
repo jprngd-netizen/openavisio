@@ -1,6 +1,7 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { getSystemInfo } from "@/lib/api";
 import { AlertCircle, Server, Database, Zap, HardDrive, Users } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,8 @@ function DiskBar({ pct }: { pct: number }) {
 }
 
 export default async function AdminSystemPage() {
+  const t = await getTranslations("Admin");
+  const tc = await getTranslations("Common");
   let info: any = null;
   let error = false;
 
@@ -47,22 +50,22 @@ export default async function AdminSystemPage() {
 
   return (
     <AppLayout>
-      <h1 className="text-xl font-bold">System</h1>
+      <h1 className="text-xl font-bold">{t("SystemTitle")}</h1>
 
       {error && (
         <div className="flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm">
           <AlertCircle className="size-4 shrink-0" />
-          Failed to load system information.
+          {t("SystemLoadError")}
         </div>
       )}
 
       {info && (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {/* Runtime */}
-          <Card title="Runtime" icon={Server}>
-            <Row label="Version" value={info.runtime?.app_version} />
+          <Card title={t("Runtime")} icon={Server}>
+            <Row label={t("Version")} value={info.runtime?.app_version} />
             <Row
-              label="Commit"
+              label={t("Commit")}
               value={
                 info.runtime?.commit && info.runtime.commit !== "unknown" ? (
                   <code className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{info.runtime.commit}</code>
@@ -72,24 +75,24 @@ export default async function AdminSystemPage() {
             <Row label="Python" value={info.runtime?.python_version} />
             <Row label="FastAPI" value={info.runtime?.fastapi_version} />
             <Row label="Pydantic" value={info.runtime?.pydantic_version} />
-            <Row label="Platform" value={info.runtime?.platform} />
+            <Row label={t("Platform")} value={info.runtime?.platform} />
             <Row label="PID" value={info.runtime?.pid} />
-            <Row label="Uptime" value={info.runtime?.process_uptime} />
+            <Row label={t("Uptime")} value={info.runtime?.process_uptime} />
           </Card>
 
           {/* Counts */}
-          <Card title="Data" icon={Users}>
-            <Row label="Users" value={info.counts?.users} />
-            <Row label="Patients" value={info.counts?.patients} />
-            <Row label="Documents" value={info.counts?.documents} />
+          <Card title={t("Data")} icon={Users}>
+            <Row label={t("Users")} value={info.counts?.users} />
+            <Row label={t("Patients")} value={info.counts?.patients} />
+            <Row label={t("Documents")} value={info.counts?.documents} />
           </Card>
 
           {/* Database */}
           <Card title="PostgreSQL" icon={Database}>
-            <Row label="Size" value={info.database?.size} />
-            <Row label="Tables" value={info.database?.tables} />
+            <Row label={t("Size")} value={info.database?.size} />
+            <Row label={t("Tables")} value={info.database?.tables} />
             <Row
-              label="Version"
+              label={t("Version")}
               value={
                 <span className="text-xs text-muted-foreground font-normal">
                   {info.database?.version?.split(" ").slice(0, 2).join(" ")}
@@ -101,11 +104,11 @@ export default async function AdminSystemPage() {
           {/* Redis */}
           {info.redis && Object.keys(info.redis).length > 0 && (
             <Card title="Redis" icon={Zap}>
-              <Row label="Version" value={info.redis?.version} />
-              <Row label="Memory used" value={info.redis?.used_memory_human} />
-              <Row label="Clients" value={info.redis?.connected_clients} />
+              <Row label={t("Version")} value={info.redis?.version} />
+              <Row label={t("MemoryUsed")} value={info.redis?.used_memory_human} />
+              <Row label={t("Clients")} value={info.redis?.connected_clients} />
               <Row
-                label="Uptime"
+                label={t("Uptime")}
                 value={(() => {
                   const s = info.redis?.uptime_in_seconds ?? 0;
                   const h = Math.floor(s / 3600);
@@ -118,13 +121,13 @@ export default async function AdminSystemPage() {
 
           {/* Storage */}
           {info.storage && Object.keys(info.storage).length > 0 && (
-            <Card title="Document Storage" icon={HardDrive}>
-              <Row label="Total" value={info.storage?.total} />
-              <Row label="Used" value={info.storage?.used} />
-              <Row label="Free" value={info.storage?.free} />
+            <Card title={t("DocumentStorage")} icon={HardDrive}>
+              <Row label={tc("Total")} value={info.storage?.total} />
+              <Row label={t("Used")} value={info.storage?.used} />
+              <Row label={t("Free")} value={info.storage?.free} />
               <div>
                 <div className="flex justify-between text-xs text-muted-foreground mb-0.5">
-                  <span>Usage</span>
+                  <span>{t("Usage")}</span>
                   <span>{info.storage?.pct}%</span>
                 </div>
                 <DiskBar pct={info.storage?.pct ?? 0} />

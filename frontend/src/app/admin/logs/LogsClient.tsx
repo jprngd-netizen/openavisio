@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface LogEntry {
   ts: string;
@@ -70,6 +71,8 @@ function LevelChip({ level, active, onClick }: { level: string; active: boolean;
 }
 
 export function LogsClient() {
+  const tr = useTranslations("Admin");
+  const tc = useTranslations("Common");
   const [tab, setTab] = useState<"logs" | "tasks" | "jobs">("logs");
 
   // -- Log stream state --
@@ -180,7 +183,7 @@ export function LogsClient() {
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            {t === "logs" ? "Application Logs" : t === "tasks" ? "Processing Pipeline" : "All Jobs"}
+            {t === "logs" ? tr("TabLogs") : t === "tasks" ? tr("TabTasks") : tr("TabJobs")}
           </button>
         ))}
       </div>
@@ -189,13 +192,13 @@ export function LogsClient() {
         <div className="flex flex-col gap-3">
           {/* Toolbar */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs text-muted-foreground mr-1">Level:</span>
+            <span className="text-xs text-muted-foreground mr-1">{tr("Level")}</span>
             {LEVELS.map((l) => (
               <LevelChip key={l} level={l} active={activeLevel.has(l)} onClick={() => toggleLevel(l)} />
             ))}
             <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
               <span className={`size-1.5 rounded-full ${connected ? "bg-green-500" : "bg-muted-foreground"}`} />
-              {connected ? "Live" : "Connecting…"}
+              {connected ? tr("Live") : tr("Connecting")}
             </div>
           </div>
 
@@ -207,7 +210,7 @@ export function LogsClient() {
           >
             {filteredLogs.length === 0 ? (
               <div className="flex items-center justify-center h-full text-zinc-500">
-                {connected ? "Waiting for log entries…" : "Connecting to log stream…"}
+                {connected ? tr("WaitingLogs") : tr("ConnectingStream")}
               </div>
             ) : (
               <table className="w-full border-collapse">
@@ -246,7 +249,7 @@ export function LogsClient() {
               }}
               className="self-end text-xs text-muted-foreground underline"
             >
-              Scroll to bottom
+              {tr("ScrollToBottom")}
             </button>
           )}
         </div>
@@ -255,17 +258,17 @@ export function LogsClient() {
       {tab === "tasks" && (
         <div className="rounded-xl border bg-card overflow-hidden">
           {tasks.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground text-sm">No pipeline tasks found.</div>
+            <div className="text-center py-12 text-muted-foreground text-sm">{tr("NoPipelineTasks")}</div>
           ) : (
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/50">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium">Document</th>
-                  <th className="px-4 py-3 text-left font-medium">Patient</th>
-                  <th className="px-4 py-3 text-left font-medium">Stage</th>
-                  <th className="px-4 py-3 text-left font-medium">Status</th>
-                  <th className="px-4 py-3 text-left font-medium">Updated</th>
-                  <th className="px-4 py-3 text-left font-medium">Error</th>
+                  <th className="px-4 py-3 text-left font-medium">{tr("Document")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{tr("Patient")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{tr("Stage")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{tc("Status")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{tr("Updated")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{tr("Error")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -298,17 +301,17 @@ export function LogsClient() {
       {tab === "jobs" && (
         <div className="rounded-xl border bg-card overflow-hidden">
           {taskRuns.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground text-sm">No task runs recorded yet.</div>
+            <div className="text-center py-12 text-muted-foreground text-sm">{tr("NoTaskRuns")}</div>
           ) : (
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/50">
                 <tr>
-                  <th className="px-4 py-3 text-left font-medium">Task</th>
-                  <th className="px-4 py-3 text-left font-medium">Args</th>
-                  <th className="px-4 py-3 text-left font-medium">Status</th>
-                  <th className="px-4 py-3 text-left font-medium">Started</th>
-                  <th className="px-4 py-3 text-left font-medium">Finished</th>
-                  <th className="px-4 py-3 text-left font-medium">Error</th>
+                  <th className="px-4 py-3 text-left font-medium">{tr("Task")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{tr("Args")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{tc("Status")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{tr("Started")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{tr("Finished")}</th>
+                  <th className="px-4 py-3 text-left font-medium">{tr("Error")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">

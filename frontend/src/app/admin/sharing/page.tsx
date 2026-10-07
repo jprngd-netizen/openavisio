@@ -4,8 +4,10 @@ import { formatDate } from "@/lib/utils";
 import { AlertCircle, FolderOpen } from "lucide-react";
 import Link from "next/link";
 import { CreatePurposeForm } from "./CreatePurposeForm";
+import { getTranslations } from "next-intl/server";
 
 export default async function AdminSharingPage() {
+  const t = await getTranslations("Sharing");
   let purposes: any[] = [];
   let fetchError = false;
   try {
@@ -18,9 +20,9 @@ export default async function AdminSharingPage() {
     <AppLayout>
       <div className="flex items-start justify-between gap-4 flex-wrap mb-4">
         <div>
-          <h1 className="text-xl font-bold">Data sharing</h1>
+          <h1 className="text-xl font-bold">{t("title")}</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Request files (e.g. EEG data) from patients for a study. Caregivers choose which files to share and consent on the patient page.
+            {t("adminSubtitle")}
           </p>
         </div>
       </div>
@@ -32,23 +34,23 @@ export default async function AdminSharingPage() {
       {fetchError && (
         <div className="flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm">
           <AlertCircle className="size-4 shrink-0" />
-          Failed to load sharing purposes. You may not have permission, or the server is unavailable.
+          {t("adminLoadError")}
         </div>
       )}
 
       {!fetchError && purposes.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">No sharing purposes yet.</div>
+        <div className="text-center py-12 text-muted-foreground">{t("adminNoPurposes")}</div>
       ) : !fetchError ? (
         <div className="rounded-xl border bg-card overflow-hidden">
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/50">
               <tr>
-                <th className="px-4 py-3 text-left font-medium">Name</th>
-                <th className="px-4 py-3 text-left font-medium">Requested</th>
-                <th className="px-4 py-3 text-left font-medium">Identification</th>
-                <th className="px-4 py-3 text-left font-medium">Status</th>
-                <th className="px-4 py-3 text-left font-medium">Files</th>
-                <th className="px-4 py-3 text-left font-medium">Created</th>
+                <th className="px-4 py-3 text-left font-medium">{t("name")}</th>
+                <th className="px-4 py-3 text-left font-medium">{t("requested")}</th>
+                <th className="px-4 py-3 text-left font-medium">{t("identification")}</th>
+                <th className="px-4 py-3 text-left font-medium">{t("status")}</th>
+                <th className="px-4 py-3 text-left font-medium">{t("files")}</th>
+                <th className="px-4 py-3 text-left font-medium">{t("created")}</th>
                 <th className="px-4 py-3" />
               </tr>
             </thead>
@@ -67,7 +69,7 @@ export default async function AdminSharingPage() {
                   <td className="px-4 py-3 text-xs text-muted-foreground">{formatDate(p.created_at)}</td>
                   <td className="px-4 py-3 text-right">
                     <Link href={`/admin/sharing/${p.id}`} className="inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-muted">
-                      <FolderOpen className="size-3.5" /> View files
+                      <FolderOpen className="size-3.5" /> {t("viewFiles")}
                     </Link>
                   </td>
                 </tr>
