@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createEncounter, updateEncounter, deleteEncounter } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { MEASUREMENT_TYPES, measurementType, computeBmi } from "@/lib/measurementTypes";
+import { CidCombobox } from "@/components/CidCombobox";
 import { Plus, X, Pencil, Trash2, Activity } from "lucide-react";
 
 const inputCls = "w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background";
@@ -315,11 +316,17 @@ export function EncountersView({ patientId, encounters }: { patientId: string; e
               </div>
               <div className="space-y-1.5">
                 <label className={labelCls}>{t("Cid10Display")}</label>
-                <input
-                  type="text"
-                  value={form.cid10_display}
-                  onChange={(e) => set("cid10_display", e.target.value)}
+                <CidCombobox
                   className={inputCls}
+                  value={form.cid10_display}
+                  onSelect={(opt, text) => {
+                    if (opt) {
+                      set("cid10_code", opt.code);
+                      set("cid10_display", opt.description);
+                    } else {
+                      set("cid10_display", text);
+                    }
+                  }}
                 />
               </div>
             </div>
