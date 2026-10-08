@@ -175,9 +175,11 @@ retention schedule.
   weekends), which constrains manual end-to-end testing.
 
 **Regulatory:**
-- Issuing prescriptions moves OpenAvisio outside the current "not a medical device"
-  positioning (see `docs/regulatory-positioning.md`). The prescription
-  feature is closer to what a medical device is under EU MDR 2017/745 and
-  Brazilian ANVISA regulations. This ADR does not assert compliance. A formal
-  regulatory review is recommended before any production deployment of the
-  prescription feature.
+- Issuing a prescription is a regulated act but does **not** make OpenAvisio a
+  medical device: the prescriber is the issuer (RDC ANVISA 1.000/2025, art. 6)
+  and Memed is the regulated "electronic prescription service" (arts. 4–5, 17).
+  A formal review of this question is in
+  `docs/research-prescription-regulatory.md` (2026-10-08) and summarised in
+  `docs/regulatory-positioning.md`. Its conditions must hold — notably: no
+  clinical decision support, no distribution, Memed in production, qualified
+  ICP-Brasil signing. This ADR does not assert compliance.

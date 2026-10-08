@@ -110,17 +110,38 @@ non-device side.
 - A **formal regulatory review** is planned as the product matures (budgeted
   under legal/data-protection).
 
-## Prescription issuing (Memed integration, 2026-10-05)
+## Prescription issuing (Memed integration)
 
-Issuing medical prescriptions through the Memed integration (ADR-036) moves
-OpenAvisio into territory that the "not a medical device" positioning above
-does **not** cover. Generating and issuing a signed prescription document is
-a regulated act in most jurisdictions, including Brazil (ANVISA RDC 1000/25)
-and the EU (MDR 2017/745).
+Issuing a medical prescription is a **regulated act**, but it does **not** by
+itself turn OpenAvisio into a medical device. A formal review of this question
+(Brazil + EU, primary sources) is in `docs/research-prescription-regulatory.md`
+(2026-10-08). Its conclusions:
 
-**This feature is outside the current "not a medical device" claim and
-requires a formal regulatory review before any production deployment.** The
-review should determine whether issuing prescriptions through the platform
-triggers medical device classification, and if so, what conformity assessment
-route applies. This note does not constitute legal advice or a compliance
-assertion.
+- **The prescriber is the issuer, not the software.** RDC ANVISA 1.000/2025,
+  art. 6: issuing the electronic prescription is the prescriber's exclusive
+  responsibility. OpenAvisio is a tool; the physician remains the author.
+- **Memed is the regulated party, not OpenAvisio.** Memed acts as the
+  "electronic prescription service" integrated to the SNCR (RDC 1.000/2025,
+  arts. 4–5, 17) and handles SNCR numbering and ICP-Brasil signing. OpenAvisio
+  must **not** re-implement the SNCR — doing so would make it the regulated
+  intermediary.
+- **Record/communication software is out of SaMD scope.** A record that only
+  stores, displays and transmits the prescriber's prescription stays outside
+  RDC 657/2022 (ANVISA Q&A) and, in the EU, outside MDSW (MDR 2017/745 +
+  MDCG 2019-11). The line is **clinical decision support**: automatic triage,
+  diagnosis/treatment suggestions or dose calculation would trigger SaMD/MDSW
+  and must not be added.
+- **A qualified ICP-Brasil signature** is required for controlled substances
+  (Lei 14.063/2020; RDC 1.000/2025, art. 8) — provided by the prescriber's own
+  BirdID through Memed.
+
+**Conditions for personal/family use (a single prescriber):** run Memed in
+production (not homologation); sign with a qualified ICP-Brasil certificate;
+use the official ANVISA layouts with SNCR numbering; retain the signed PDF;
+add no clinical decision support; and do not distribute the software.
+
+**Out of scope / NO-GO without a full conformity route:** distributing the
+software, serving third-party patients, or adding clinical decision support.
+
+This note is not legal advice. It supersedes the earlier "requires a formal
+regulatory review" placeholder in ADR-036 — that review now exists.
