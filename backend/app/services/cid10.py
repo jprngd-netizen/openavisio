@@ -34,6 +34,9 @@ def search(query: str, limit: int = 20) -> list[dict]:
     if not q:
         return []
     nq = _norm(q)
+    # Codes are matched without the separator dot, so a code typed from memory
+    # ("F320") still finds the catalogue entry ("F32.0").
+    qn = q.lower().replace(".", "")
     exact: list[dict] = []
     prefix: list[dict] = []
     contains: list[dict] = []
@@ -42,9 +45,10 @@ def search(query: str, limit: int = 20) -> list[dict]:
         code = e["code"]
         if code in seen:
             continue
-        if code.lower() == nq:
+        cn = code.lower().replace(".", "")
+        if cn == qn:
             exact.append(e)
-        elif code.lower().startswith(nq):
+        elif cn.startswith(qn):
             prefix.append(e)
         elif nq in _norm(e["description"]):
             contains.append(e)

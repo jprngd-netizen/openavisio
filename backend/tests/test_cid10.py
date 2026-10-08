@@ -47,5 +47,19 @@ async def test_cid10_search_by_description_is_accent_insensitive(client: AsyncCl
     assert "I10" in codes
 
 
+async def test_cid10_search_by_code_without_dot(client: AsyncClient, db: AsyncSession) -> None:
+    await _admin(db, "admin_cid3@test.com")
+    auth = await _auth(client, "admin_cid3@test.com")
+
+    # Codes typed from memory, without the separator dot.
+    r = await client.get("/api/cid10/search", headers=auth, params={"q": "F320"})
+    assert r.status_code == 200, r.text
+    assert r.json() and r.json()[0]["code"] == "F32.0"
+
+    r2 = await client.get("/api/cid10/search", headers=auth, params={"q": "a000"})
+    assert r2.status_code == 200, r2.text
+    assert r2.json() and r2.json()[0]["code"] == "A00.0"
+
+
 async def test_cid10_search_requires_auth(client: AsyncClient, db: AsyncSession) -> None:
     assert (await client.get("/api/cid10/search", params={"q": "I10"})).status_code == 401
