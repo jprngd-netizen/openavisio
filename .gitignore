@@ -29,6 +29,8 @@ yarn-debug.log*
 
 # Data
 data/
+!backend/app/data/
+!backend/app/data/**
 *.db
 
 # IDE
