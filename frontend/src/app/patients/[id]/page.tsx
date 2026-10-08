@@ -7,17 +7,18 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { PATIENT_SECTIONS } from "@/lib/patientSections";
 import { PatientPhotoEditor } from "@/components/PatientPhotoEditor";
 import { UploadPanel } from "./documents/UploadPanel";
-import { Cake, Venus, Mars, User as UserIcon, HeartHandshake, ChevronRight, CalendarDays, Settings, Upload, Pencil, Printer, type LucideIcon } from "lucide-react";
+import { Cake, Venus, Mars, User as UserIcon, HeartHandshake, ChevronRight, CalendarDays, Settings, Upload, Pencil, Printer, ClipboardList, type LucideIcon } from "lucide-react";
 import { Suspense } from "react";
 import { CreatedBanner } from "./CreatedBanner";
 import { FavoriteStar } from "@/components/FavoriteStar";
 
 export default async function PatientDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const [patient, t, td, locale] = await Promise.all([
+  const [patient, t, td, to, locale] = await Promise.all([
     getPatient(id).catch(() => null),
     getTranslations("Patient"),
     getTranslations("DocumentsPage"),
+    getTranslations("Occupational"),
     getLocale(),
   ]);
   if (!patient) notFound();
@@ -111,6 +112,20 @@ export default async function PatientDetailsPage({ params }: { params: Promise<{
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
+        {/* Occupational health record — its own entry point alongside the chart sections. */}
+        <Link
+          href={`/patients/${id}/prontuario`}
+          className="group flex items-center gap-4 rounded-2xl border bg-card p-4 transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-primary/30"
+        >
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
+            <ClipboardList className="size-5" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold">{to("Title")}</div>
+            <div className="truncate text-xs text-muted-foreground">{to("Subtitle")}</div>
+          </div>
+          <ChevronRight className="size-5 shrink-0 text-muted-foreground/50 transition-transform group-hover:translate-x-0.5" />
+        </Link>
         {PATIENT_SECTIONS.map(({ key, segment, Icon, tint }) => (
           <Link
             key={segment}

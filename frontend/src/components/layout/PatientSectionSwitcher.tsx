@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronDown, LayoutGrid, Settings, Check } from "lucide-react";
+import { ChevronDown, LayoutGrid, Settings, Check, ClipboardList } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { PATIENT_SECTIONS } from "@/lib/patientSections";
 
@@ -13,6 +13,7 @@ import { PATIENT_SECTIONS } from "@/lib/patientSections";
 export function PatientSectionSwitcher() {
   const pathname = usePathname();
   const tp = useTranslations("Patient");
+  const to = useTranslations("Occupational");
   const [open, setOpen] = useState(false);
 
   const m = pathname.match(/^\/patients\/([^/]+)(?:\/([^/]+))?/);
@@ -23,6 +24,7 @@ export function PatientSectionSwitcher() {
   const items = [
     { segment: null as string | null, href: `/patients/${patientId}`, label: tp("Overview"), Icon: LayoutGrid, tint: "bg-primary/10 text-primary" },
     ...PATIENT_SECTIONS.map((s) => ({ segment: s.segment, href: `/patients/${patientId}/${s.segment}`, label: tp(s.key), Icon: s.Icon, tint: s.tint })),
+    { segment: "prontuario", href: `/patients/${patientId}/prontuario`, label: to("Title"), Icon: ClipboardList, tint: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400" },
     { segment: "manage", href: `/patients/${patientId}/manage`, label: tp("Manage"), Icon: Settings, tint: "bg-muted text-muted-foreground" },
   ];
   const current = items.find((i) => i.segment === segment) ?? items[0];
