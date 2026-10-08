@@ -14,6 +14,7 @@ from app.routers import (
     auth,
     calendar,
     chat,
+    clinical_history,
     conditions,
     correspondents,
     dashboard,
@@ -75,6 +76,7 @@ app.include_router(groups.router, prefix="/api", tags=["groups"])
 app.include_router(medications.router, prefix="/api", tags=["medications"])
 app.include_router(conditions.router, prefix="/api", tags=["conditions"])
 app.include_router(encounters.router, prefix="/api", tags=["encounters"])
+app.include_router(clinical_history.router, prefix="/api", tags=["clinical-history"])
 app.include_router(access.router, prefix="/api", tags=["access"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(organization.router, prefix="/api", tags=["organization"])

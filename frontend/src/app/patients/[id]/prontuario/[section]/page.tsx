@@ -1,15 +1,17 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Breadcrumb } from "@/components/Breadcrumb";
-import { getPatient, getOrganization } from "@/lib/api";
+import { getPatient, getOrganization, getConditions, getMedications, getClinicalHistory } from "@/lib/api";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Info } from "lucide-react";
 import { OCCUPATIONAL_ITEM_BY_SLUG } from "@/lib/occupationalSections";
 import { CoverView } from "./CoverView";
+import { ClinicalHistoryView } from "./ClinicalHistoryView";
 
 // Per-section page. Resolves the section slug from the taxonomy; an unknown
-// slug is a 404. Section #1 ("cover") renders the real "Capa do Prontuário";
-// the remaining sections still show the styled "content coming" placeholder.
+// slug is a 404. Section #1 ("cover") renders the "Capa do Prontuário"; section
+// #2 ("clinical-history") renders the read/write anamnesis; the remaining
+// sections still show the styled "content coming" placeholder.
 export default async function OccupationalSectionPage({
   params,
 }: {
@@ -32,6 +34,18 @@ export default async function OccupationalSectionPage({
   const isCover = section === "cover";
   const organization = isCover ? await getOrganization().catch(() => null) : null;
   const recordNumber = String(patient.id).replace(/-/g, "").slice(0, 8).toUpperCase();
+
+  // Section #2 — the longitudinal anamnesis. The derived antecedents (diagnoses,
+  // medications) are the canonical conditions/medications resources, edited in
+  // place here — never duplicated.
+  const isClinicalHistory = section === "clinical-history";
+  const [clinicalHistory, conditions, medications] = isClinicalHistory
+    ? await Promise.all([
+        getClinicalHistory(id).catch(() => null),
+        getConditions(id).catch(() => []),
+        getMedications(id).catch(() => []),
+      ])
+    : [null, [], []];
 
   return (
     <AppLayout>
@@ -56,6 +70,13 @@ export default async function OccupationalSectionPage({
           patient={patient}
           organizationName={organization?.name ?? null}
           recordNumber={recordNumber}
+        />
+      ) : isClinicalHistory ? (
+        <ClinicalHistoryView
+          patientId={id}
+          history={clinicalHistory}
+          conditions={conditions}
+          medications={medications}
         />
       ) : (
         <div className="rounded-xl border bg-card p-6">
