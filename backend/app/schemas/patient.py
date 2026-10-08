@@ -33,6 +33,16 @@ class PatientDto(OrmBase):
     city_name: str | None = None
     state_code: str | None = None
 
+    # Employment context (occupational record — "Capa do Prontuário")
+    registration: str | None = None
+    company: str | None = None
+    contract: str | None = None
+    job_title: str | None = None
+    admission_date: str | None = None
+    cost_center: str | None = None
+    work_location: str | None = None
+    shift: str | None = None
+
 
 class _PatientContactFields(BaseModel):
     cns: str | None = None
@@ -47,7 +57,18 @@ class _PatientContactFields(BaseModel):
     state_code: str | None = None
 
 
-class PatientCreateRequest(_PatientContactFields):
+class _PatientEmploymentFields(BaseModel):
+    registration: str | None = None
+    company: str | None = None
+    contract: str | None = None
+    job_title: str | None = None
+    admission_date: str | None = None
+    cost_center: str | None = None
+    work_location: str | None = None
+    shift: str | None = None
+
+
+class PatientCreateRequest(_PatientEmploymentFields, _PatientContactFields):
     given_name: str
     family_name: str
     birth_date: str | None = None
@@ -57,7 +78,7 @@ class PatientCreateRequest(_PatientContactFields):
     cpf: str | None = None
 
 
-class PatientUpdateRequest(_PatientContactFields):
+class PatientUpdateRequest(_PatientEmploymentFields, _PatientContactFields):
     given_name: str | None = None
     family_name: str | None = None
     birth_date: str | None = None

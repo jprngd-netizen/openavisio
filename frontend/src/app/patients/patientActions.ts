@@ -21,6 +21,15 @@ export type PatientPayload = {
   district?: string;
   city_name?: string;
   state_code?: string;
+  // Employment context (occupational record cover)
+  registration?: string;
+  company?: string;
+  contract?: string;
+  job_title?: string;
+  admission_date?: string;
+  cost_center?: string;
+  work_location?: string;
+  shift?: string;
 };
 
 async function getToken(): Promise<string | undefined> {
@@ -66,4 +75,20 @@ export async function updatePatientAction(
   if (!res.ok) return { error: await failure(res, "update") };
 
   return { id };
+}
+
+/**
+ * Reveal the full CPF (normally only cpf_last4 is exposed). Deliberate,
+ * auditable action: the backend writes an audit-log entry on every call.
+ */
+export async function revealPatientCpfAction(id: string): Promise<{ cpf?: string; error?: string }> {
+  const token = await getToken();
+  if (!token) return { error: "Not authenticated." };
+
+  const res = await fetch(`${API}/api/patients/${id}/cpf`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return { error: await failure(res, "reveal CPF for") };
+  const data = await res.json();
+  return { cpf: data.cpf };
 }

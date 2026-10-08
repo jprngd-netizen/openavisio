@@ -10,6 +10,7 @@ from app.core.database import get_db
 from app.core.storage import get_storage
 from app.deps import get_current_user, require_manager
 from app.models.access import PatientAccess
+from app.models.audit import AuditLog
 from app.models.favorite import PatientFavorite
 from app.models.patient import Patient
 from app.models.user import User
@@ -34,6 +35,19 @@ def _to_dto(p: Patient, favs: set[uuid.UUID]) -> PatientDto:
     dto.is_favorite = p.id in favs
     dto.has_photo = bool(p.photo_storage_path)
     return dto
+
+
+def _audit_reveal(user: User, patient_id: uuid.UUID) -> AuditLog:
+    """Audit entry for an explicit full-CPF reveal — no PII in the payload."""
+    name = " ".join(filter(None, [user.first_name, user.last_name])) or user.email
+    return AuditLog(
+        user_id=user.id,
+        user_name=name,
+        entity_type="Patient",
+        entity_id=str(patient_id),
+        action="revealed",
+        changes={"field": "cpf"},
+    )
 
 
 @router.get("/patients", response_model=list[PatientDto])
@@ -122,6 +136,37 @@ async def get_patient(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     favs = await _favorite_ids(db, user.id)
     return _to_dto(patient, favs)
+
+
+@router.get("/patients/{patient_id}/cpf")
+async def reveal_patient_cpf(
+    patient_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Return the full, decrypted CPF — intentionally, on explicit request.
+
+    The CPF is stored encrypted (`cpf_encrypted`, master KEK) and normally only
+    `cpf_last4` is exposed. Revealing the full value is a deliberate, auditable
+    action (occupational record cover, official forms): every call writes an
+    audit-log entry. Insufficient access still raises 404 via the guard.
+    """
+    from app.auth.access import require_patient_access
+    from app.core.encryption import decrypt_setting
+
+    await require_patient_access(patient_id, user, db)
+    patient = await _get_patient_or_404(patient_id, db)
+    if not patient.cpf_encrypted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No CPF on record")
+
+    db.add(_audit_reveal(user, patient_id))
+    await db.commit()
+
+    try:
+        cpf = decrypt_setting(patient.cpf_encrypted)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="CPF could not be decrypted")
+    return {"cpf": cpf}
 
 
 # --- Photo (optional, encrypted PHI — ADR-031) -------------------------------
@@ -253,6 +298,15 @@ async def create_patient(
         district=body.district,
         city_name=body.city_name,
         state_code=body.state_code,
+        # employment context (occupational record cover)
+        registration=body.registration,
+        company=body.company,
+        contract=body.contract,
+        job_title=body.job_title,
+        admission_date=body.admission_date,
+        cost_center=body.cost_center,
+        work_location=body.work_location,
+        shift=body.shift,
     )
     if body.cpf:
         from app.core.encryption import encrypt_setting

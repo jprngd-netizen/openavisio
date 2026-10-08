@@ -29,6 +29,18 @@ class Patient(BaseModel):
 
     cns: Mapped[str | None] = mapped_column(String(20))
 
+    # Employment context (occupational record — "Capa do Prontuário"). A 1:1
+    # block on the patient; a per-transfer history, if ever needed, becomes its
+    # own table. `admission_date` is an ISO date string like `birth_date`.
+    registration: Mapped[str | None] = mapped_column(String(64))
+    company: Mapped[str | None] = mapped_column(String(160))
+    contract: Mapped[str | None] = mapped_column(String(64))
+    job_title: Mapped[str | None] = mapped_column(String(120))
+    admission_date: Mapped[str | None] = mapped_column(String(20))
+    cost_center: Mapped[str | None] = mapped_column(String(64))
+    work_location: Mapped[str | None] = mapped_column(String(160))
+    shift: Mapped[str | None] = mapped_column(String(64))
+
     # Address (Brazilian format)
     cep: Mapped[str | None] = mapped_column(String(9))
     street: Mapped[str | None] = mapped_column(String(256))

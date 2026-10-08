@@ -1,14 +1,15 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Breadcrumb } from "@/components/Breadcrumb";
-import { getPatient } from "@/lib/api";
+import { getPatient, getOrganization } from "@/lib/api";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Info } from "lucide-react";
 import { OCCUPATIONAL_ITEM_BY_SLUG } from "@/lib/occupationalSections";
+import { CoverView } from "./CoverView";
 
-// Per-section placeholder page. Resolves the section slug from the taxonomy;
-// an unknown slug is a 404. Shows the group + item name and a styled "structure
-// defined, content coming" block — no fields or forms yet.
+// Per-section page. Resolves the section slug from the taxonomy; an unknown
+// slug is a 404. Section #1 ("cover") renders the real "Capa do Prontuário";
+// the remaining sections still show the styled "content coming" placeholder.
 export default async function OccupationalSectionPage({
   params,
 }: {
@@ -25,6 +26,12 @@ export default async function OccupationalSectionPage({
   if (!patient) notFound();
 
   const { group, item } = resolved;
+
+  // Section #1 — the occupational record cover. Identity and the record header
+  // read from the patient/organization; only the employment block is editable.
+  const isCover = section === "cover";
+  const organization = isCover ? await getOrganization().catch(() => null) : null;
+  const recordNumber = String(patient.id).replace(/-/g, "").slice(0, 8).toUpperCase();
 
   return (
     <AppLayout>
@@ -43,12 +50,21 @@ export default async function OccupationalSectionPage({
 
       <h2 className="mb-4 text-lg font-semibold">{t(item.key)}</h2>
 
-      <div className="rounded-xl border bg-card p-6">
-        <div className="flex items-start gap-3">
-          <Info className="mt-0.5 size-5 shrink-0 text-primary" />
-          <p className="text-sm text-muted-foreground">{t("Placeholder")}</p>
+      {isCover ? (
+        <CoverView
+          patientId={id}
+          patient={patient}
+          organizationName={organization?.name ?? null}
+          recordNumber={recordNumber}
+        />
+      ) : (
+        <div className="rounded-xl border bg-card p-6">
+          <div className="flex items-start gap-3">
+            <Info className="mt-0.5 size-5 shrink-0 text-primary" />
+            <p className="text-sm text-muted-foreground">{t("Placeholder")}</p>
+          </div>
         </div>
-      </div>
+      )}
     </AppLayout>
   );
 }
