@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { Printer } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { Download } from "lucide-react";
 
 // Same order/idiom as the server page. The slug is both the `?sections=` value
 // and the `Export.Sections.*` i18n key.
@@ -20,8 +20,13 @@ type Section = (typeof SECTIONS)[number];
 export function ExportPanel({ patientId, selected }: { patientId: string; selected: string[] }) {
   const router = useRouter();
   const t = useTranslations("Export");
+  const locale = useLocale();
   const sel = new Set(selected);
   const allSelected = SECTIONS.every((s) => sel.has(s));
+
+  // The PDF is generated server-side (record + the original documents' pages),
+  // so the button downloads it instead of printing the HTML page.
+  const pdfHref = `/api/patients/${patientId}/export/pdf?locale=${locale}&sections=${selected.join(",")}`;
 
   // Only the checked set is pushed into the URL, so the server re-renders with
   // just those sections. Everything checked = drop the param (its absence means
@@ -45,14 +50,13 @@ export function ExportPanel({ patientId, selected }: { patientId: string; select
           <h1 className="text-base font-semibold">{t("Title")}</h1>
           <p className="text-sm text-muted-foreground">{t("Description")}</p>
         </div>
-        <button
-          type="button"
-          onClick={() => window.print()}
+        <a
+          href={pdfHref}
           className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
         >
-          <Printer className="size-4" />
+          <Download className="size-4" />
           {t("SavePdf")}
-        </button>
+        </a>
       </div>
 
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2">

@@ -17,6 +17,7 @@ dependencies = [
     "pydantic-settings>=2.6.0",
     "weasyprint>=62.0",
     "pillow>=11.0.0",
+    "pypdf>=5.0.0",
     "redis>=5.2.0",
     "email-validator>=2.2.0",
     "flower>=2.0.0",
