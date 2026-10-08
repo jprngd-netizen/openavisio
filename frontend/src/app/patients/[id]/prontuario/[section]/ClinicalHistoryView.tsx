@@ -13,6 +13,7 @@ import {
   updateMedication,
   deleteMedication,
 } from "@/lib/api";
+import { CidCombobox } from "@/components/CidCombobox";
 
 type Employment = { company: string; role: string; start: string; end: string };
 type Exposure = { category: string; agent: string; duration: string; ppe: boolean };
@@ -203,18 +204,19 @@ function ConditionsEditor({ patientId, items }: { patientId: string; items: any[
   const t = useTranslations("OccupationalClinicalHistory");
   const router = useRouter();
   const [pending, start] = useTransition();
-  const [draft, setDraft] = useState({ code_display: "", onset_date_time: "", severity: "" });
+  const [draft, setDraft] = useState({ code: "", code_display: "", onset_date_time: "", severity: "" });
 
   function add() {
     if (!draft.code_display.trim()) return;
     start(async () => {
       await createCondition(patientId, {
+        code: draft.code || null,
         code_display: draft.code_display.trim(),
         onset_date_time: draft.onset_date_time || null,
         severity: draft.severity || null,
         clinical_status: "active",
       });
-      setDraft({ code_display: "", onset_date_time: "", severity: "" });
+      setDraft({ code: "", code_display: "", onset_date_time: "", severity: "" });
       router.refresh();
     });
   }
@@ -229,8 +231,12 @@ function ConditionsEditor({ patientId, items }: { patientId: string; items: any[
         {items.length === 0 && <p className="text-xs text-muted-foreground">{t("None")}</p>}
       </div>
       <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[2fr_auto_auto_auto]">
-        <input className={inputCls} placeholder={t("Diagnosis")} value={draft.code_display}
-          onChange={(e) => setDraft({ ...draft, code_display: e.target.value })} />
+        <CidCombobox
+          className={inputCls}
+          placeholder={t("Diagnosis")}
+          value={draft.code_display}
+          onSelect={(opt, text) => setDraft((d) => ({ ...d, code_display: text, code: opt?.code ?? "" }))}
+        />
         <input type="date" className={inputCls} value={draft.onset_date_time}
           onChange={(e) => setDraft({ ...draft, onset_date_time: e.target.value })} />
         <select className={inputCls} value={draft.severity} onChange={(e) => setDraft({ ...draft, severity: e.target.value })}>
@@ -249,6 +255,7 @@ function ConditionsEditor({ patientId, items }: { patientId: string; items: any[
 function ConditionRow({ condition, busy, onChange }: { condition: any; busy: boolean; onChange: () => void }) {
   const t = useTranslations("OccupationalClinicalHistory");
   const [row, setRow] = useState({
+    code: condition.code ?? "",
     code_display: condition.code_display ?? "",
     onset_date_time: condition.onset_date_time ?? "",
     severity: condition.severity ?? "",
@@ -258,7 +265,11 @@ function ConditionRow({ condition, busy, onChange }: { condition: any; busy: boo
 
   return (
     <div className="grid grid-cols-1 gap-2 rounded-md border p-2 sm:grid-cols-[2fr_auto_auto_auto_auto]">
-      <input className={inputCls} value={row.code_display} onChange={(e) => setRow({ ...row, code_display: e.target.value })} />
+      <CidCombobox
+        className={inputCls}
+        value={row.code_display}
+        onSelect={(opt, text) => setRow((r) => ({ ...r, code_display: text, code: opt?.code ?? "" }))}
+      />
       <input type="date" className={inputCls} value={row.onset_date_time} onChange={(e) => setRow({ ...row, onset_date_time: e.target.value })} />
       <select className={inputCls} value={row.severity} onChange={(e) => setRow({ ...row, severity: e.target.value })}>
         <option value="">{t("Severity")}</option>
@@ -269,7 +280,7 @@ function ConditionRow({ condition, busy, onChange }: { condition: any; busy: boo
       </select>
       <div className="flex items-center gap-1">
         <button type="button" disabled={busy || pending}
-          onClick={() => start(async () => { await updateCondition(condition.id, { ...row, onset_date_time: row.onset_date_time || null, severity: row.severity || null }); onChange(); })}
+          onClick={() => start(async () => { await updateCondition(condition.id, { ...row, code: row.code || null, onset_date_time: row.onset_date_time || null, severity: row.severity || null }); onChange(); })}
           className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50">
           <Save className="size-4" />
         </button>

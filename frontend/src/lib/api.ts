@@ -176,6 +176,11 @@ export const attachPrescription = async (
 export const getClinicalHistory = async (patientId: string) => api.get<any | null>(`/api/patients/${patientId}/clinical-history`);
 export const saveClinicalHistory = async (patientId: string, data: any) => api.put<any>(`/api/patients/${patientId}/clinical-history`, data);
 
+// CID-10 catalogue (DATASUS, pt-BR) for diagnosis pickers.
+export type CidOption = { code: string; description: string };
+export const searchCid10 = async (q: string) =>
+  api.get<CidOption[]>(`/api/cid10/search?q=${encodeURIComponent(q)}&limit=20`);
+
 // Conditions
 export const getConditions = async (patientId: string, status?: string) => api.get<any[]>(`/api/patients/${patientId}/conditions${status ? `?status=${status}` : ""}`);
 export const createCondition = async (patientId: string, data: any) => api.post<any>(`/api/patients/${patientId}/conditions`, data);
