@@ -1295,7 +1295,7 @@
     "Assessment": "Assessment",
     "Plan": "Plan",
     "Cid10Code": "ICD-10 code",
-    "Cid10Display": "ICD-10 description",
+    "Cid10Display": "Diagnosis",
     "Notes": "Notes",
     "SectionS": "Subjective / History",
     "SectionO": "Physical exam",

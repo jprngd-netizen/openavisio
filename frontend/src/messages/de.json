@@ -1295,7 +1295,7 @@
     "Assessment": "Beurteilung",
     "Plan": "Plan",
     "Cid10Code": "ICD-10-Code",
-    "Cid10Display": "ICD-10-Beschreibung",
+    "Cid10Display": "Diagnose",
     "Notes": "Notizen",
     "SectionS": "Subjektiv / Anamnese",
     "SectionO": "Körperliche Untersuchung",
