@@ -207,6 +207,7 @@ production, and write the date and the wall-clock time it took into this file:
 | Date | By | Duration | Outcome |
 |---|---|---|---|
 | 2026-07-14 | Claude, scratch host | ~4 min (copy 1s, restore 9s, backend build + decrypt 162s) | **Passed.** 1 patient, 21 documents, 20 conditions, 5 medications, 34 encrypted blobs. Three PDFs decrypted end to end (`%PDF-`, 2.3 MB / 936 KB / 640 KB) with their extracted text. |
+| 2026-10-08 | Senna (orchestrator), scratch `pgvector:pg17` on the SP host | ~2 min (age decrypt ~6s, restore ~20s, 3-document decrypt ~3s) | **Passed.** Restored `clinical-2026-10-08` + its same-date keystore into a throwaway Postgres: 3 patients, 12 documents, 243 observations, 3 conditions, 2 prescriptions, 3 patient KEKs, 2 users. Three blobs decrypted end to end with the master KEK (`\xff\xd8\xff\xe0` JPEG 160 KB, `%PDF-` 172 KB). Restored on the app host so the master KEK never left the SP box; the age key was brought in transiently and shredded afterwards. |
 
 **What the drill found before it even started:** the backup script was silently
 destroying good backups. A `pg_dump` that died (Postgres briefly down during a
