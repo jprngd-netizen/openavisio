@@ -1443,5 +1443,114 @@
     "RegisterPasskeyFailed": "Falha ao registrar a chave de acesso. Tente novamente.",
     "RenamePasskeyFailed": "Não foi possível renomear a chave de acesso.",
     "DeletePasskeyFailed": "Não foi possível excluir a chave de acesso."
+  },
+  "Export": {
+    "Title": "Exportar prontuário",
+    "Description": "Escolha as seções a incluir e salve o documento como PDF.",
+    "SelectAll": "Selecionar tudo",
+    "SavePdf": "Salvar como PDF",
+    "GeneratedOn": "Gerado em {date}",
+    "BirthDate": "Data de nascimento",
+    "Sex": "Sexo",
+    "Male": "Masculino",
+    "Female": "Feminino",
+    "Other": "Outro",
+    "NoData": "Nenhum dado.",
+    "Footer": "Documento gerado pelo OpenAvisio em {datetime}",
+    "Sections": {
+      "encounters": "Consultas",
+      "conditions": "Diagnósticos",
+      "medications": "Medicamentos",
+      "measurements": "Medições",
+      "lab-results": "Resultados laboratoriais",
+      "documents": "Documentos",
+      "prescriptions": "Receitas"
+    },
+    "EncounterType": {
+      "Consulta": "Consulta",
+      "Retorno": "Retorno",
+      "Teleconsulta": "Teleconsulta",
+      "Urgencia": "Urgência",
+      "Evolucao": "Evolução",
+      "Procedimento": "Procedimento"
+    },
+    "Vitals": {
+      "body-weight": "Peso",
+      "body-height": "Altura",
+      "blood-pressure-systolic": "Pressão arterial (sistólica)",
+      "blood-pressure-diastolic": "Pressão arterial (diastólica)",
+      "body-temperature": "Temperatura",
+      "oxygen-saturation": "Saturação de oxigênio",
+      "heart-rate": "Frequência cardíaca",
+      "bmi": "IMC"
+    },
+    "Severity": {
+      "mild": "leve",
+      "moderate": "moderado",
+      "severe": "grave"
+    },
+    "ConditionStatus": {
+      "active": "ativo",
+      "inactive": "inativo",
+      "resolved": "resolvido"
+    },
+    "Encounter": {
+      "Type": "Tipo",
+      "Date": "Data",
+      "ChiefComplaint": "Queixa",
+      "History": "Anamnese",
+      "PhysicalExam": "Exame físico",
+      "Assessment": "Avaliação",
+      "Plan": "Plano",
+      "Cid10": "CID-10",
+      "Notes": "Notas",
+      "Vitals": "Sinais vitais"
+    },
+    "Condition": {
+      "Name": "Diagnóstico",
+      "Onset": "Início",
+      "Severity": "Gravidade",
+      "Status": "Status"
+    },
+    "Medication": {
+      "Name": "Medicamento",
+      "Dosage": "Posologia",
+      "Period": "Período",
+      "Status": "Status",
+      "Active": "Ativo",
+      "Ended": "Encerrado",
+      "Ongoing": "em uso"
+    },
+    "Measurement": {
+      "Type": "Tipo",
+      "Date": "Data",
+      "Value": "Valor"
+    },
+    "Lab": {
+      "Test": "Exame",
+      "Panel": "Painel",
+      "Result": "Resultado",
+      "Reference": "Referência",
+      "Date": "Data"
+    },
+    "Document": {
+      "FileName": "Arquivo",
+      "Type": "Tipo",
+      "IssuedDate": "Data de emissão"
+    },
+    "Prescription": {
+      "Status": "Status",
+      "Date": "Data",
+      "Notes": "Anotações",
+      "Items": "Itens",
+      "Medication": "Medicamento",
+      "Posology": "Posologia",
+      "Quantity": "Quantidade",
+      "NoItems": "Nenhum item.",
+      "StatusDraft": "Rascunho",
+      "StatusIssued": "Emitida",
+      "StatusFailed": "Falha",
+      "StatusDeleted": "Excluída"
+    }
   }
 }

@@ -7,7 +7,7 @@ import { getTranslations, getLocale } from "next-intl/server";
 import { PATIENT_SECTIONS } from "@/lib/patientSections";
 import { PatientPhotoEditor } from "@/components/PatientPhotoEditor";
 import { UploadPanel } from "./documents/UploadPanel";
-import { Cake, Venus, Mars, User as UserIcon, HeartHandshake, ChevronRight, CalendarDays, Settings, Upload, Pencil, type LucideIcon } from "lucide-react";
+import { Cake, Venus, Mars, User as UserIcon, HeartHandshake, ChevronRight, CalendarDays, Settings, Upload, Pencil, Printer, type LucideIcon } from "lucide-react";
 import { Suspense } from "react";
 import { CreatedBanner } from "./CreatedBanner";
 import { FavoriteStar } from "@/components/FavoriteStar";
@@ -58,6 +58,14 @@ export default async function PatientDetailsPage({ params }: { params: Promise<{
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <Link
+              href={`/patients/${id}/export`}
+              title={t("ExportPdf")}
+              aria-label={t("ExportPdf")}
+              className="inline-flex size-9 items-center justify-center rounded-lg border text-muted-foreground hover:text-foreground"
+            >
+              <Printer className="size-4" />
+            </Link>
             <Link
               href={`/patients/${id}/edit`}
               title={t("Edit")}
