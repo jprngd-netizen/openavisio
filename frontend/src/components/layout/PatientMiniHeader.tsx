@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Cake } from "lucide-react";
 import { PatientAvatar } from "@/components/PatientAvatar";
 import { getPatient } from "@/lib/api";
-import { formatDate } from "@/lib/utils";
+import { formatDate, ageFromBirthDate } from "@/lib/utils";
 
 // On a patient's subpages you otherwise lose sight of whose data you are
 // looking at — the big header only exists on the overview. This is the same
@@ -32,9 +32,7 @@ export function PatientMiniHeader() {
 
   if (!patientId || !patient) return null;
 
-  const age = patient.birth_date
-    ? Math.floor((Date.now() - new Date(patient.birth_date).getTime()) / 31_557_600_000)
-    : null;
+  const age = ageFromBirthDate(patient.birth_date);
 
   return (
     <Link

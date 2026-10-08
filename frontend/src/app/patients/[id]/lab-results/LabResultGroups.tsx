@@ -5,7 +5,8 @@ import { Fragment, useState, useTransition } from "react";
 import { Trash2, ArrowUp, ArrowDown, ChevronDown } from "lucide-react";
 import { deleteObservation } from "@/lib/api";
 import { TrendChart } from "@/components/TrendChart";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { formatDate } from "@/lib/utils";
 
 type Obs = {
   id: string;
@@ -46,6 +47,7 @@ export function LabResultGroups({ observations }: { observations: Obs[] }) {
   const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
   const t = useTranslations("LabResult");
   const tc = useTranslations("Common");
+  const locale = useLocale();
 
   const distinctDates = new Set(observations.map((o) => dayOf(o.effective_date_time))).size;
   const [view, setView] = useState<"matrix" | "cards">(distinctDates >= 2 ? "matrix" : "cards");
@@ -151,7 +153,7 @@ export function LabResultGroups({ observations }: { observations: Obs[] }) {
                       <th className="px-4 py-2 text-left font-medium text-xs sticky left-0 bg-muted/20 z-10">{t("Parameter")}</th>
                       {dates.map((d) => (
                         <th key={d} className="px-3 py-2 text-right font-medium text-xs whitespace-nowrap">
-                          {d ? new Date(d).toLocaleDateString() : "—"}
+                          {d ? formatDate(d, locale) : "—"}
                         </th>
                       ))}
                       <th className="px-4 py-2 text-left font-medium text-xs whitespace-nowrap">{t("Reference")}</th>
@@ -302,7 +304,7 @@ export function LabResultGroups({ observations }: { observations: Obs[] }) {
             >
               <span className="flex items-center gap-2 font-medium text-sm">
                 <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`} />
-                {date ? new Date(date).toLocaleDateString() : "—"}
+                {date ? formatDate(date, locale) : "—"}
               </span>
               <span className="text-xs text-muted-foreground">{t("nValues", { count })}</span>
             </button>
