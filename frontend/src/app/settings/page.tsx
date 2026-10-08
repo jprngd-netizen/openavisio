@@ -6,6 +6,7 @@ import { getMe, getMyPasskeys } from "@/lib/api";
 import { PasswordForm } from "./PasswordForm";
 import { ProfileForm } from "./ProfileForm";
 import { LanguagePicker } from "./LanguagePicker";
+import { WeekStartPicker } from "./WeekStartPicker";
 import { PasskeysSection } from "./PasskeysSection";
 import { formatDate } from "@/lib/utils";
 
@@ -25,6 +26,7 @@ export default async function SettingsPage() {
   ]);
   const t = await getTranslations("Settings");
   const isSystem = !cookieStore.has("NEXT_LOCALE");
+  const weekStart = cookieStore.get("WEEK_START")?.value === "monday" ? "monday" : "sunday";
   const user = session?.user as any;
   const roleLabel = ROLE_KEYS[user?.role]
     ? t(ROLE_KEYS[user?.role] as any)
@@ -77,6 +79,15 @@ export default async function SettingsPage() {
           <p className="text-xs text-muted-foreground mt-0.5">{t("LanguageSubtitle")}</p>
         </div>
         <LanguagePicker current={locale} isSystem={isSystem} />
+      </div>
+
+      {/* First day of the week (calendar) */}
+      <div className="rounded-xl border bg-card p-6 max-w-lg space-y-3">
+        <div>
+          <h2 className="font-medium text-sm">{t("WeekStart")}</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">{t("WeekStartSubtitle")}</p>
+        </div>
+        <WeekStartPicker current={weekStart} />
       </div>
 
       {/* Security */}

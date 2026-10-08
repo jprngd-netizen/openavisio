@@ -20,7 +20,10 @@ interface FeedItem {
 
 const DOMAINS = ["motor", "speech", "cognitive", "social"] as const;
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+// The first column depends on the user's preference (Settings → first day of
+// the week); Sunday is the default (pt-BR / en).
+const WEEKDAYS_MON = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const WEEKDAYS_SUN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
@@ -73,7 +76,8 @@ function withDefaultTime(dateStr: string): string {
   return dateStr.length === 10 ? `${dateStr}T08:00` : dateStr;
 }
 
-export function CalendarGrid({ patientId, birthDate }: { patientId: string; birthDate?: string | null }) {
+export function CalendarGrid({ patientId, birthDate, weekStart = "sunday" }: { patientId: string; birthDate?: string | null; weekStart?: "sunday" | "monday" }) {
+  const WEEKDAYS = weekStart === "sunday" ? WEEKDAYS_SUN : WEEKDAYS_MON;
   const router = useRouter();
   const today = new Date();
   const todayStr = toDateStr(today);
@@ -268,7 +272,7 @@ export function CalendarGrid({ patientId, birthDate }: { patientId: string; birt
 
   // Build grid cells
   const firstDay = new Date(year, month, 1);
-  const startPad = (firstDay.getDay() + 6) % 7;
+  const startPad = weekStart === "sunday" ? firstDay.getDay() : (firstDay.getDay() + 6) % 7;
   const totalCells = Math.ceil((startPad + lastDate) / 7) * 7;
   const cells = Array.from({ length: totalCells }, (_, i) => {
     const cellDate = new Date(year, month, i - startPad + 1);
