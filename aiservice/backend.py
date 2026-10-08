@@ -667,6 +667,14 @@ def get_model(stage: str) -> str:
     The backend pipeline may override by passing the model name directly
     when it has read a selection from SystemSetting.
     """
+    # Embeddings always come from Ollama (see get_embed_backend): the chat
+    # backend's VLLM_*/MISTRAL_* model vars must not leak into the embed stage,
+    # or a vLLM-backed install would ask Ollama for the chat model.
+    if stage == "embed":
+        val = os.environ.get("OLLAMA_EMBED_MODEL", "").strip()
+        if val:
+            return val
+
     backend_type = os.environ.get("AI_BACKEND", "ollama").lower().strip()
     stage_upper = stage.upper()
 
