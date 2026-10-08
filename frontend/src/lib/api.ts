@@ -28,6 +28,27 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return res.json();
 }
 
+// FormData-safe variant: multipart requests must NOT set Content-Type, or the
+// browser cannot add the multipart boundary and the server fails to parse it.
+async function requestForm<T>(path: string, formData: FormData): Promise<T> {
+  const token = await getToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    cache: "no-store",
+    body: formData,
+    headers,
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`API error ${res.status}: ${err}`);
+  }
+  if (res.status === 204) return undefined as T;
+  return res.json();
+}
+
 const api = {
   get: <T>(path: string) => request<T>(path, { method: "GET" }),
   post: <T>(path: string, body?: unknown) =>
@@ -136,6 +157,20 @@ export const markPrescriptionDeleted = async (id: string, payload: any) =>
   api.post<any>(`/api/prescriptions/${id}/memed-deleted`, payload);
 export const retryPrescription = async (id: string) =>
   api.post<any>(`/api/prescriptions/${id}/retry`);
+export const attachPrescription = async (
+  patientId: string,
+  file: File,
+  opts?: { notes?: string; issuedAt?: string },
+) => {
+  const fd = new FormData();
+  fd.append("file", file);
+  if (opts?.notes) fd.append("notes", opts.notes);
+  if (opts?.issuedAt) fd.append("issued_at", opts.issuedAt);
+  return requestForm<any>(
+    `/api/patients/${patientId}/prescriptions/attach`,
+    fd,
+  );
+};
 
 // Conditions
 export const getConditions = async (patientId: string, status?: string) => api.get<any[]>(`/api/patients/${patientId}/conditions${status ? `?status=${status}` : ""}`);

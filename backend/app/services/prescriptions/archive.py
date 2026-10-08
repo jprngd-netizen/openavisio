@@ -191,6 +191,98 @@ async def capture_signed_pdf(
     return doc
 
 
+async def attach_prescription_pdf(
+    db: AsyncSession,
+    prescription: Prescription,
+    data: bytes,
+    file_name: str,
+) -> PrescriptionDocument:
+    """Encrypt and archive an externally-produced prescription PDF.
+
+    Mirrors the encryption/storage steps of :func:`capture_signed_pdf` but for
+    a PDF the prescriber produced **outside** OpenAvisio — e.g. downloaded from
+    Memed's own web application when the partner/API integration is not
+    available (it requires a CNPJ the physician does not have).
+
+    The archived ``PrescriptionDocument`` is marked ``signed=False`` and all
+    ``memed_*`` provenance fields are left ``None``; the only archived hash is
+    the SHA-256 of the uploaded bytes.
+
+    Steps
+        1. Reject if a ``PrescriptionDocument`` already exists for this
+           prescription (single-document guard).
+        2. Ensure the patient's KEK exists (create on first use).
+        3. Encrypt the PDF under a fresh DEK wrapped by the patient KEK.
+        4. Create a ``PrescriptionDocument`` and flush to obtain its id.
+        5. Write the encrypted blob to storage at ``{patient_id}/{doc_id}.enc``.
+        6. Link the document to the prescription and commit.
+
+    On **any** exception after writing the blob, the blob is deleted and the
+    DB transaction is rolled back — no orphaned blobs.
+
+    Raises
+        ValueError: if a ``PrescriptionDocument`` already exists for this
+            prescription.
+    """
+    # --- 1. Reject second capture ---
+    existing = await db.execute(
+        select(PrescriptionDocument).where(
+            PrescriptionDocument.prescription_id == prescription.id
+        )
+    )
+    if existing.scalar_one_or_none() is not None:
+        raise ValueError(
+            f"Prescription {prescription.id} already has a captured document"
+        )
+
+    # --- 2. Patient KEK ---
+    patient_id = prescription.patient_id
+    kek = await ensure_patient_kek(db, patient_id)
+
+    # --- 3. Encrypt ---
+    ciphertext, wrapped_dek = encrypt_document(data, kek)
+
+    # --- 4. Create PrescriptionDocument (flush to obtain id) ---
+    doc_id = uuid.uuid4()
+    storage_key = f"{patient_id}/{doc_id}.enc"
+    now = datetime.now(timezone.utc)
+
+    doc = PrescriptionDocument(
+        id=doc_id,
+        prescription_id=prescription.id,
+        file_name=file_name or "prescription.pdf",
+        content_type="application/pdf",
+        size=len(data),
+        storage_path=storage_key,
+        hash=hashlib.sha256(data).hexdigest(),
+        encrypted_dek=wrapped_dek,
+        kek_version=1,
+        signed=False,
+        memed_prescription_id=None,
+        captured_at=now,
+    )
+    db.add(doc)
+    await db.flush()
+
+    # --- 5. Write blob ---
+    storage = get_storage()
+    try:
+        storage.write(storage_key, ciphertext)
+    except Exception:
+        await db.rollback()
+        raise
+
+    # --- 6. Link document and commit ---
+    prescription.document = doc
+    try:
+        await db.commit()
+    except Exception:
+        storage.delete(storage_key)
+        await db.rollback()
+        raise
+    return doc
+
+
 async def read_signed_pdf(
     db: AsyncSession,
     prescription: Prescription,

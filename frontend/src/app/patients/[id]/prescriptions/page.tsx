@@ -3,9 +3,10 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { getPrescriptions, getPatient, getPrescription } from "@/lib/api";
 import { getTranslations, getLocale } from "next-intl/server";
 import { Breadcrumb } from "@/components/Breadcrumb";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, ExternalLink } from "lucide-react";
 import { PrescriptionList } from "./PrescriptionList";
 import { NewPrescriptionButton } from "./NewPrescriptionButton";
+import { AttachPrescriptionPanel } from "./AttachPrescriptionPanel";
 import { createPrescriptionAction } from "./actions";
 
 export default async function PrescriptionsPage({
@@ -67,12 +68,26 @@ export default async function PrescriptionsPage({
         <PrescriptionList prescriptions={prescriptions} rxPrescriptionId={rx} isPrescriber={isPrescriber} />
       ) : (
         <>
-          <div className="mb-4 flex items-center justify-end">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+            <a
+              href="https://memed.com.br/login"
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="prescribe-on-memed"
+              className="inline-flex items-center gap-2 rounded-lg border border-primary text-primary px-3 py-2 text-sm font-medium hover:bg-primary/5 transition-colors"
+            >
+              <ExternalLink className="size-4" />
+              {t("MemedPrescribe")}
+            </a>
             <form action={createPrescriptionAction}>
               <input type="hidden" name="patientId" value={id} />
               <NewPrescriptionButton />
             </form>
           </div>
+          <p className="mb-4 text-xs text-muted-foreground">{t("MemedPrescribeHint")}</p>
+
+          <AttachPrescriptionPanel patientId={id} />
+
           {fetchError ? (
             <div className="flex items-center gap-2 rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm">
               <AlertCircle className="size-4 shrink-0" />

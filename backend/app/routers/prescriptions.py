@@ -7,7 +7,7 @@ and ``routers/admin.py`` for audit logging.
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -37,7 +37,11 @@ from app.schemas.prescription import (
     PrescriptionItemDto,
     PrescriptionUpdateRequest,
 )
-from app.services.prescriptions.archive import capture_signed_pdf, read_signed_pdf
+from app.services.prescriptions.archive import (
+    attach_prescription_pdf,
+    capture_signed_pdf,
+    read_signed_pdf,
+)
 from app.services.prescriptions.events import (
     CaptureMetadata,
     UnparsableMemedEvent,
@@ -55,6 +59,9 @@ from app.services.prescriptions.state import (
 )
 
 router = APIRouter()
+
+# Maximum size of an externally-produced prescription PDF accepted for archival.
+MAX_PRESCRIPTION_PDF_BYTES = 20 * 1024 * 1024  # 20 MB
 
 
 # ---------------------------------------------------------------------------
@@ -181,6 +188,93 @@ async def create_prescription(
 
     # Reload with relations
     rx = await _load_rx_with_relations(db, rx.id)
+    return _to_dto(rx)
+
+
+# ---------------------------------------------------------------------------
+# Attach — archive an externally-produced prescription PDF
+# ---------------------------------------------------------------------------
+
+
+@router.post(
+    "/patients/{patient_id}/prescriptions/attach",
+    response_model=PrescriptionDto,
+    status_code=status.HTTP_201_CREATED,
+)
+async def attach_prescription(
+    patient_id: uuid.UUID,
+    request: Request,
+    file: UploadFile = File(...),
+    notes: str | None = Form(None),
+    issued_at: datetime | None = Form(None),
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Archive a prescription PDF the physician produced outside OpenAvisio.
+
+    Used when the Memed partner/API integration is unavailable (it requires a
+    CNPJ the physician does not have) and the PDF was downloaded from Memed's
+    own web application.  The upload is stored encrypted per-patient, exactly
+    like an API-captured prescription, but marked as externally produced.
+    """
+    await require_patient_access(patient_id, user, db, AccessLevel.contribute)
+    prescriber = await _get_prescriber_or_409(db)
+
+    # --- Validate the upload ---
+    data = await file.read()
+    if not data.startswith(b"%PDF-"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "invalid_pdf"},
+        )
+    if len(data) > MAX_PRESCRIPTION_PDF_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "file_too_large"},
+        )
+
+    # --- Create the issued Prescription (external signature) ---
+    rx = Prescription(
+        patient_id=patient_id,
+        prescriber_id=prescriber.id,
+        owner_id=user.id,
+        status=PrescriptionStatus.issued,
+        version=1,
+        issued_at=issued_at or datetime.now(timezone.utc),
+        notes=notes,
+        signature_state="external",
+    )
+    db.add(rx)
+    await db.flush()
+    rx_id = rx.id
+
+    # --- Encrypt + store the PDF (commits internally) ---
+    try:
+        await attach_prescription_pdf(
+            db, rx, data, file.filename or "prescription.pdf"
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(exc))
+
+    # --- Audit log (separate transaction) ---
+    db.add(
+        _audit_entry(
+            user,
+            "Prescription",
+            str(rx_id),
+            "created",
+            {
+                "status": "issued",
+                "signature_state": "external",
+                "file_name": file.filename,
+            },
+            ip_address=client_ip(request),
+            user_agent=request.headers.get("user-agent"),
+        )
+    )
+    await db.commit()
+
+    rx = await _load_rx_with_relations(db, rx_id)
     return _to_dto(rx)
 
 
