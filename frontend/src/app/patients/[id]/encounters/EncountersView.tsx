@@ -55,10 +55,13 @@ export function EncountersView({ patientId, encounters }: { patientId: string; e
   function setVital(code: string, value: string) {
     setVitals((v) => {
       const next = { ...v, [code]: value };
-      // BMI is derived whenever weight and height are present and BMI is still blank.
-      if ((code === "body-weight" || code === "body-height") && !next["bmi"]) {
+      // BMI is always derived from weight and height, so recompute on every change
+      // rather than only while blank: entering the height digit by digit ("1" → "189")
+      // otherwise freezes the absurd value computed from the first keystroke.
+      if (code === "body-weight" || code === "body-height") {
         const bmi = computeBmi(parseFloat(next["body-weight"]), parseFloat(next["body-height"]));
         if (bmi != null) next["bmi"] = String(bmi);
+        else delete next["bmi"];
       }
       return next;
     });
