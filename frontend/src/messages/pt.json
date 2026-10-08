@@ -1343,6 +1343,7 @@
     "PrivacyS4Body": "Os dados de pacientes são compartilhados exclusivamente com usuários que receberam acesso expresso do usuário responsável pelo cuidado (coordenador ou proprietário). Em princípio, não há compartilhamento com terceiros, salvo:",
     "PrivacyS4Item1": "O provedor de e-mail configurado recebe o endereço de e-mail de um usuário convidado com a finalidade de enviar o convite.",
     "PrivacyS4Item2": "Caso <code>AI_BACKEND=mistral</code> esteja configurado: a Mistral AI SAS (Paris, França) recebe o texto extraído do documento para o tratamento por IA. Nesse caso, é necessário firmar um contrato de tratamento de dados — um modelo acompanha o software (<code>docs/avv-vorlage.md</code>).",
+    "PrivacyS4Item3": "Ao emitir uma prescrição, a plataforma de prescrição eletrônica Memed (integrada ao SNCR/ANVISA) recebe os dados do prescritor e do paciente necessários para emitir e assinar digitalmente a receita, usando o certificado ICP-Brasil do próprio prescritor.",
     "PrivacyUmamiHeading": "Medição de audiência (Umami)",
     "PrivacyUmamiBody": "Esta instalação utiliza o software de análise auto-hospedado Umami ({url}) para avaliar estatisticamente o uso do site. O Umami não usa cookies, não cria perfis de usuários e não armazena endereços IP; são coletados exclusivamente dados de acesso anonimizados e agregados (páginas acessadas, tipo de navegador, país de origem). Os dados não saem do servidor do responsável. A base legal é o art. 7, IX, da LGPD (legítimo interesse na medição de audiência); não é necessário banner de consentimento por não haver cookies nem criação de perfis.",
     "PrivacyS5Heading": "5. Prazo de armazenamento",
@@ -1350,6 +1351,7 @@
     "PrivacyS5Item2": "Dados de usuários: até a exclusão da conta do usuário",
     "PrivacyS5Item3": "Registros de aplicação: 30 dias",
     "PrivacyS5Item4": "Tokens de sessão: 15 minutos (token de acesso), 7 dias (token de atualização)",
+    "PrivacyS5Item5": "Prescrições emitidas: mantidas como registro legal e não abrangidas pela eliminação automática por prazo de retenção.",
     "PrivacyS6Heading": "6. Seus direitos",
     "PrivacyS6Body": "Você tem, perante o controlador, os seguintes direitos:",
     "PrivacyS6Item1Title": "Confirmação e acesso (art. 18, I e II, da LGPD)",
@@ -1376,7 +1378,7 @@
     "PrivacyS8Body": "Todos os documentos são armazenados de forma criptografada (AES-GCM com chave individual por documento). A transmissão ocorre exclusivamente por HTTPS. O acesso aos dados de pacientes é restrito a usuários expressamente autorizados. Todas as alterações de dados são registradas.",
     "PrivacyFooterBefore": "Esta Política de Privacidade se aplica à instalação do OpenAvisio em",
     "PrivacyFooterDomain": "[DOMAIN]",
-    "PrivacyFooterAfter": "Última atualização: junho de 2026."
+    "PrivacyFooterAfter": "Última atualização: outubro de 2026."
   },
   "Dashboard": {
     "title": "Painel",

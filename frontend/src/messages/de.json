@@ -1343,6 +1343,7 @@
     "PrivacyS4Body": "Patientendaten werden ausschließlich an Benutzer weitergegeben, die vom betreuenden Benutzer (Coordinator oder Eigentümer) ausdrücklich Zugang erhalten haben. Eine Weitergabe an Dritte erfolgt grundsätzlich nicht, es sei denn:",
     "PrivacyS4Item1": "Der konfigurierte E-Mail-Dienstleister erhält die E-Mail-Adresse eines eingeladenen Benutzers zum Zweck der Einladungsübermittlung.",
     "PrivacyS4Item2": "Falls <code>AI_BACKEND=mistral</code> konfiguriert ist: Mistral AI SAS (Paris, Frankreich) erhält den extrahierten Dokumententext zur KI-Verarbeitung. In diesem Fall ist ein Auftragsverarbeitungsvertrag (AVV) abzuschließen — eine Vorlage liegt der Software bei (<code>docs/avv-vorlage.md</code>).",
+    "PrivacyS4Item3": "Bei der Ausstellung eines Rezepts erhält die Plattform für elektronische Verschreibungen Memed (integriert in das SNCR/ANVISA) die für die Ausstellung und digitale Signatur des Rezepts erforderlichen Daten des Verordnenden und der Patientin/des Patienten und verwendet dafür das eigene ICP-Brasil-Zertifikat des Verordnenden.",
     "PrivacyUmamiHeading": "Reichweitenmessung (Umami)",
     "PrivacyUmamiBody": "Diese Installation nutzt die selbst gehostete Analysesoftware Umami ({url}), um die Nutzung der Seite statistisch auszuwerten. Umami setzt keine Cookies, erstellt keine Nutzerprofile und speichert IP-Adressen nicht; erhoben werden ausschließlich anonymisierte, aggregierte Zugriffsdaten (aufgerufene Seiten, Browsertyp, Herkunftsland). Die Daten verlassen den Server des Betreibers nicht. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der Reichweitenmessung); ein Einwilligungsbanner ist mangels Cookies und Profilbildung nicht erforderlich.",
     "PrivacyS5Heading": "5. Speicherdauer",
@@ -1350,6 +1351,7 @@
     "PrivacyS5Item2": "Benutzerdaten: bis zur Löschung des Benutzerkontos",
     "PrivacyS5Item3": "Anwendungsprotokolle: 30 Tage",
     "PrivacyS5Item4": "Sitzungstokens: 15 Minuten (Zugriffstoken), 7 Tage (Refresh-Token)",
+    "PrivacyS5Item5": "Ausgestellte Rezepte: werden als gesetzlicher Nachweis aufbewahrt und sind nicht von der automatischen Löschung nach Aufbewahrungsfristen betroffen.",
     "PrivacyS6Heading": "6. Ihre Rechte",
     "PrivacyS6Body": "Sie haben gegenüber dem Verantwortlichen folgende Rechte:",
     "PrivacyS6Item1Title": "Auskunft (Art. 15 DSGVO)",
@@ -1376,7 +1378,7 @@
     "PrivacyS8Body": "Alle Dokumente werden verschlüsselt gespeichert (AES-GCM mit individuellem Schlüssel je Dokument). Die Übertragung erfolgt ausschließlich über HTTPS. Der Zugriff auf Patientendaten ist auf ausdrücklich berechtigte Benutzer beschränkt. Alle Datenänderungen werden protokolliert.",
     "PrivacyFooterBefore": "Diese Datenschutzerklärung gilt für die OpenAvisio-Installation unter",
     "PrivacyFooterDomain": "[DOMAIN]",
-    "PrivacyFooterAfter": "Stand: Juni 2026."
+    "PrivacyFooterAfter": "Stand: Oktober 2026."
   },
   "Dashboard": {
     "title": "Übersicht",

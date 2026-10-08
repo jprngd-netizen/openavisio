@@ -1343,6 +1343,7 @@
     "PrivacyS4Body": "Patient data is shared exclusively with users who have been expressly granted access by the responsible user (coordinator or owner). In principle, no data is shared with third parties, unless:",
     "PrivacyS4Item1": "The configured email service provider receives the email address of an invited user for the purpose of sending the invitation.",
     "PrivacyS4Item2": "If <code>AI_BACKEND=mistral</code> is configured: Mistral AI SAS (Paris, France) receives the extracted document text for AI processing. In this case a data processing agreement must be concluded — a template is included with the software (<code>docs/avv-vorlage.md</code>).",
+    "PrivacyS4Item3": "When a prescription is issued, the electronic-prescription platform Memed (integrated with the SNCR/ANVISA) receives the prescriber's and the patient's data needed to issue and digitally sign the prescription, using the prescriber's own ICP-Brasil certificate.",
     "PrivacyUmamiHeading": "Analytics (Umami)",
     "PrivacyUmamiBody": "This installation uses the self-hosted analytics software Umami ({url}) to statistically evaluate how the site is used. Umami sets no cookies, creates no user profiles and does not store IP addresses; only anonymised, aggregated access data is collected (pages visited, browser type, country of origin). The data does not leave the operator's server. The legal basis is art. 7, IX, of the LGPD (legitimate interest in audience measurement); a consent banner is not required given the absence of cookies and profiling.",
     "PrivacyS5Heading": "5. Retention period",
@@ -1350,6 +1351,7 @@
     "PrivacyS5Item2": "User data: until the user account is deleted",
     "PrivacyS5Item3": "Application logs: 30 days",
     "PrivacyS5Item4": "Session tokens: 15 minutes (access token), 7 days (refresh token)",
+    "PrivacyS5Item5": "Issued prescriptions: retained as a legal record and not subject to automatic retention purge.",
     "PrivacyS6Heading": "6. Your rights",
     "PrivacyS6Body": "You have the following rights before the controller:",
     "PrivacyS6Item1Title": "Confirmation and access (art. 18, I and II, of the LGPD)",
@@ -1376,7 +1378,7 @@
     "PrivacyS8Body": "All documents are stored encrypted (AES-GCM with an individual key per document). Transmission takes place exclusively over HTTPS. Access to patient data is limited to expressly authorised users. All data changes are logged.",
     "PrivacyFooterBefore": "This Privacy Policy applies to the OpenAvisio installation at",
     "PrivacyFooterDomain": "[DOMAIN]",
-    "PrivacyFooterAfter": "Last updated: June 2026."
+    "PrivacyFooterAfter": "Last updated: October 2026."
   },
   "Dashboard": {
     "title": "Dashboard",
