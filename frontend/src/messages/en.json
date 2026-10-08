@@ -278,6 +278,7 @@
     "DangerZone": "Danger zone",
     "EraseWarning": "Permanently erase this patient record and all associated clinical data. This cannot be undone.",
     "Overview": "Overview",
+    "ClinicalRecord": "Clinical Record",
     "Age": "{count, plural, one {# year} other {# years}}",
     "Clear": "Clear",
     "CreatedSuccess": "Patient created successfully.",

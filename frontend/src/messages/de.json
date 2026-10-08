@@ -278,6 +278,7 @@
     "DangerZone": "Gefahrenzone",
     "EraseWarning": "Diese Patientenakte und alle zugehörigen klinischen Daten unwiderruflich löschen. Das kann nicht rückgängig gemacht werden.",
     "Overview": "Übersicht",
+    "ClinicalRecord": "Klinische Akte",
     "Age": "{count, plural, one {# Jahr} other {# Jahre}}",
     "Clear": "Löschen",
     "CreatedSuccess": "Patient erfolgreich erstellt.",

@@ -278,6 +278,7 @@
     "DangerZone": "Zona de perigo",
     "EraseWarning": "Apagar permanentemente este prontuário e todos os dados clínicos. Esta ação não pode ser desfeita.",
     "Overview": "Visão geral",
+    "ClinicalRecord": "Prontuário Clínico",
     "Age": "{count, plural, one {# ano} other {# anos}}",
     "Clear": "Limpar",
     "CreatedSuccess": "Paciente criado com sucesso.",
