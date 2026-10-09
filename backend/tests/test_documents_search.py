@@ -8,7 +8,7 @@ from app.core.security import hash_password
 from app.models.correspondent import Correspondent
 from app.models.document import DocumentReference
 from app.models.organization import Organization
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from app.models.access import PatientAccess
 from app.models.patient import Patient
@@ -22,7 +22,7 @@ async def _setup(db: AsyncSession):
     await db.commit()
     await db.refresh(user)
 
-    patient = Patient(given_name="Emma", family_name="Test", birth_date="2015-04-02", created_by=user.id)
+    patient = Patient(given_name="Emma", family_name="Test", birth_date=date(2015, 4, 2), created_by=user.id)
     db.add(patient)
     await db.commit()
     await db.refresh(patient)

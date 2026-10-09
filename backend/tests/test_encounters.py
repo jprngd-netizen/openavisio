@@ -140,7 +140,7 @@ async def test_encounter_vitals_are_linked_observations(client: AsyncClient, db:
     obs = r.json()
     assert len(obs) == 3
     assert all(o["encounter_id"] == eid for o in obs)
-    assert all(o["effective_date_time"] == "2026-10-07" for o in obs)
+    assert all(o["effective_date_time"].startswith("2026-10-07") for o in obs)
 
     # patching replaces the vitals set (old rows are soft-deleted)
     r = await client.patch(

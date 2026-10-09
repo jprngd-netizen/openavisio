@@ -1,7 +1,7 @@
 """Tests for external document share links — see docs/adr/021-external-document-share-links.md."""
 
 import hashlib
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from httpx import AsyncClient
 from sqlalchemy import select
@@ -31,7 +31,7 @@ async def _user(db: AsyncSession, email: str, role: str = "user") -> User:
 
 
 async def _patient(db: AsyncSession, owner: User) -> Patient:
-    p = Patient(given_name="Emma", family_name="Test", birth_date="2015-04-02", created_by=owner.id)
+    p = Patient(given_name="Emma", family_name="Test", birth_date=date(2015, 4, 2), created_by=owner.id)
     db.add(p)
     await db.commit()
     await db.refresh(p)

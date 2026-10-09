@@ -191,10 +191,10 @@ async def test_purge_observation_uses_effective_date(client: AsyncClient, db: As
     # old created_at but recent effective date -> kept
     kept = Observation(patient_id=patient.id, owner_id=owner.id, category="measurement",
                        created_at=now - timedelta(days=90),
-                       effective_date_time=now.isoformat())
+                       effective_date_time=now)
     # recent created_at but old effective date -> purged
     purged = Observation(patient_id=patient.id, owner_id=owner.id, category="measurement",
-                         effective_date_time=(now - timedelta(days=90)).isoformat())
+                         effective_date_time=(now - timedelta(days=90)))
     db.add_all([kept, purged])
     await db.commit()
 

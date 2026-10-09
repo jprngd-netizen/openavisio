@@ -22,7 +22,7 @@ async def _setup(db: AsyncSession):
     db.add(u)
     await db.commit()
     await db.refresh(u)
-    p = Patient(given_name="Emma", family_name="Test", birth_date="2015-04-02", created_by=u.id)
+    p = Patient(given_name="Emma", family_name="Test", birth_date=date(2015, 4, 2), created_by=u.id)
     db.add(p)
     await db.commit()
     await db.refresh(p)
@@ -37,8 +37,10 @@ async def _auth(client: AsyncClient) -> dict:
 
 
 async def _cond(db, user, patient, name, onset=None, severity=None, note=None, docs=()):
+    from app.core.datetimes import parse_datetime
+
     c = Condition(patient_id=patient.id, owner_id=user.id, code_display=name,
-                  onset_date_time=onset, severity=severity, note=note)
+                  onset_date_time=parse_datetime(onset), severity=severity, note=note)
     for d in docs:
         c.sources.append(ConditionSource(document_reference_id=d.id))
     db.add(c)
@@ -69,7 +71,7 @@ async def test_merge_unions_sources_keeps_earliest_onset(client: AsyncClient, db
     body = r.json()
     assert body["code_display"] == "Ataxie", "winner keeps its name"
     assert body["severity"] == "mild", "severity travels with the name"
-    assert body["onset_date_time"] == "2023-02-01", "the earliest documented onset survives"
+    assert body["onset_date_time"].startswith("2023-02-01"), "the earliest documented onset survives"
     assert body["note"] == "W\nL"
     assert {s["document_reference_id"] for s in body["sources"]} == {str(doc_a.id), str(doc_b.id)}, "union, deduped"
 

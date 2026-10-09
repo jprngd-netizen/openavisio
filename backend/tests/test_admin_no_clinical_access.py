@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
 from app.models.document import DocumentReference
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from app.models.access import PatientAccess
 from app.models.patient import Patient
@@ -28,7 +28,7 @@ async def _auth(client: AsyncClient, email: str) -> dict:
 
 
 async def _patient_with_doc(db: AsyncSession, owner: User):
-    p = Patient(given_name="Emma", family_name="Test", birth_date="2015-04-02", created_by=owner.id)
+    p = Patient(given_name="Emma", family_name="Test", birth_date=date(2015, 4, 2), created_by=owner.id)
     db.add(p)
     await db.commit()
     await db.refresh(p)

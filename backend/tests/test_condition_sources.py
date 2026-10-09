@@ -26,7 +26,7 @@ async def _setup(db: AsyncSession):
     db.add(u)
     await db.commit()
     await db.refresh(u)
-    p = Patient(given_name="Emma", family_name="Test", birth_date="2015-04-02", created_by=u.id)
+    p = Patient(given_name="Emma", family_name="Test", birth_date=date(2015, 4, 2), created_by=u.id)
     db.add(p)
     await db.commit()
     await db.refresh(p)

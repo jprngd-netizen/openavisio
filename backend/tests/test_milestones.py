@@ -4,7 +4,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import hash_password
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from app.models.access import PatientAccess
 from app.models.patient import Patient
@@ -21,7 +21,7 @@ async def _user(db: AsyncSession, email: str) -> User:
 
 
 async def _patient(db: AsyncSession, owner: User) -> Patient:
-    p = Patient(given_name="Emma", family_name="Test", birth_date="2024-01-15", created_by=owner.id)
+    p = Patient(given_name="Emma", family_name="Test", birth_date=date(2024, 1, 15), created_by=owner.id)
     db.add(p)
     await db.commit()
     await db.refresh(p)

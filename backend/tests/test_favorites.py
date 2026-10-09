@@ -1,6 +1,6 @@
 """#70: patient favorites — add/remove, access-checked, revoke drops them."""
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,7 +27,7 @@ async def _auth(client: AsyncClient, email: str) -> dict:
 
 
 async def _patient(db: AsyncSession, creator: User, level: str = "admin") -> Patient:
-    p = Patient(given_name="Emma", family_name="Test", birth_date="2015-04-02", created_by=creator.id)
+    p = Patient(given_name="Emma", family_name="Test", birth_date=date(2015, 4, 2), created_by=creator.id)
     db.add(p)
     await db.commit()
     await db.refresh(p)
