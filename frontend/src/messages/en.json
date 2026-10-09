@@ -1182,7 +1182,10 @@
     "patientNotFound": "Patient not found.",
     "loadError": "Failed to load conditions. The server may be unavailable.",
     "empty": "No conditions recorded.",
-    "showFullName": "Show full name"
+    "showFullName": "Show full name",
+    "encounters": "{count, plural, one {# visit} other {# visits}}",
+    "showEncounters": "Show visits",
+    "encounterOrigin": "Visit on {date}"
   },
   "Prescriptions": {
     "New": "New prescription",
@@ -1323,7 +1326,11 @@
     "ActiveMedsDuplicateHint": "Another active medication shares the same substance. Review the prescription.",
     "ActiveMedsDuplicateCount": "{count} possible duplicate(s)",
     "ActiveMedsSince": "since {date}",
-    "ActiveMedsUntil": "until {date}"
+    "ActiveMedsUntil": "until {date}",
+    "Diagnoses": "Diagnoses",
+    "AddDiagnosis": "Add diagnosis",
+    "RemoveDiagnosis": "Remove diagnosis",
+    "DiagnosesEmpty": "No diagnosis recorded"
   },
   "Legal": {
     "ImprintBack": "Back to the app",

@@ -23,12 +23,11 @@ const EMPTY = {
   physical_exam: "",
   assessment: "",
   plan: "",
-  cid10_code: "",
-  cid10_display: "",
   notes: "",
 };
 
 type FormState = typeof EMPTY;
+type DiagnosisRow = { cid10_code: string; cid10_display: string };
 
 function toLocalInput(iso: string | null | undefined): string {
   if (!iso) return "";
@@ -47,9 +46,24 @@ export function EncountersView({ patientId, encounters, activeMeds = [] }: { pat
   const [error, setError] = useState("");
   const [form, setForm] = useState<FormState>(EMPTY);
   const [vitals, setVitals] = useState<Record<string, string>>({});
+  // WS-3: a consultation carries N diagnoses, each resolved to a problem-list
+  // Condition on the backend; the editor mirrors the single-CID picker N times.
+  const [diagnoses, setDiagnoses] = useState<DiagnosisRow[]>([]);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function addDiagnosis() {
+    setDiagnoses((d) => [...d, { cid10_code: "", cid10_display: "" }]);
+  }
+
+  function setDiagnosis(index: number, patch: Partial<DiagnosisRow>) {
+    setDiagnoses((d) => d.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+  }
+
+  function removeDiagnosis(index: number) {
+    setDiagnoses((d) => d.filter((_, i) => i !== index));
   }
 
   // Vital signs live in the consultation: they are written as linked Observation
@@ -72,6 +86,7 @@ export function EncountersView({ patientId, encounters, activeMeds = [] }: { pat
   function reset() {
     setForm(EMPTY);
     setVitals({});
+    setDiagnoses([]);
     setEditingId(null);
     setError("");
   }
@@ -96,10 +111,14 @@ export function EncountersView({ patientId, encounters, activeMeds = [] }: { pat
       physical_exam: e.physical_exam ?? "",
       assessment: e.assessment ?? "",
       plan: e.plan ?? "",
-      cid10_code: e.cid10_code ?? "",
-      cid10_display: e.cid10_display ?? "",
       notes: e.notes ?? "",
     });
+    const rows: DiagnosisRow[] = Array.isArray(e.diagnoses) && e.diagnoses.length
+      ? e.diagnoses.map((d: any) => ({ cid10_code: d.cid10_code ?? "", cid10_display: d.cid10_display ?? "" }))
+      : (e.cid10_code || e.cid10_display)
+        ? [{ cid10_code: e.cid10_code ?? "", cid10_display: e.cid10_display ?? "" }]
+        : [];
+    setDiagnoses(rows);
     setVitals(
       Object.fromEntries(
         (e.measurements ?? [])
@@ -130,10 +149,14 @@ export function EncountersView({ patientId, encounters, activeMeds = [] }: { pat
       physical_exam: form.physical_exam || null,
       assessment: form.assessment || null,
       plan: form.plan || null,
-      cid10_code: form.cid10_code || null,
-      cid10_display: form.cid10_display || null,
       notes: form.notes || null,
       measurements,
+      diagnoses: diagnoses
+        .filter((d) => d.cid10_code.trim() !== "" || d.cid10_display.trim() !== "")
+        .map((d) => ({
+          cid10_code: d.cid10_code.trim() || null,
+          cid10_display: d.cid10_display.trim() || null,
+        })),
     };
     startTransition(async () => {
       try {
@@ -307,33 +330,51 @@ export function EncountersView({ patientId, encounters, activeMeds = [] }: { pat
               />
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-[8rem_1fr]">
-              <div className="space-y-1.5">
-                <label className={labelCls}>{t("Cid10Code")}</label>
-                <input
-                  type="text"
-                  value={form.cid10_code}
-                  readOnly
-                  tabIndex={-1}
-                  aria-readonly="true"
-                  className={`${inputCls} cursor-default bg-muted/60 text-center font-medium`}
-                />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className={labelCls}>{t("Diagnoses")}</label>
+                <button
+                  type="button"
+                  onClick={addDiagnosis}
+                  className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  {t("AddDiagnosis")}
+                </button>
               </div>
-              <div className="space-y-1.5">
-                <label className={labelCls}>{t("Cid10Display")}</label>
-                <CidCombobox
-                  className={inputCls}
-                  value={form.cid10_display}
-                  onSelect={(opt, text) => {
-                    if (opt) {
-                      set("cid10_code", opt.code);
-                      set("cid10_display", opt.description);
-                    } else {
-                      set("cid10_display", text);
-                    }
-                  }}
-                />
-              </div>
+              {diagnoses.length === 0 && (
+                <p className="text-xs text-muted-foreground">{t("DiagnosesEmpty")}</p>
+              )}
+              {diagnoses.map((d, i) => (
+                <div key={i} className="grid grid-cols-1 gap-2 sm:grid-cols-[8rem_1fr_auto]">
+                  <input
+                    type="text"
+                    value={d.cid10_code}
+                    readOnly
+                    tabIndex={-1}
+                    aria-readonly="true"
+                    aria-label={t("Cid10Code")}
+                    className={`${inputCls} cursor-default bg-muted/60 text-center font-medium`}
+                  />
+                  <CidCombobox
+                    className={inputCls}
+                    value={d.cid10_display}
+                    placeholder={t("Cid10Display")}
+                    onSelect={(opt, text) => {
+                      if (opt) setDiagnosis(i, { cid10_code: opt.code, cid10_display: opt.description });
+                      else setDiagnosis(i, { cid10_display: text });
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeDiagnosis(i)}
+                    title={t("RemoveDiagnosis")}
+                    className="inline-flex items-center justify-center rounded-lg border px-2 text-muted-foreground transition-colors hover:border-destructive hover:text-destructive"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
             </div>
 
             <div className="space-y-1.5">
@@ -384,13 +425,22 @@ export function EncountersView({ patientId, encounters, activeMeds = [] }: { pat
                           {typeLabel(e.encounter_type)}
                         </span>
                       )}
-                      {(e.cid10_code || e.cid10_display) && (
-                        <span className="text-xs text-muted-foreground">
-                          {e.cid10_code ? `${e.cid10_code}` : ""}
-                          {e.cid10_code && e.cid10_display ? " · " : ""}
-                          {e.cid10_display ?? ""}
-                        </span>
-                      )}
+                      {(() => {
+                        const rows = (e.diagnoses?.length
+                          ? e.diagnoses
+                          : [{ cid10_code: e.cid10_code, cid10_display: e.cid10_display }]
+                        ).filter((d: any) => d.cid10_code || d.cid10_display);
+                        return rows.map((d: any, i: number) => (
+                          <span
+                            key={i}
+                            className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary"
+                          >
+                            {d.cid10_code ? `${d.cid10_code}` : ""}
+                            {d.cid10_code && d.cid10_display ? " · " : ""}
+                            {d.cid10_display ?? ""}
+                          </span>
+                        ));
+                      })()}
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">

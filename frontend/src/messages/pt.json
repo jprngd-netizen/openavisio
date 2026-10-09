@@ -1182,7 +1182,10 @@
     "patientNotFound": "Paciente não encontrado.",
     "loadError": "Falha ao carregar diagnósticos. O servidor pode estar indisponível.",
     "empty": "Nenhum diagnóstico registrado.",
-    "showFullName": "Mostrar nome completo"
+    "showFullName": "Mostrar nome completo",
+    "encounters": "{count, plural, one {# consulta} other {# consultas}}",
+    "showEncounters": "Mostrar consultas",
+    "encounterOrigin": "Consulta em {date}"
   },
   "Prescriptions": {
     "New": "Nova receita",
@@ -1323,7 +1326,11 @@
     "ActiveMedsDuplicateHint": "Há outra medicação ativa com a mesma substância. Revise a prescrição.",
     "ActiveMedsDuplicateCount": "{count} possível(is) duplicidade(s)",
     "ActiveMedsSince": "desde {date}",
-    "ActiveMedsUntil": "até {date}"
+    "ActiveMedsUntil": "até {date}",
+    "Diagnoses": "Diagnósticos",
+    "AddDiagnosis": "Adicionar diagnóstico",
+    "RemoveDiagnosis": "Remover diagnóstico",
+    "DiagnosesEmpty": "Nenhum diagnóstico registrado"
   },
   "Legal": {
     "ImprintBack": "Voltar ao aplicativo",

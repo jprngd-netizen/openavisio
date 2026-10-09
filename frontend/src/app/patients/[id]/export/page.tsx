@@ -143,13 +143,19 @@ export default async function PatientExportPage({
                     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                       <span className="font-semibold">{formatDate(e.encounter_date, locale)}</span>
                       {e.encounter_type && <span className="text-sm text-black/70">{encounterType(e.encounter_type)}</span>}
-                      {(e.cid10_code || e.cid10_display) && (
-                        <span className="text-xs text-black/60">
-                          {e.cid10_code || ""}
-                          {e.cid10_code && e.cid10_display ? " · " : ""}
-                          {e.cid10_display || ""}
-                        </span>
-                      )}
+                      {(() => {
+                        const rows = (e.diagnoses?.length
+                          ? e.diagnoses
+                          : [{ cid10_code: e.cid10_code, cid10_display: e.cid10_display }]
+                        ).filter((d: any) => d.cid10_code || d.cid10_display);
+                        return rows.map((d: any, i: number) => (
+                          <span key={i} className="text-xs text-black/60">
+                            {d.cid10_code || ""}
+                            {d.cid10_code && d.cid10_display ? " · " : ""}
+                            {d.cid10_display || ""}
+                          </span>
+                        ));
+                      })()}
                     </div>
 
                     {vitals.length > 0 && (

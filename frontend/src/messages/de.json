@@ -1182,7 +1182,10 @@
     "patientNotFound": "Patient nicht gefunden.",
     "loadError": "Diagnosen konnten nicht geladen werden. Der Server ist möglicherweise nicht erreichbar.",
     "empty": "Keine Diagnosen erfasst.",
-    "showFullName": "Vollständigen Namen anzeigen"
+    "showFullName": "Vollständigen Namen anzeigen",
+    "encounters": "{count, plural, one {# Konsultation} other {# Konsultationen}}",
+    "showEncounters": "Konsultationen anzeigen",
+    "encounterOrigin": "Konsultation am {date}"
   },
   "Prescriptions": {
     "New": "Neues Rezept",
@@ -1323,7 +1326,11 @@
     "ActiveMedsDuplicateHint": "Ein anderes aktives Medikament enthält denselben Wirkstoff. Bitte die Verordnung prüfen.",
     "ActiveMedsDuplicateCount": "{count} mögliche Doppelung(en)",
     "ActiveMedsSince": "seit {date}",
-    "ActiveMedsUntil": "bis {date}"
+    "ActiveMedsUntil": "bis {date}",
+    "Diagnoses": "Diagnosen",
+    "AddDiagnosis": "Diagnose hinzufügen",
+    "RemoveDiagnosis": "Diagnose entfernen",
+    "DiagnosesEmpty": "Keine Diagnose erfasst"
   },
   "Legal": {
     "ImprintBack": "Zurück zur App",

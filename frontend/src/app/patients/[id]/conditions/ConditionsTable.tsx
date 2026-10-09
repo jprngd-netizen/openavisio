@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileText } from "lucide-react";
+import { FileText, Stethoscope } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { formatDate, statusBadgeColor } from "@/lib/utils";
 import { ConditionActions } from "./ConditionActions";
@@ -51,6 +51,44 @@ function Sources({ sources, patientId }: { sources: any[]; patientId: string }) 
   );
 }
 
+function EncounterSources({ encounters, patientId }: { encounters: any[]; patientId: string }) {
+  const t = useTranslations("Conditions");
+  const sorted = [...encounters].sort((a: any, b: any) =>
+    (a.encounter_date ?? "9999").localeCompare(b.encounter_date ?? "9999")
+  );
+  return (
+    <div className="flex items-center gap-1.5 whitespace-nowrap">
+      <span className="inline-flex items-center gap-1">
+        <Stethoscope className="h-3.5 w-3.5" />
+        {t("encounters", { count: encounters.length })}
+      </span>
+      <details className="relative">
+        <summary
+          className="flex cursor-pointer select-none items-center rounded p-0.5 text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden"
+          style={{ listStyle: "none" }}
+          title={t("showEncounters")}
+        >
+          <FileText className="h-3.5 w-3.5" />
+        </summary>
+        <ul className="absolute right-0 z-10 mt-1 w-64 space-y-1 rounded-md border bg-card p-2 shadow-md">
+          {sorted.map((e: any) => (
+            <li key={e.encounter_id} className="truncate">
+              <a
+                href={`/patients/${patientId}/encounters`}
+                className="underline decoration-dotted underline-offset-2 hover:text-foreground"
+                title={t("encounterOrigin", { date: e.encounter_date ? formatDate(e.encounter_date) : "—" })}
+              >
+                {e.encounter_date ? `${formatDate(e.encounter_date)} · ` : ""}
+                {e.cid10_display || e.cid10_code || ""}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </details>
+    </div>
+  );
+}
+
 function tSafe(t: any, key: string, raw: string | null | undefined) {
   if (!raw) return "—";
   try { return t(`${key}_${raw}`); } catch { return raw; }
@@ -82,11 +120,34 @@ export function ConditionsTable({ conditions, patientId }: { conditions: any[]; 
                 <div className="mt-1 text-xs text-muted-foreground">
                   {c.onset_date_time && <>{formatDate(c.onset_date_time)} · </>}
                   {c.severity && <span className="capitalize">{tSafe(t, "severity", c.severity)} · </span>}
-                  {c.sources?.length ? t("documents", { count: c.sources.length }) : t("manual")}
+                  {c.sources?.length
+                    ? t("documents", { count: c.sources.length })
+                    : c.encounters?.length
+                      ? t("encounters", { count: c.encounters.length })
+                      : t("manual")}
                 </div>
               </div>
               {/* full-width rows with a real touch height — a text link in xs font
                   is a target nobody hits on the first try */}
+              {open && c.encounters?.length > 0 && (
+                <ul className="divide-y border-t">
+                  {c.encounters.map((e: any) => (
+                    <li key={e.encounter_id}>
+                      <a
+                        href={`/patients/${patientId}/encounters`}
+                        className="flex min-h-11 items-center gap-2.5 px-4 py-2 text-sm active:bg-muted/50"
+                        onClick={(ev) => ev.stopPropagation()}
+                      >
+                        <Stethoscope className="h-4 w-4 shrink-0 text-muted-foreground" />
+                        <span className="min-w-0 truncate">
+                          {e.encounter_date && <span className="text-muted-foreground">{formatDate(e.encounter_date)} · </span>}
+                          {e.cid10_display || e.cid10_code || ""}
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              )}
               {open && c.sources?.length > 0 && (
                 <ul className="divide-y border-t">
                   {sortedSources(c.sources).map((s: any) => (
@@ -151,7 +212,11 @@ export function ConditionsTable({ conditions, patientId }: { conditions: any[]; 
                   </span>
                 </td>
                 <td className="px-4 py-3 text-muted-foreground text-xs">
-                  {c.sources?.length ? <Sources sources={c.sources} patientId={patientId} /> : t("manual")}
+                  <div className="flex flex-col gap-1">
+                    {c.encounters?.length ? <EncounterSources encounters={c.encounters} patientId={patientId} /> : null}
+                    {c.sources?.length ? <Sources sources={c.sources} patientId={patientId} /> : null}
+                    {!c.sources?.length && !c.encounters?.length ? t("manual") : null}
+                  </div>
                 </td>
                 <td className="w-px whitespace-nowrap px-4 py-3">
                   <div className="flex items-center gap-2">
