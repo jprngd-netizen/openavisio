@@ -1,11 +1,15 @@
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel, OwnedResource
+
+if TYPE_CHECKING:
+    from app.models.encounter_condition import EncounterCondition
 
 
 class Condition(OwnedResource):
@@ -30,6 +34,16 @@ class Condition(OwnedResource):
     patient: Mapped["Patient"] = relationship("Patient", back_populates="conditions")  # noqa: F821
     sources: Mapped[list["ConditionSource"]] = relationship(
         "ConditionSource", back_populates="condition", cascade="all, delete-orphan"
+    )
+    # WS-3: the consultations that recorded this problem, with the CID-10 as it
+    # read then — the provenance shown in the problem list. View-only and
+    # soft-delete-filtered; un-linking never deletes the Condition.
+    encounters: Mapped[list["EncounterCondition"]] = relationship(  # noqa: F821
+        "EncounterCondition",
+        primaryjoin="and_(Condition.id == EncounterCondition.condition_id, EncounterCondition.is_deleted == False)",  # noqa: E712
+        viewonly=True,
+        lazy="selectin",
+        order_by="EncounterCondition.created_at",
     )
 
 

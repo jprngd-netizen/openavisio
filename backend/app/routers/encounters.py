@@ -8,9 +8,11 @@ from app.auth.access import AccessLevel, require_patient_access
 from app.core.database import get_db
 from app.deps import get_current_user
 from app.models.encounter import Encounter
+from app.models.encounter_condition import EncounterCondition
 from app.models.observation import Observation
 from app.models.user import User
 from app.schemas.encounter import EncounterCreateRequest, EncounterDto, EncounterUpdateRequest
+from app.services.encounter_diagnoses import sync_encounter_diagnoses
 
 router = APIRouter()
 
@@ -41,10 +43,13 @@ async def create_encounter(
     await require_patient_access(patient_id, user, db, AccessLevel.contribute)
     data = body.model_dump()
     measurements = data.pop("measurements", [])
+    diagnoses = data.pop("diagnoses", [])
     encounter = Encounter(patient_id=patient_id, owner_id=user.id, **data)
     db.add(encounter)
-    await db.flush()  # assign encounter.id before writing its linked vitals
+    await db.flush()  # assign encounter.id before writing its linked vitals/diagnoses
     _add_measurements(db, patient_id, user.id, encounter.id, encounter.encounter_date, measurements)
+    if diagnoses:
+        await sync_encounter_diagnoses(db, encounter, user.id, diagnoses)
     await db.commit()
     return await _reload(db, encounter.id)
 
@@ -77,6 +82,7 @@ async def update_encounter(
     await require_patient_access(encounter.patient_id, user, db, AccessLevel.contribute)
     data = body.model_dump(exclude_unset=True)
     measurements = data.pop("measurements", None)
+    diagnoses = data.pop("diagnoses", None)
     for field, value in data.items():
         setattr(encounter, field, value)
     if measurements is not None:
@@ -90,6 +96,10 @@ async def update_encounter(
         for obs in existing:
             obs.is_deleted = True
         _add_measurements(db, encounter.patient_id, user.id, encounter.id, encounter.encounter_date, measurements)
+    if diagnoses is not None:
+        # Reconcile the diagnosis links: dropped ones are un-linked (the
+        # Condition itself survives as a problem), new ones are added.
+        await sync_encounter_diagnoses(db, encounter, user.id, diagnoses)
     await db.commit()
     return await _reload(db, encounter.id)
 
@@ -113,6 +123,16 @@ async def delete_encounter(
     ).scalars().all()
     for obs in vitals:
         obs.is_deleted = True
+    # Un-link the diagnoses too; the Conditions themselves (the problem list) stay.
+    links = (
+        await db.execute(
+            select(EncounterCondition).where(
+                EncounterCondition.encounter_id == encounter.id, EncounterCondition.is_deleted == False  # noqa: E712
+            )
+        )
+    ).scalars().all()
+    for link in links:
+        link.is_deleted = True
     await db.commit()
 
 

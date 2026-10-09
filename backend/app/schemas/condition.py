@@ -13,6 +13,15 @@ class ConditionSourceDto(OrmBase):
     doc_type: str | None
 
 
+class ConditionEncounterSourceDto(OrmBase):
+    """Provenance of a problem: the consultation that recorded it (WS-3)."""
+
+    encounter_id: uuid.UUID
+    encounter_date: TzDateTime | None
+    cid10_code: str | None
+    cid10_display: str | None
+
+
 class ConditionDto(OrmBase):
     id: uuid.UUID
     patient_id: uuid.UUID
@@ -29,6 +38,7 @@ class ConditionDto(OrmBase):
     document_reference_id: uuid.UUID | None
     created_at: datetime
     sources: list[ConditionSourceDto] = []
+    encounters: list[ConditionEncounterSourceDto] = []
 
 
 class ConditionMergeRequest(BaseModel):

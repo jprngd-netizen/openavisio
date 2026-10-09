@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import OwnedResource
 
 if TYPE_CHECKING:
+    from app.models.encounter_condition import EncounterCondition
     from app.models.observation import Observation
 
 
@@ -41,4 +42,14 @@ class Encounter(OwnedResource):
         viewonly=True,
         lazy="selectin",
         order_by="Observation.effective_date_time",
+    )
+    # WS-3: the diagnoses recorded in this consultation, each linked to a
+    # canonical Condition. View-only like the vitals: rows are written through
+    # the encounter router, which reconciles the links explicitly.
+    diagnoses: Mapped[list["EncounterCondition"]] = relationship(  # noqa: F821
+        "EncounterCondition",
+        primaryjoin="and_(Encounter.id == EncounterCondition.encounter_id, EncounterCondition.is_deleted == False)",  # noqa: E712
+        viewonly=True,
+        lazy="selectin",
+        order_by="EncounterCondition.created_at",
     )

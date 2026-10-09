@@ -9,6 +9,7 @@ from app.auth.access import AccessLevel, require_patient_access
 from app.core.database import get_db
 from app.deps import get_current_user
 from app.models.condition import Condition, ConditionSource
+from app.models.encounter_condition import EncounterCondition
 from app.models.user import User
 from app.schemas.condition import ConditionCreateRequest, ConditionDto, ConditionMergeRequest, ConditionUpdateRequest
 
@@ -23,7 +24,7 @@ async def list_conditions(
     db: AsyncSession = Depends(get_db),
 ):
     await require_patient_access(patient_id, user, db)
-    q = select(Condition).options(selectinload(Condition.sources).selectinload(ConditionSource.document)).where(Condition.patient_id == patient_id, Condition.is_deleted == False)  # noqa: E712
+    q = select(Condition).options(selectinload(Condition.sources).selectinload(ConditionSource.document), selectinload(Condition.encounters).selectinload(EncounterCondition.encounter)).where(Condition.patient_id == patient_id, Condition.is_deleted == False)  # noqa: E712
     if cond_status:
         q = q.where(Condition.clinical_status == cond_status)
     result = await db.execute(q)
@@ -41,7 +42,7 @@ async def create_condition(
     cond = Condition(patient_id=patient_id, owner_id=user.id, **body.model_dump())
     db.add(cond)
     await db.commit()
-    await db.refresh(cond, ["sources"])
+    await db.refresh(cond, ["sources", "encounters"])
     return cond
 
 
@@ -51,7 +52,7 @@ async def get_condition(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Condition).options(selectinload(Condition.sources).selectinload(ConditionSource.document)).where(Condition.id == condition_id, Condition.is_deleted == False))  # noqa: E712
+    result = await db.execute(select(Condition).options(selectinload(Condition.sources).selectinload(ConditionSource.document), selectinload(Condition.encounters).selectinload(EncounterCondition.encounter)).where(Condition.id == condition_id, Condition.is_deleted == False))  # noqa: E712
     cond = result.scalar_one_or_none()
     if not cond:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
@@ -66,7 +67,7 @@ async def update_condition(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Condition).options(selectinload(Condition.sources).selectinload(ConditionSource.document)).where(Condition.id == condition_id, Condition.is_deleted == False))  # noqa: E712
+    result = await db.execute(select(Condition).options(selectinload(Condition.sources).selectinload(ConditionSource.document), selectinload(Condition.encounters).selectinload(EncounterCondition.encounter)).where(Condition.id == condition_id, Condition.is_deleted == False))  # noqa: E712
     cond = result.scalar_one_or_none()
     if not cond:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
@@ -91,7 +92,7 @@ async def merge_condition(
     recoverable, but deliberately no automatic unmerge."""
     if body.other_id == condition_id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot merge a condition into itself")
-    q = select(Condition).options(selectinload(Condition.sources).selectinload(ConditionSource.document))
+    q = select(Condition).options(selectinload(Condition.sources).selectinload(ConditionSource.document), selectinload(Condition.encounters).selectinload(EncounterCondition.encounter))
     winner = (await db.execute(q.where(Condition.id == condition_id, Condition.is_deleted == False))).scalar_one_or_none()  # noqa: E712
     loser = (await db.execute(q.where(Condition.id == body.other_id, Condition.is_deleted == False))).scalar_one_or_none()  # noqa: E712
     if not winner or not loser:
@@ -129,7 +130,7 @@ async def delete_condition(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(Condition).options(selectinload(Condition.sources).selectinload(ConditionSource.document)).where(Condition.id == condition_id, Condition.is_deleted == False))  # noqa: E712
+    result = await db.execute(select(Condition).options(selectinload(Condition.sources).selectinload(ConditionSource.document), selectinload(Condition.encounters).selectinload(EncounterCondition.encounter)).where(Condition.id == condition_id, Condition.is_deleted == False))  # noqa: E712
     cond = result.scalar_one_or_none()
     if not cond:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
