@@ -176,6 +176,20 @@ export const attachPrescription = async (
 export const getClinicalHistory = async (patientId: string) => api.get<any | null>(`/api/patients/${patientId}/clinical-history`);
 export const saveClinicalHistory = async (patientId: string, data: any) => api.put<any>(`/api/patients/${patientId}/clinical-history`, data);
 
+// Allergies (structured AllergyIntolerance, WS-1)
+export const getAllergies = async (patientId: string, status?: string) =>
+  api.get<any[]>(`/api/patients/${patientId}/allergies${status ? `?status=${status}` : ""}`);
+export const createAllergy = async (patientId: string, data: any) => api.post<any>(`/api/patients/${patientId}/allergies`, data);
+export const updateAllergy = async (id: string, data: any) => api.patch<any>(`/api/allergies/${id}`, data);
+export const deleteAllergy = async (id: string) => api.delete<void>(`/api/allergies/${id}`);
+export const getAllergyAlerts = async (patientId: string, substances: string[]) => {
+  const q = substances
+    .filter((s) => s && s.trim())
+    .map((s) => `substance=${encodeURIComponent(s)}`)
+    .join("&");
+  return api.get<any[]>(`/api/patients/${patientId}/allergy-alerts${q ? `?${q}` : ""}`);
+};
+
 // CID-10 catalogue (DATASUS, pt-BR) for diagnosis pickers.
 export type CidOption = { code: string; description: string };
 export const searchCid10 = async (q: string) =>

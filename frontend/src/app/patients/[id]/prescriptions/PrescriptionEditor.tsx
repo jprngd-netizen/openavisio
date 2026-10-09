@@ -8,12 +8,14 @@ import {
   X,
   RefreshCw,
   AlertCircle,
+  AlertTriangle,
   Loader2,
 } from "lucide-react";
 import {
   getPrescription,
   updatePrescription,
   retryPrescription,
+  getAllergyAlerts,
 } from "@/lib/api";
 
 const DEBOUNCE_MS = 1500;
@@ -35,6 +37,8 @@ export function PrescriptionEditor({
   const [items, setItems] = useState<any[]>([]);
   const [version, setVersion] = useState(1);
   const [status, setStatus] = useState("draft");
+  const [patientId, setPatientId] = useState<string | null>(null);
+  const [allergyAlerts, setAllergyAlerts] = useState<any[]>([]);
 
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -70,6 +74,7 @@ export function PrescriptionEditor({
         setItems(loadedItems);
         setVersion(p.version);
         setStatus(p.status);
+        setPatientId(p.patient_id ?? null);
         setLoading(false);
       })
       .catch((e: Error) => {
@@ -77,6 +82,23 @@ export function PrescriptionEditor({
         setLoading(false);
       });
   }, [prescriptionId]);
+
+  // Allergy alert: re-check the draft items against the patient's active
+  // allergies whenever they change (debounced), showing a banner before issue.
+  useEffect(() => {
+    if (!patientId) return;
+    const names = items.map((i) => i.medication_name).filter(Boolean);
+    if (names.length === 0) {
+      setAllergyAlerts([]);
+      return;
+    }
+    const handle = setTimeout(() => {
+      getAllergyAlerts(patientId, names)
+        .then((found) => setAllergyAlerts(found))
+        .catch(() => setAllergyAlerts([]));
+    }, 600);
+    return () => clearTimeout(handle);
+  }, [items, patientId]);
 
   function scheduleAutosave() {
     if (_statusRef.current !== "draft") return;
@@ -199,6 +221,28 @@ export function PrescriptionEditor({
 
   return (
     <div className="space-y-4">
+      {/* Allergy conflict banner — an active allergy matches a drafted substance */}
+      {allergyAlerts.length > 0 && (
+        <div
+          className="flex items-start gap-3 rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm dark:border-red-900/40 dark:bg-red-900/15"
+          data-testid="allergy-alert-banner"
+          role="alert"
+        >
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-red-600" />
+          <div className="flex-1">
+            <p className="font-semibold text-red-700 dark:text-red-300">{t("AllergyAlertTitle")}</p>
+            <ul className="mt-1 list-inside list-disc text-red-700 dark:text-red-300">
+              {allergyAlerts.map((a, i) => (
+                <li key={`${a.allergy_id}-${i}`} data-testid="allergy-alert-item">
+                  {t("AllergyAlertItem", { substance: a.matched_substance, allergy: a.substance_display })}
+                  {a.reaction ? ` — ${a.reaction}` : ""}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
       {/* Conflict banner */}
       {conflict && (
         <div
