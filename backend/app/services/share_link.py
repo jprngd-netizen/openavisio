@@ -17,13 +17,11 @@ from app.models.audit import AuditLog
 from app.models.patient import Patient
 from app.models.access import PatientAccess
 from app.models.share_link import DocumentShareLink, ShareLinkStatus
-from app.models.user import User, UserRole
+from app.models.user import User
 
 # Allowed link lifetimes (days). No "never" — GDPR storage limitation.
 EXPIRY_CHOICES = {7, 30, 90}
 _ACCESS_DEBOUNCE = timedelta(minutes=10)
-
-_STAFF_ROLES = {UserRole.admin, UserRole.manager}
 
 
 def generate_token() -> tuple[str, str]:
@@ -59,12 +57,11 @@ async def _is_active_rep(patient_id: uuid.UUID, user: User, db: AsyncSession) ->
 
 
 async def require_share_management(patient_id: uuid.UUID, user: User, db: AsyncSession) -> bool:
-    """Gate for creating/managing external share links (ADR-021, Regel X + exception).
+    """Gate for creating/managing external share links (ADR-021).
 
-    Outbound external sharing is a data-subject act, not a staff act:
+    Outbound external sharing is a data-subject act. Any user who has access to
+    the patient (caregiver or staff) may manage share links:
     - No access at all -> 404.
-    - Staff (admin/manager) who are NOT an active legal representative -> 403 (ADR 026).
-    - Otherwise allowed.
 
     Returns ``created_legal`` (whether the user is an active legal representative).
     """
@@ -72,14 +69,7 @@ async def require_share_management(patient_id: uuid.UUID, user: User, db: AsyncS
     if level is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    is_rep = await _is_active_rep(patient_id, user, db)
-
-    if user.role in _STAFF_ROLES and not is_rep:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="External sharing is reserved for a patient's caregivers or legal representatives, not staff.",
-        )
-    return is_rep
+    return await _is_active_rep(patient_id, user, db)
 
 
 async def log_share_access(

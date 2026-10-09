@@ -4,7 +4,7 @@
 
 ## Context
 
-`resolve_patient_access()` short-circuited for the `admin` role: unconditional full access to every Patient's record, before any ownership/grant check. Found in practice (issue #65): a deployment admin could open every patient and read all clinical data. This contradicted the boundary the system already drew elsewhere — ADR 021 ("Regel X": staff acting in admin/manager capacity are not Caregivers and cannot create share links) and the Sharing Purpose definition (managing one grants access to explicitly shared files, "nothing else in a Patient's record") — and undermined the core promise for hosted Deployments: the operator's IT admin must not be able to read medical records.
+`resolve_patient_access()` short-circuited for the `admin` role: unconditional full access to every Patient's record, before any ownership/grant check. Found in practice (issue #65): a deployment admin could open every patient and read all clinical data. This contradicted the boundary the system already drew elsewhere — ADR 021 ("Regel X": staff acting in admin/manager capacity are not Caregivers and cannot create share links) [amended 2026-10-09: the share-link staff refusal was removed, see ADR 021] and the Sharing Purpose definition (managing one grants access to explicitly shared files, "nothing else in a Patient's record") — and undermined the core promise for hosted Deployments: the operator's IT admin must not be able to read medical records.
 
 An audit showed nothing legitimate depended on the bypass: Coordinators (`manager` role) never had one and work via ownership + PatientAccess grants; Patient Erasure requires owner or an admin-level grant; user management uses `require_admin` role checks, not patient access.
 

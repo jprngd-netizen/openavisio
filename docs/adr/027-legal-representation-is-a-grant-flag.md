@@ -15,7 +15,7 @@ Design session (2026-07-09): OpenAvisio's deployments (Verein, care home, famili
 Legal representation becomes a boolean `is_legal_representative` on `PatientAccess`. A person's human relationship (Mother, Nurse, …) stays in the existing `relationship` field; the flag captures the legal standing independently, so "Mother who is also the guardian" is expressible.
 
 - `resolve_patient_access` loses the representation branch — access is grants/groups only.
-- Regel X (external sharing) reads the flag instead of the old table.
+- Regel X (external sharing) reads the flag instead of the old table. [Amended 2026-10-09: the flag is still recorded as `created_legal`, but it is no longer a gate — share-link access requires only concrete patient access, see ADR 021.]
 - `PatientRepresentation` and `RepresentationInviteToken` (model, router, schemas, the frontend subpage) are deleted. The `Legal Guardian`/`Power of Attorney` entries are removed from the relationship dropdown — the checkbox replaces them.
 
 Dropped deliberately: court file reference, scope, valid-from/until. If a deployment later needs to document a court reference, it is a field on the grant — added when a real need appears.

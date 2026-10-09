@@ -172,7 +172,7 @@ export const attachPrescription = async (
   );
 };
 
-// Clinical history (occupational record section #2) — 1:1 anamnesis, upsert.
+// Clinical history (antecedents) — 1:1 anamnesis, upsert.
 export const getClinicalHistory = async (patientId: string) => api.get<any | null>(`/api/patients/${patientId}/clinical-history`);
 export const saveClinicalHistory = async (patientId: string, data: any) => api.put<any>(`/api/patients/${patientId}/clinical-history`, data);
 

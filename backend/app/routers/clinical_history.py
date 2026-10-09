@@ -45,8 +45,6 @@ async def upsert_clinical_history(
         record = ClinicalHistory(patient_id=patient_id)
         db.add(record)
     data = body.model_dump()
-    data["previous_employments"] = [e.model_dump() for e in body.previous_employments]
-    data["exposures"] = [e.model_dump() for e in body.exposures]
     for field, value in data.items():
         setattr(record, field, value)
     await db.commit()

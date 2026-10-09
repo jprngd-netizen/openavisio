@@ -83,9 +83,9 @@ def _token_of(url: str) -> str:
     return url.rsplit("/", 1)[1]
 
 
-# --- creation authorization (Regel X + owner/rep exception) ------------------
+# --- creation authorization (any user with patient access) -------------------
 
-async def test_owner_user_can_create_staff_cannot(client: AsyncClient, db: AsyncSession):
+async def test_owner_user_can_create_no_access_404(client: AsyncClient, db: AsyncSession):
     owner = await _user(db, "owner@t.com", role="user")
     await _user(db, "admin@t.com", role="admin")
     patient = await _patient(db, owner)
@@ -95,7 +95,7 @@ async def test_owner_user_can_create_staff_cannot(client: AsyncClient, db: Async
     admin_h = await _auth(client, "admin@t.com")
     body = {"document_ids": [str(doc.id)], "expiry_days": 30}
 
-    # Staff admin has no patient access at all since ADR 025 → 404 (no existence leak)
+    # A user with no patient access gets 404 (no existence leak) — regardless of role.
     assert (await client.post(f"/api/patients/{patient.id}/share-links", json=body, headers=admin_h)).status_code == 404
     # Owner (role=user) → allowed
     r = await client.post(f"/api/patients/{patient.id}/share-links", json=body, headers=owner_h)
@@ -128,16 +128,17 @@ async def test_active_rep_allowed_and_flagged(client: AsyncClient, db: AsyncSess
     assert r.json()["created_legal"] is True
 
 
-async def test_manager_with_grant_still_forbidden(client: AsyncClient, db: AsyncSession):
+async def test_manager_with_grant_allowed(client: AsyncClient, db: AsyncSession):
     owner = await _user(db, "owner_m@t.com", role="user")
     mgr = await _user(db, "mgr@t.com", role="manager")
     patient = await _patient(db, owner)
     doc = await _document(db, patient, owner)
-    await _grant(db, patient, mgr, "full")  # concrete access, but still staff
+    await _grant(db, patient, mgr, "full")  # concrete access
     h = await _auth(client, "mgr@t.com")
     r = await client.post(f"/api/patients/{patient.id}/share-links",
                           json={"document_ids": [str(doc.id)], "expiry_days": 30}, headers=h)
-    assert r.status_code == 403, r.text
+    assert r.status_code == 201, r.text
+    assert r.json()["created_legal"] is False
 
 
 async def test_plain_user_with_grant_allowed(client: AsyncClient, db: AsyncSession):

@@ -21,15 +21,6 @@ export type PatientPayload = {
   district?: string;
   city_name?: string;
   state_code?: string;
-  // Employment context (occupational record cover)
-  registration?: string;
-  company?: string;
-  contract?: string;
-  job_title?: string;
-  admission_date?: string;
-  cost_center?: string;
-  work_location?: string;
-  shift?: string;
 };
 
 async function getToken(): Promise<string | undefined> {

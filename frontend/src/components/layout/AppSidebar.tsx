@@ -13,8 +13,6 @@ import {
   UserCog,
   Building2,
   UserPlus,
-  ClipboardList,
-  ScrollText,
   Bot,
   BadgeCheck,
   MonitorDot,
@@ -23,14 +21,12 @@ import {
   Star,
   ChevronsLeft,
   ChevronsRight,
-  ChevronRight,
 } from "lucide-react"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { Fragment, useEffect, useState } from "react"
 import { PATIENT_SECTIONS } from "@/lib/patientSections"
-import { OCCUPATIONAL_SECTIONS } from "@/lib/occupationalSections"
 import { ADMIN_NAV } from "@/lib/adminNav"
 import { getPatient } from "@/lib/api"
 import { useTheme } from "next-themes"
@@ -73,13 +69,9 @@ interface AppSidebarProps {
 export function AppSidebar({ orgName, userRole, userName, hasGroups, favorites = [] }: AppSidebarProps) {
   const t = useTranslations("Nav")
   const tp = useTranslations("Patient")
-  const to = useTranslations("Occupational")
   const pathname = usePathname()
   const { state, toggleSidebar } = useSidebar()
   const collapsed = state === "collapsed"
-  // The occupational record is a big tree; keep it collapsed until opened (the
-  // arrow). One local flag — no Collapsible primitive needed.
-  const [occOpen, setOccOpen] = useState(false)
   const { resolvedTheme, setTheme } = useTheme()
   const { highContrast, toggle: toggleHighContrast } = useHighContrast()
 
@@ -185,15 +177,6 @@ export function AppSidebar({ orgName, userRole, userName, hasGroups, favorites =
                             </SidebarMenuItem>
                           )
                         })}
-                        {/* Occupational record — icon row (no room for the tree). */}
-                        <SidebarMenuItem>
-                          <SidebarMenuButton asChild isActive={pathname.startsWith(`/patients/${patientId}/prontuario`)} tooltip={to("Title")}>
-                            <Link href={`/patients/${patientId}/prontuario`}>
-                              <ClipboardList className="text-indigo-600 dark:text-indigo-400" />
-                              <span>{to("Title")}</span>
-                            </Link>
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
                       </ul>
                     </li>
                   )}
@@ -235,51 +218,6 @@ export function AppSidebar({ orgName, userRole, userName, hasGroups, favorites =
                           </SidebarMenuSubItem>
                         )
                       })}
-
-                      {/* Occupational record — a group that opens on the arrow. */}
-                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton asChild isActive={pathname.startsWith(`/patients/${patientId}/prontuario`)}>
-                          <button type="button" onClick={() => setOccOpen((o) => !o)} aria-expanded={occOpen}>
-                            <ClipboardList className="text-indigo-600 dark:text-indigo-400" />
-                            <span>{to("Title")}</span>
-                            <ChevronRight
-                              className={`ml-auto size-4 shrink-0 transition-transform ${occOpen ? "rotate-90" : ""}`}
-                            />
-                          </button>
-                        </SidebarMenuSubButton>
-                      </SidebarMenuSubItem>
-                      {occOpen && (
-                        <SidebarMenuSub>
-                          {OCCUPATIONAL_SECTIONS.map((group) => (
-                            <Fragment key={group.slug}>
-                              <SidebarMenuSubItem>
-                                <span className="px-2 pb-0.5 pt-2 text-[10px] font-semibold uppercase tracking-wide text-sidebar-foreground/50">
-                                  {to(group.key)}
-                                </span>
-                              </SidebarMenuSubItem>
-                              {group.items.map(({ slug, key }) => {
-                                const href = `/patients/${patientId}/prontuario/${slug}`
-                                return (
-                                  <SidebarMenuSubItem key={slug}>
-                                    <SidebarMenuSubButton asChild isActive={pathname.startsWith(href)}>
-                                      <Link href={href}>
-                                        <span>{to(key)}</span>
-                                      </Link>
-                                    </SidebarMenuSubButton>
-                                  </SidebarMenuSubItem>
-                                )
-                              })}
-                            </Fragment>
-                          ))}
-                          <SidebarMenuSubItem>
-                            <SidebarMenuSubButton asChild>
-                              <Link href={`/patients/${patientId}/export`}>
-                                <span>{to("PrintRecord")}</span>
-                              </Link>
-                            </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                        </SidebarMenuSub>
-                      )}
                     </SidebarMenuSub>
                     </li>
                   )}

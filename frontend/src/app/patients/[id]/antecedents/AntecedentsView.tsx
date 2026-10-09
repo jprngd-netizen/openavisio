@@ -15,19 +15,12 @@ import {
 } from "@/lib/api";
 import { CidCombobox } from "@/components/CidCombobox";
 
-type Employment = { company: string; role: string; start: string; end: string };
-type Exposure = { category: string; agent: string; duration: string; ppe: boolean };
-
 type Props = {
   patientId: string;
   history: any | null;
   conditions: any[];
   medications: any[];
 };
-
-const CATEGORIES = ["physical", "chemical", "biological", "ergonomic", "psychosocial"] as const;
-const EMPTY_EMP: Employment = { company: "", role: "", start: "", end: "" };
-const EMPTY_EXP: Exposure = { category: "", agent: "", duration: "", ppe: false };
 
 const inputCls =
   "w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring";
@@ -41,8 +34,8 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
-export function ClinicalHistoryView({ patientId, history, conditions, medications }: Props) {
-  const t = useTranslations("OccupationalClinicalHistory");
+export function AntecedentsView({ patientId, history, conditions, medications }: Props) {
+  const t = useTranslations("Antecedents");
   const router = useRouter();
 
   const [personal, setPersonal] = useState(history?.personal_history ?? "");
@@ -50,16 +43,6 @@ export function ClinicalHistoryView({ patientId, history, conditions, medication
   const [surgical, setSurgical] = useState(history?.surgical_history ?? "");
   const [allergies, setAllergies] = useState(history?.allergies ?? "");
   const [habits, setHabits] = useState(history?.habits ?? "");
-  const [employments, setEmployments] = useState<Employment[]>(
-    (history?.previous_employments ?? []).map((e: any) => ({
-      company: e.company ?? "", role: e.role ?? "", start: e.start ?? "", end: e.end ?? "",
-    })),
-  );
-  const [exposures, setExposures] = useState<Exposure[]>(
-    (history?.exposures ?? []).map((e: any) => ({
-      category: e.category ?? "", agent: e.agent ?? "", duration: e.duration ?? "", ppe: !!e.ppe,
-    })),
-  );
 
   const [saving, startSave] = useTransition();
   const [saved, setSaved] = useState(false);
@@ -76,8 +59,6 @@ export function ClinicalHistoryView({ patientId, history, conditions, medication
           surgical_history: surgical || null,
           allergies: allergies || null,
           habits: habits || null,
-          previous_employments: employments.filter((e) => e.company || e.role || e.start || e.end),
-          exposures: exposures.filter((e) => e.category || e.agent || e.duration),
         });
         setSaved(true);
         router.refresh();
@@ -89,7 +70,7 @@ export function ClinicalHistoryView({ patientId, history, conditions, medication
 
   return (
     <div className="space-y-6">
-      {/* (A) Clinical history — free text, editable. */}
+      {/* (A) Antecedentes clínicos — free text, editable. */}
       <Card title={t("ClinicalTitle")}>
         <div className="grid gap-4 md:grid-cols-2">
           <Field label={t("PersonalHistory")} value={personal} onChange={setPersonal} />
@@ -98,78 +79,6 @@ export function ClinicalHistoryView({ patientId, history, conditions, medication
           <Field label={t("Allergies")} value={allergies} onChange={setAllergies} />
           <div className="md:col-span-2">
             <Field label={t("Habits")} value={habits} onChange={setHabits} />
-          </div>
-        </div>
-      </Card>
-
-      {/* (B) Occupational history — editable lists. */}
-      <Card title={t("OccupationalTitle")}>
-        <div className="space-y-6">
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-medium">{t("PreviousEmployments")}</span>
-              <button
-                type="button"
-                onClick={() => setEmployments((l) => [...l, { ...EMPTY_EMP }])}
-                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-              >
-                <Plus className="size-3.5" /> {t("Add")}
-              </button>
-            </div>
-            {employments.length === 0 && <p className="text-xs text-muted-foreground">{t("None")}</p>}
-            <div className="space-y-2">
-              {employments.map((e, i) => (
-                <div key={i} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto_auto_auto]">
-                  <input className={inputCls} placeholder={t("Company")} value={e.company}
-                    onChange={(ev) => setEmployments((l) => l.map((x, j) => (j === i ? { ...x, company: ev.target.value } : x)))} />
-                  <input className={inputCls} placeholder={t("Role")} value={e.role}
-                    onChange={(ev) => setEmployments((l) => l.map((x, j) => (j === i ? { ...x, role: ev.target.value } : x)))} />
-                  <input type="date" className={inputCls} value={e.start}
-                    onChange={(ev) => setEmployments((l) => l.map((x, j) => (j === i ? { ...x, start: ev.target.value } : x)))} />
-                  <input type="date" className={inputCls} value={e.end}
-                    onChange={(ev) => setEmployments((l) => l.map((x, j) => (j === i ? { ...x, end: ev.target.value } : x)))} />
-                  <button type="button" onClick={() => setEmployments((l) => l.filter((_, j) => j !== i))}
-                    className="rounded-md p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
-                    <Trash2 className="size-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-medium">{t("Exposures")}</span>
-              <button type="button" onClick={() => setExposures((l) => [...l, { ...EMPTY_EXP }])}
-                className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-                <Plus className="size-3.5" /> {t("Add")}
-              </button>
-            </div>
-            {exposures.length === 0 && <p className="text-xs text-muted-foreground">{t("None")}</p>}
-            <div className="space-y-2">
-              {exposures.map((e, i) => (
-                <div key={i} className="grid grid-cols-1 gap-2 sm:grid-cols-[auto_1fr_auto_auto_auto]">
-                  <select className={inputCls} value={e.category}
-                    onChange={(ev) => setExposures((l) => l.map((x, j) => (j === i ? { ...x, category: ev.target.value } : x)))}>
-                    <option value="">{t("Category")}</option>
-                    {CATEGORIES.map((c) => <option key={c} value={c}>{t(`Category_${c}`)}</option>)}
-                  </select>
-                  <input className={inputCls} placeholder={t("Agent")} value={e.agent}
-                    onChange={(ev) => setExposures((l) => l.map((x, j) => (j === i ? { ...x, agent: ev.target.value } : x)))} />
-                  <input className={inputCls} placeholder={t("Duration")} value={e.duration}
-                    onChange={(ev) => setExposures((l) => l.map((x, j) => (j === i ? { ...x, duration: ev.target.value } : x)))} />
-                  <label className="inline-flex items-center gap-1.5 whitespace-nowrap px-1 text-xs">
-                    <input type="checkbox" checked={e.ppe}
-                      onChange={(ev) => setExposures((l) => l.map((x, j) => (j === i ? { ...x, ppe: ev.target.checked } : x)))} />
-                    {t("Ppe")}
-                  </label>
-                  <button type="button" onClick={() => setExposures((l) => l.filter((_, j) => j !== i))}
-                    className="rounded-md p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
-                    <Trash2 className="size-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </Card>
@@ -184,7 +93,7 @@ export function ClinicalHistoryView({ patientId, history, conditions, medication
         {error && <span className="text-sm text-destructive">{error}</span>}
       </div>
 
-      {/* (C) Derived antecedents — the canonical resources, edited in place. */}
+      {/* (B) Derived antecedents — the canonical resources, edited in place. */}
       <ConditionsEditor patientId={patientId} items={conditions} />
       <MedicationsEditor patientId={patientId} items={medications} />
     </div>
@@ -201,7 +110,7 @@ function Field({ label, value, onChange }: { label: string; value: string; onCha
 }
 
 function ConditionsEditor({ patientId, items }: { patientId: string; items: any[] }) {
-  const t = useTranslations("OccupationalClinicalHistory");
+  const t = useTranslations("Antecedents");
   const router = useRouter();
   const [pending, start] = useTransition();
   const [draft, setDraft] = useState({ code: "", code_display: "", onset_date_time: "", severity: "" });
@@ -253,7 +162,7 @@ function ConditionsEditor({ patientId, items }: { patientId: string; items: any[
 }
 
 function ConditionRow({ condition, busy, onChange }: { condition: any; busy: boolean; onChange: () => void }) {
-  const t = useTranslations("OccupationalClinicalHistory");
+  const t = useTranslations("Antecedents");
   const [row, setRow] = useState({
     code: condition.code ?? "",
     code_display: condition.code_display ?? "",
@@ -295,7 +204,7 @@ function ConditionRow({ condition, busy, onChange }: { condition: any; busy: boo
 }
 
 function MedicationsEditor({ patientId, items }: { patientId: string; items: any[] }) {
-  const t = useTranslations("OccupationalClinicalHistory");
+  const t = useTranslations("Antecedents");
   const router = useRouter();
   const [pending, start] = useTransition();
   const [draft, setDraft] = useState({ medication_display: "", dosage_text: "" });
@@ -337,7 +246,7 @@ function MedicationsEditor({ patientId, items }: { patientId: string; items: any
 }
 
 function MedicationRow({ medication, busy, onChange }: { medication: any; busy: boolean; onChange: () => void }) {
-  const t = useTranslations("OccupationalClinicalHistory");
+  const t = useTranslations("Antecedents");
   const [row, setRow] = useState({
     medication_display: medication.medication_display ?? "",
     dosage_text: medication.dosage_text ?? "",

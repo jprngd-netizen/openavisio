@@ -148,7 +148,7 @@ async def reveal_patient_cpf(
 
     The CPF is stored encrypted (`cpf_encrypted`, master KEK) and normally only
     `cpf_last4` is exposed. Revealing the full value is a deliberate, auditable
-    action (occupational record cover, official forms): every call writes an
+    action (record cover, official forms): every call writes an
     audit-log entry. Insufficient access still raises 404 via the guard.
     """
     from app.auth.access import require_patient_access
@@ -298,15 +298,6 @@ async def create_patient(
         district=body.district,
         city_name=body.city_name,
         state_code=body.state_code,
-        # employment context (occupational record cover)
-        registration=body.registration,
-        company=body.company,
-        contract=body.contract,
-        job_title=body.job_title,
-        admission_date=body.admission_date,
-        cost_center=body.cost_center,
-        work_location=body.work_location,
-        shift=body.shift,
     )
     if body.cpf:
         from app.core.encryption import encrypt_setting

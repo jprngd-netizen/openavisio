@@ -8,6 +8,8 @@ import {
   Calendar,
   FileSignature,
   Stethoscope,
+  IdCard,
+  History,
   type LucideIcon,
 } from "lucide-react";
 
@@ -16,6 +18,8 @@ import {
 // `tint` gives each section its own colour so the overview reads warm, not
 // clinical (tester feedback). Full static class strings so Tailwind keeps them.
 export const PATIENT_SECTIONS: { key: string; segment: string; Icon: LucideIcon; tint: string }[] = [
+  { key: "Cover", segment: "cover", Icon: IdCard, tint: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400" },
+  { key: "Antecedents", segment: "antecedents", Icon: History, tint: "bg-lime-500/10 text-lime-600 dark:text-lime-400" },
   { key: "Dashboard", segment: "dashboard", Icon: Activity, tint: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
   { key: "Encounters", segment: "encounters", Icon: Stethoscope, tint: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400" },
   { key: "Documents", segment: "documents", Icon: FileText, tint: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },

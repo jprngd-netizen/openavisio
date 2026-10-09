@@ -1,33 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useLocale, useTranslations } from "next-intl";
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import {
-  AlertCircle,
   Cake,
   Eye,
   EyeOff,
   IdCard,
   Mars,
   Pencil,
-  Save,
   User as UserIcon,
   Venus,
 } from "lucide-react";
 import { PatientAvatar } from "@/components/PatientAvatar";
 import { formatDate, ageFromBirthDate } from "@/lib/utils";
-import { updatePatientAction, revealPatientCpfAction, type PatientPayload } from "@/app/patients/patientActions";
+import { revealPatientCpfAction } from "@/app/patients/patientActions";
 
-// "Capa do Prontuário" — section #1 of the occupational record. Identity (A)
-// and the record header (C) are read from the patient/organization; only the
-// employment block (B) is editable here. Nothing is duplicated: the patient
-// fields are the single source and are edited in the patient form.
+// "Capa do Prontuário" — the front page of the clinical chart. Identity (A) and
+// the record header (C) are read from the patient/organization; nothing is
+// duplicated: the patient fields are the single source, edited in the patient
+// form. The CPF is masked and only revealed on an explicit, audited request.
 
 const label = "text-[11px] uppercase tracking-wide text-muted-foreground";
 const value = "text-sm font-medium";
-const input = "w-full rounded-lg border bg-background px-3 py-2 text-sm";
 
 function Field({ labelText, children }: { labelText: string; children: React.ReactNode }) {
   return (
@@ -49,10 +45,9 @@ export function CoverView({
   organizationName: string | null;
   recordNumber: string;
 }) {
-  const t = useTranslations("OccupationalCover");
+  const t = useTranslations("Cover");
   const tp = useTranslations("Patient");
   const locale = useLocale();
-  const router = useRouter();
 
   const age = ageFromBirthDate(patient.birth_date);
   const genderLabel = patient.gender
@@ -94,53 +89,9 @@ export function CoverView({
 
   const maskedCpf = patient.cpf_last4 ? `•••.•••.•••-${patient.cpf_last4}` : none;
 
-  // --- Employment block (B): editable, real integration --------------------
-  const [form, setForm] = useState<PatientPayload>({
-    registration: patient.registration ?? "",
-    company: patient.company ?? "",
-    contract: patient.contract ?? "",
-    job_title: patient.job_title ?? "",
-    admission_date: patient.admission_date ?? "",
-    cost_center: patient.cost_center ?? "",
-    work_location: patient.work_location ?? "",
-    shift: patient.shift ?? "",
-  });
-  const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
-  const [pending, setPending] = useState(false);
-
-  const set =
-    (k: keyof PatientPayload) =>
-    (e: React.ChangeEvent<HTMLInputElement>) =>
-      setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSaved(false);
-    // Only send filled values (blank = leave unchanged), matching PatientForm.
-    const payload = Object.fromEntries(
-      Object.entries(form).filter(([, v]) => v !== "" && v !== null && v !== undefined),
-    ) as PatientPayload;
-    setPending(true);
-    try {
-      const res = await updatePatientAction(patientId, payload);
-      if (res.error) {
-        setError(res.error);
-        return;
-      }
-      setSaved(true);
-      router.refresh();
-    } catch {
-      setError(t("SaveError"));
-    } finally {
-      setPending(false);
-    }
-  }
-
   return (
     <div className="space-y-6">
-      {/* (A) Identificação do trabalhador */}
+      {/* (A) Identificação do paciente */}
       <section className="rounded-2xl border bg-card p-5">
         <h2 className="mb-4 text-sm font-semibold">{t("GroupWorker")}</h2>
         <div className="flex flex-col gap-5 sm:flex-row">
@@ -210,62 +161,6 @@ export function CoverView({
           </div>
         </div>
       </section>
-
-      {/* (B) Vínculo empregatício & lotação — editable */}
-      <form onSubmit={onSubmit} className="rounded-2xl border bg-card p-5">
-        <h2 className="mb-4 text-sm font-semibold">{t("GroupEmployment")}</h2>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="space-y-1">
-            <label className={label}>{t("Registration")}</label>
-            <input value={form.registration} onChange={set("registration")} className={input} />
-          </div>
-          <div className="space-y-1">
-            <label className={label}>{t("Company")}</label>
-            <input value={form.company} onChange={set("company")} className={input} />
-          </div>
-          <div className="space-y-1">
-            <label className={label}>{t("Contract")}</label>
-            <input value={form.contract} onChange={set("contract")} className={input} />
-          </div>
-          <div className="space-y-1">
-            <label className={label}>{t("JobTitle")}</label>
-            <input value={form.job_title} onChange={set("job_title")} className={input} />
-          </div>
-          <div className="space-y-1">
-            <label className={label}>{t("AdmissionDate")}</label>
-            <input type="date" value={form.admission_date} onChange={set("admission_date")} className={input} />
-          </div>
-          <div className="space-y-1">
-            <label className={label}>{t("Shift")}</label>
-            <input value={form.shift} onChange={set("shift")} className={input} />
-          </div>
-          <div className="space-y-1">
-            <label className={label}>{t("CostCenter")}</label>
-            <input value={form.cost_center} onChange={set("cost_center")} className={input} />
-          </div>
-          <div className="space-y-1">
-            <label className={label}>{t("WorkLocation")}</label>
-            <input value={form.work_location} onChange={set("work_location")} className={input} />
-          </div>
-        </div>
-
-        {error && (
-          <p className="mt-3 flex items-center gap-1.5 text-sm text-destructive">
-            <AlertCircle className="size-4 shrink-0" />
-            {error}
-          </p>
-        )}
-        {saved && !error && <p className="mt-3 text-sm text-emerald-600 dark:text-emerald-400">{t("Saved")}</p>}
-
-        <button
-          type="submit"
-          disabled={pending}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground disabled:opacity-50"
-        >
-          <Save className="size-4" />
-          {pending ? t("Saving") : t("Save")}
-        </button>
-      </form>
 
       {/* (C) Cabeçalho do prontuário */}
       <section className="rounded-2xl border bg-card p-5">

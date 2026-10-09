@@ -1,10 +1,9 @@
-"""História Clínica e Ocupacional (seção #2): anamnese longitudinal 1:1.
+"""História clínica (antecedentes): anamnese longitudinal 1:1.
 
 Um registro por paciente (`clinical_histories`, migration `n5f6a7b8c9d0`).
-Campos narrativos em texto livre; empregos anteriores e exposições a agentes de
-risco como listas JSONB. O PUT faz upsert — recria uma única linha por paciente.
-Os antecedentes derivados (diagnósticos/medicações) NÃO são duplicados aqui:
-são os próprios recursos `conditions`/`medications`, editáveis na seção.
+Campos narrativos em texto livre. O PUT faz upsert — recria uma única linha por
+paciente. Os antecedentes derivados (diagnósticos/medicações) NÃO são duplicados
+aqui: são os próprios recursos `conditions`/`medications`, editáveis na seção.
 """
 
 from __future__ import annotations
@@ -48,20 +47,12 @@ async def test_clinical_history_upsert_round_trip(client: AsyncClient, db: Async
         "surgical_history": "Apendicectomia em 2009.",
         "allergies": "Dipirona.",
         "habits": "Ex-tabagista (parou em 2018); etilismo social.",
-        "previous_employments": [
-            {"company": "COPAMAC", "role": "Técnico de Segurança", "start": "2015-01", "end": "2020-12"},
-        ],
-        "exposures": [
-            {"category": "chemical", "agent": "Benzeno", "duration": "2 anos", "ppe": True},
-        ],
     }
     first = await client.put(f"/api/patients/{pid}/clinical-history", headers=auth, json=payload)
     assert first.status_code == 200, first.text
     body = first.json()
     assert body["allergies"] == "Dipirona."
-    assert body["previous_employments"][0]["company"] == "COPAMAC"
-    assert body["exposures"][0]["category"] == "chemical"
-    assert body["exposures"][0]["ppe"] is True
+    assert body["personal_history"] == "Hipertensão desde 2015."
 
     # Segundo PUT: continua UMA linha (upsert, não duplica).
     payload["allergies"] = "Dipirona; látex."
