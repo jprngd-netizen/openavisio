@@ -101,6 +101,7 @@ export const createCorrespondent = async (name: string) => api.post<{ id: string
 
 // Medications
 export const getMedications = async (patientId: string, status?: string) => api.get<any[]>(`/api/patients/${patientId}/medications${status ? `?status=${status}` : ""}`);
+export const getActiveMedications = async (patientId: string) => api.get<any[]>(`/api/patients/${patientId}/medications/active`);
 export const createMedication = async (patientId: string, data: any) => api.post<any>(`/api/patients/${patientId}/medications`, data);
 export const updateMedication = async (id: string, data: any) => api.put<any>(`/api/medications/${id}`, data);
 export const deleteMedication = async (id: string) => api.delete<void>(`/api/medications/${id}`);

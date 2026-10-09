@@ -7,6 +7,7 @@ import { createEncounter, updateEncounter, deleteEncounter } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { MEASUREMENT_TYPES, measurementType, computeBmi } from "@/lib/measurementTypes";
 import { CidCombobox } from "@/components/CidCombobox";
+import { ActiveMedicationsPanel } from "./ActiveMedicationsPanel";
 import { Plus, X, Pencil, Trash2, Activity } from "lucide-react";
 
 const inputCls = "w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background";
@@ -35,7 +36,7 @@ function toLocalInput(iso: string | null | undefined): string {
   return String(iso).slice(0, 16);
 }
 
-export function EncountersView({ patientId, encounters }: { patientId: string; encounters: any[] }) {
+export function EncountersView({ patientId, encounters, activeMeds = [] }: { patientId: string; encounters: any[]; activeMeds?: any[] }) {
   const t = useTranslations("Enc");
   const tm = useTranslations("Measurement");
   const router = useRouter();
@@ -180,6 +181,8 @@ export function EncountersView({ patientId, encounters }: { patientId: string; e
 
   return (
     <div>
+      <ActiveMedicationsPanel medications={activeMeds} />
+
       <div className="mb-6 flex items-center justify-end">
         <button
           onClick={() => (open ? close() : openCreate())}

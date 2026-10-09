@@ -1316,7 +1316,14 @@
       "Procedimento": "Procedure"
     },
     "Vitals": "Vital signs",
-    "VitalsHint": "Record the measurements taken during the consultation. Leave blank what was not measured."
+    "VitalsHint": "Record the measurements taken during the consultation. Leave blank what was not measured.",
+    "ActiveMedsTitle": "Active medications now",
+    "ActiveMedsEmpty": "No active medications right now.",
+    "ActiveMedsDuplicateBadge": "Possible duplicate",
+    "ActiveMedsDuplicateHint": "Another active medication shares the same substance. Review the prescription.",
+    "ActiveMedsDuplicateCount": "{count} possible duplicate(s)",
+    "ActiveMedsSince": "since {date}",
+    "ActiveMedsUntil": "until {date}"
   },
   "Legal": {
     "ImprintBack": "Back to the app",

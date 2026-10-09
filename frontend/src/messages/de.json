@@ -1316,7 +1316,14 @@
       "Procedimento": "Eingriff"
     },
     "Vitals": "Vitalwerte",
-    "VitalsHint": "Hier die in der Konsultation gemessenen Werte erfassen. Leer lassen, was nicht gemessen wurde."
+    "VitalsHint": "Hier die in der Konsultation gemessenen Werte erfassen. Leer lassen, was nicht gemessen wurde.",
+    "ActiveMedsTitle": "Aktuell aktive Medikamente",
+    "ActiveMedsEmpty": "Derzeit keine aktiven Medikamente.",
+    "ActiveMedsDuplicateBadge": "Mögliche Doppelung",
+    "ActiveMedsDuplicateHint": "Ein anderes aktives Medikament enthält denselben Wirkstoff. Bitte die Verordnung prüfen.",
+    "ActiveMedsDuplicateCount": "{count} mögliche Doppelung(en)",
+    "ActiveMedsSince": "seit {date}",
+    "ActiveMedsUntil": "bis {date}"
   },
   "Legal": {
     "ImprintBack": "Zurück zur App",

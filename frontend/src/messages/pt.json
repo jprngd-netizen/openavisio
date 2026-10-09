@@ -1316,7 +1316,14 @@
       "Procedimento": "Procedimento"
     },
     "Vitals": "Sinais vitais",
-    "VitalsHint": "Registre aqui as medidas aferidas na consulta. Deixe em branco o que não foi medido."
+    "VitalsHint": "Registre aqui as medidas aferidas na consulta. Deixe em branco o que não foi medido.",
+    "ActiveMedsTitle": "Medicações ativas agora",
+    "ActiveMedsEmpty": "Nenhuma medicação ativa no momento.",
+    "ActiveMedsDuplicateBadge": "Possível duplicidade",
+    "ActiveMedsDuplicateHint": "Há outra medicação ativa com a mesma substância. Revise a prescrição.",
+    "ActiveMedsDuplicateCount": "{count} possível(is) duplicidade(s)",
+    "ActiveMedsSince": "desde {date}",
+    "ActiveMedsUntil": "até {date}"
   },
   "Legal": {
     "ImprintBack": "Voltar ao aplicativo",
