@@ -43,3 +43,13 @@ class MedicationCreateRequest(BaseModel):
 
 class MedicationUpdateRequest(MedicationCreateRequest):
     medication_display: str | None = None
+
+
+class ActiveMedicationDto(MedicationDto):
+    """An active medication plus the ids of active meds it duplicates (WS-2).
+
+    ``duplicate_of`` is empty when the substance is unique among the active
+    list; a non-empty list flags a likely double prescription.
+    """
+
+    duplicate_of: list[uuid.UUID] = []

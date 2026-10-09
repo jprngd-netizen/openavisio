@@ -11,7 +11,13 @@ from app.core.datetimes import SAO_PAULO
 from app.deps import get_current_user
 from app.models.medication import MedicationStatement
 from app.models.user import User
-from app.schemas.medication import MedicationCreateRequest, MedicationDto, MedicationUpdateRequest
+from app.schemas.medication import (
+    ActiveMedicationDto,
+    MedicationCreateRequest,
+    MedicationDto,
+    MedicationUpdateRequest,
+)
+from app.services.medication_reconciliation import active_medications, duplicate_ids
 
 router = APIRouter()
 
@@ -49,6 +55,36 @@ async def list_medications(
         q = q.where(MedicationStatement.status == med_status)
     result = await db.execute(q)
     return [_to_dto(m) for m in result.scalars().all()]
+
+
+@router.get("/patients/{patient_id}/medications/active", response_model=list[ActiveMedicationDto])
+async def list_active_medications(
+    patient_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Active medications right now, each flagged with its duplicates (WS-2).
+
+    "Active" = status active AND currently in force (see
+    ``medication_reconciliation``). ``duplicate_of`` lists the other active
+    medications sharing the same substance — the encounter shows this as a
+    reconciliation warning. Read-only: the CRUD routes are untouched.
+    """
+    await require_patient_access(patient_id, user, db)
+    q = select(MedicationStatement).where(
+        MedicationStatement.patient_id == patient_id,
+        MedicationStatement.is_deleted == False,  # noqa: E712
+    ).order_by(MedicationStatement.created_at)
+    result = await db.execute(q)
+    now = datetime.now(SAO_PAULO)
+    active = active_medications(result.scalars().all(), now)
+    dup_index = duplicate_ids(active)
+    return [
+        ActiveMedicationDto.model_validate(med).model_copy(
+            update={"is_active": True, "duplicate_of": dup_index.get(med.id, [])}
+        )
+        for med in active
+    ]
 
 
 @router.post("/patients/{patient_id}/medications", response_model=MedicationDto, status_code=status.HTTP_201_CREATED)
