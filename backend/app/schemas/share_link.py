@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, field_validator
 
@@ -68,7 +68,7 @@ class PublicShareDocumentDto(BaseModel):
 class PublicSharePatientDto(BaseModel):
     given_name: str
     family_name: str
-    birth_date: str | None
+    birth_date: date | None
 
 
 class PublicShareLinkDto(BaseModel):

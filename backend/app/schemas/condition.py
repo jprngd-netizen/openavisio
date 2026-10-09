@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.schemas.common import OrmBase
+from app.schemas.common import OrmBase, TzDateTime
 
 
 class ConditionSourceDto(OrmBase):
@@ -22,9 +22,9 @@ class ConditionDto(OrmBase):
     severity: str | None
     code: str | None
     code_display: str
-    recorded_date: str | None
-    onset_date_time: str | None
-    abatement_date_time: str | None
+    recorded_date: TzDateTime | None
+    onset_date_time: TzDateTime | None
+    abatement_date_time: TzDateTime | None
     note: str | None
     document_reference_id: uuid.UUID | None
     created_at: datetime
@@ -42,9 +42,9 @@ class ConditionCreateRequest(BaseModel):
     severity: str | None = None
     code: str | None = None
     code_display: str
-    recorded_date: str | None = None
-    onset_date_time: str | None = None
-    abatement_date_time: str | None = None
+    recorded_date: TzDateTime | None = None
+    onset_date_time: TzDateTime | None = None
+    abatement_date_time: TzDateTime | None = None
     note: str | None = None
 
 

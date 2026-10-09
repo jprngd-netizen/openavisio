@@ -1,7 +1,8 @@
 import uuid
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String, Text, and_
+from sqlalchemy import DateTime, ForeignKey, String, Text, and_
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,7 +18,10 @@ class Encounter(OwnedResource):
     patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(50), default="finished")
     encounter_type: Mapped[str | None] = mapped_column(String(50))
-    encounter_date: Mapped[str | None] = mapped_column(String(50))  # ISO-8601 string
+    # WS-5: typed instant (was an ISO-8601 String). The legacy `encounter_date`
+    # String column is retained read-only by the DB until a later cleanup
+    # migration drops it; the ORM attribute now maps to `encounter_date_ts`.
+    encounter_date: Mapped[datetime | None] = mapped_column("encounter_date_ts", DateTime(timezone=True))
     chief_complaint: Mapped[str | None] = mapped_column(Text)
     history: Mapped[str | None] = mapped_column(Text)
     physical_exam: Mapped[str | None] = mapped_column(Text)

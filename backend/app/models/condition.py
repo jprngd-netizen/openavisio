@@ -1,6 +1,7 @@
 import uuid
+from datetime import datetime
 
-from sqlalchemy import ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -17,9 +18,10 @@ class Condition(OwnedResource):
     severity: Mapped[str | None] = mapped_column(String(50))
     code: Mapped[str | None] = mapped_column(String(100))
     code_display: Mapped[str] = mapped_column(String(256), nullable=False)
-    recorded_date: Mapped[str | None] = mapped_column(String(50))
-    onset_date_time: Mapped[str | None] = mapped_column(String(50))
-    abatement_date_time: Mapped[str | None] = mapped_column(String(50))
+    # WS-5: typed instants (legacy ISO-8601 String columns kept until cleanup).
+    recorded_date: Mapped[datetime | None] = mapped_column("recorded_date_ts", DateTime(timezone=True))
+    onset_date_time: Mapped[datetime | None] = mapped_column("onset_date_time_ts", DateTime(timezone=True))
+    abatement_date_time: Mapped[datetime | None] = mapped_column("abatement_date_time_ts", DateTime(timezone=True))
     note: Mapped[str | None] = mapped_column(Text)
     document_reference_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("document_references.id"), nullable=True)
     # set on soft-deleted rows that were merged away — the audit trail of a merge (#159)

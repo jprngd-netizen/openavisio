@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel
 
@@ -10,7 +10,7 @@ class PatientDto(OrmBase):
     id: uuid.UUID
     given_name: str
     family_name: str
-    birth_date: str | None
+    birth_date: date | None
     gender: str | None
     active: bool
     identifier: str | None
@@ -50,7 +50,7 @@ class _PatientContactFields(BaseModel):
 class PatientCreateRequest(_PatientContactFields):
     given_name: str
     family_name: str
-    birth_date: str | None = None
+    birth_date: date | None = None
     gender: str | None = None
     identifier: str | None = None
     # Store-only: encrypted before it reaches the database.
@@ -60,7 +60,7 @@ class PatientCreateRequest(_PatientContactFields):
 class PatientUpdateRequest(_PatientContactFields):
     given_name: str | None = None
     family_name: str | None = None
-    birth_date: str | None = None
+    birth_date: date | None = None
     gender: str | None = None
     active: bool | None = None
     identifier: str | None = None

@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.schemas.common import OrmBase
+from app.schemas.common import OrmBase, TzDateTime
 from app.schemas.observation import ObservationDto
 
 
@@ -21,7 +21,7 @@ class EncounterDto(OrmBase):
     patient_id: uuid.UUID
     status: str
     encounter_type: str | None
-    encounter_date: str | None
+    encounter_date: TzDateTime | None
     chief_complaint: str | None
     history: str | None
     physical_exam: str | None
@@ -38,7 +38,7 @@ class EncounterDto(OrmBase):
 class EncounterCreateRequest(BaseModel):
     status: str = "finished"
     encounter_type: str | None = None
-    encounter_date: str | None = None
+    encounter_date: TzDateTime | None = None
     chief_complaint: str | None = None
     history: str | None = None
     physical_exam: str | None = None
@@ -53,7 +53,7 @@ class EncounterCreateRequest(BaseModel):
 class EncounterUpdateRequest(BaseModel):
     status: str | None = None
     encounter_type: str | None = None
-    encounter_date: str | None = None
+    encounter_date: TzDateTime | None = None
     chief_complaint: str | None = None
     history: str | None = None
     physical_exam: str | None = None

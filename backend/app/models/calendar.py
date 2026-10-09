@@ -30,8 +30,8 @@ class CalendarEvent(OwnedResource):
     # Milestone support (issue #11): appointment | milestone; domain only for milestones.
     category: Mapped[str] = mapped_column(String(20), nullable=False, default=EventCategory.appointment, index=True)
     developmental_domain: Mapped[str | None] = mapped_column(String(20))
-    start_at: Mapped[str] = mapped_column(String(50), nullable=False)
-    end_at: Mapped[str | None] = mapped_column(String(50))
+    start_at: Mapped[datetime] = mapped_column("start_at_ts", DateTime(timezone=True), nullable=False)
+    end_at: Mapped[datetime | None] = mapped_column("end_at_ts", DateTime(timezone=True))
     all_day: Mapped[bool] = mapped_column(Boolean, default=False)
     provider: Mapped[str | None] = mapped_column(String(256))
     location: Mapped[str | None] = mapped_column(String(512))

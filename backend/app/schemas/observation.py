@@ -2,7 +2,7 @@ import uuid
 
 from pydantic import BaseModel
 
-from app.schemas.common import OrmBase
+from app.schemas.common import OrmBase, TzDateTime
 
 
 class ObservationDto(OrmBase):
@@ -13,7 +13,7 @@ class ObservationDto(OrmBase):
     code_display: str | None
     category: str | None
     panel: str | None
-    effective_date_time: str | None
+    effective_date_time: TzDateTime | None
     value_quantity: float | None
     value_unit: str | None
     value_string: str | None
@@ -30,7 +30,7 @@ class ObservationCreateRequest(BaseModel):
     code_display: str | None = None
     category: str | None = None
     panel: str | None = None
-    effective_date_time: str | None = None
+    effective_date_time: TzDateTime | None = None
     value_quantity: float | None = None
     value_unit: str | None = None
     value_string: str | None = None

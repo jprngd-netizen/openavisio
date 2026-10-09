@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from sqlalchemy import DateTime, Float, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
@@ -16,7 +17,8 @@ class Observation(OwnedResource):
     code_display: Mapped[str | None] = mapped_column(String(256))
     category: Mapped[str | None] = mapped_column(String(100))
     panel: Mapped[str | None] = mapped_column(String(128))  # #69: report section, e.g. "Blutbild"
-    effective_date_time: Mapped[str | None] = mapped_column(String(50))
+    # WS-5: typed instant (legacy ISO-8601 String column kept until cleanup).
+    effective_date_time: Mapped[datetime | None] = mapped_column("effective_date_time_ts", DateTime(timezone=True))
     value_quantity: Mapped[float | None] = mapped_column(Float)
     value_unit: Mapped[str | None] = mapped_column(String(50))
     value_string: Mapped[str | None] = mapped_column(Text)

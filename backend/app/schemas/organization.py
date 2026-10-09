@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 
 from pydantic import BaseModel
 
@@ -41,7 +42,7 @@ class AiConfig(BaseModel):
 class FirstPatientConfig(BaseModel):
     given_name: str
     family_name: str
-    birth_date: str | None = None
+    birth_date: date | None = None
 
 
 class OrganizationInitRequest(BaseModel):

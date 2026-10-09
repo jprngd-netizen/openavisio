@@ -4,7 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, model_validator
 
 from app.models.calendar import DevelopmentalDomain, EventCategory
-from app.schemas.common import OrmBase
+from app.schemas.common import OrmBase, TzDateTime
 
 
 class CalendarEventDto(OrmBase):
@@ -12,8 +12,8 @@ class CalendarEventDto(OrmBase):
     patient_id: uuid.UUID
     title: str
     description: str | None
-    start_at: str
-    end_at: str | None
+    start_at: TzDateTime
+    end_at: TzDateTime | None
     all_day: bool
     provider: str | None
     location: str | None
@@ -30,8 +30,8 @@ class CalendarEventCreateRequest(BaseModel):
 
     title: str
     description: str | None = None
-    start_at: str
-    end_at: str | None = None
+    start_at: TzDateTime
+    end_at: TzDateTime | None = None
     all_day: bool = False
     provider: str | None = None
     location: str | None = None
@@ -49,7 +49,7 @@ class CalendarEventCreateRequest(BaseModel):
 
 class CalendarEventUpdateRequest(CalendarEventCreateRequest):
     title: str | None = None
-    start_at: str | None = None
+    start_at: TzDateTime | None = None
     category: EventCategory | None = None
 
 

@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from app.schemas.common import OrmBase
+from app.schemas.common import OrmBase, TzDateTime
 
 
 class MedicationDto(OrmBase):
@@ -12,9 +12,9 @@ class MedicationDto(OrmBase):
     status: str
     medication_code: str | None
     medication_display: str
-    date_asserted: str | None
-    effective_start: str | None
-    effective_end: str | None
+    date_asserted: TzDateTime | None
+    effective_start: TzDateTime | None
+    effective_end: TzDateTime | None
     dosage_text: str | None
     dose_quantity: float | None
     dose_unit: str | None
@@ -30,9 +30,9 @@ class MedicationCreateRequest(BaseModel):
     status: str = "active"
     medication_code: str | None = None
     medication_display: str
-    date_asserted: str | None = None
-    effective_start: str | None = None
-    effective_end: str | None = None
+    date_asserted: TzDateTime | None = None
+    effective_start: TzDateTime | None = None
+    effective_end: TzDateTime | None = None
     dosage_text: str | None = None
     dose_quantity: float | None = None
     dose_unit: str | None = None

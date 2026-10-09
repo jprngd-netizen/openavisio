@@ -1,6 +1,7 @@
 import uuid
+from datetime import date
 
-from sqlalchemy import Boolean, ForeignKey, LargeBinary, String, Text
+from sqlalchemy import Boolean, Date, ForeignKey, LargeBinary, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -15,7 +16,8 @@ class Patient(BaseModel):
 
     given_name: Mapped[str] = mapped_column(String(100), nullable=False)
     family_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    birth_date: Mapped[str | None] = mapped_column(String(20))  # ISO date string
+    # WS-5: a pure calendar date (legacy ISO String `birth_date` kept until cleanup).
+    birth_date: Mapped[date | None] = mapped_column("birth_date_ts", Date)
     gender: Mapped[str | None] = mapped_column(String(20))
     active: Mapped[bool] = mapped_column(Boolean, default=True)
     identifier: Mapped[str | None] = mapped_column(String(256))
