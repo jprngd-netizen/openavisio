@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     tesseract-ocr \
     tesseract-ocr-deu \
+    tesseract-ocr-por \
     ocrmypdf \
     && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt .

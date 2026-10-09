@@ -4,11 +4,17 @@ OCR module: Tesseract/OCRmyPDF-based text extraction from PDFs and images.
 
 import io
 import logging
+import os
 import subprocess
 import tempfile
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+# Tesseract languages for OCR. A pt-BR document read with German tesseract data garbles
+# the text that feeds classification/extraction; OCR_LANGS lets an install choose its own
+# set (the image ships por, deu and eng).
+OCR_LANGS = os.environ.get("OCR_LANGS", "por+eng").strip() or "por+eng"
 
 
 def ocr_pdf(file_bytes: bytes) -> dict:
@@ -30,7 +36,7 @@ def ocr_pdf(file_bytes: bytes) -> dict:
                     "ocrmypdf",
                     "--force-ocr",
                     "--sidecar", str(sidecar_path),
-                    "-l", "deu+eng",
+                    "-l", OCR_LANGS,
                     "--tesseract-timeout", "120",
                     str(input_path),
                     str(output_path),
@@ -49,7 +55,7 @@ def ocr_pdf(file_bytes: bytes) -> dict:
                         "ocrmypdf",
                         "--skip-text",
                         "--sidecar", str(sidecar_path),
-                        "-l", "deu+eng",
+                        "-l", OCR_LANGS,
                         str(input_path),
                         str(output_path),
                     ],
@@ -78,10 +84,10 @@ def ocr_image(file_bytes: bytes) -> dict:
     from PIL import Image
 
     image = Image.open(io.BytesIO(file_bytes))
-    text = pytesseract.image_to_string(image, lang="deu+eng")
+    text = pytesseract.image_to_string(image, lang=OCR_LANGS)
 
     # Get word-level confidence
-    data = pytesseract.image_to_data(image, lang="deu+eng", output_type=pytesseract.Output.DICT)
+    data = pytesseract.image_to_data(image, lang=OCR_LANGS, output_type=pytesseract.Output.DICT)
     confidences = [int(c) for c in data["conf"] if int(c) > 0]
     avg_confidence = (sum(confidences) / len(confidences) / 100.0) if confidences else 0.0
 
@@ -103,7 +109,7 @@ def _get_tesseract_confidence_pdf(file_bytes: bytes) -> float:
         img = bitmap.to_pil()
         doc.close()
 
-        data = pytesseract.image_to_data(img, lang="deu+eng", output_type=pytesseract.Output.DICT)
+        data = pytesseract.image_to_data(img, lang=OCR_LANGS, output_type=pytesseract.Output.DICT)
         confidences = [int(c) for c in data["conf"] if int(c) > 0]
         return (sum(confidences) / len(confidences) / 100.0) if confidences else 0.0
     except Exception as e:

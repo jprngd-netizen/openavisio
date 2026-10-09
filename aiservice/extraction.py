@@ -70,7 +70,9 @@ def _parse_llm_response(response_text: str) -> dict:
             lines = lines[:-1]
         text = "\n".join(lines).strip()
 
-    return json.loads(text)
+    # OCR sidecars carry page breaks (\f) and other control characters; models
+    # echo them inside JSON strings, and strict JSON rejects those.
+    return json.loads(text, strict=False)
 
 
 def _lang_line(language: str) -> str:

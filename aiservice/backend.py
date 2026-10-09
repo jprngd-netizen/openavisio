@@ -3,6 +3,7 @@ AI inference backend abstraction.
 Supports Ollama (default), vLLM (high-throughput), Mistral (cloud), and Mock (dev/testing).
 """
 
+import base64
 import logging
 import os
 import time
@@ -286,6 +287,29 @@ class OllamaBackend(InferenceBackend):
 
 # --- vLLM backend (multi-URL) ---
 
+def _image_data_url(image: bytes) -> str:
+    """Encode one image as an OpenAI `image_url` data URL. vision_ocr always sends PNG."""
+    if image[:3] == b"\xff\xd8\xff":
+        mime = "image/jpeg"
+    else:
+        mime = "image/png"
+    return f"data:{mime};base64,{base64.b64encode(image).decode('ascii')}"
+
+
+def _openai_vision_messages(messages: list[dict], images: list[bytes]) -> list[dict]:
+    """Rewrite the last message's text into OpenAI content blocks + one image_url per image.
+
+    OpenAI-compatible APIs (vLLM, OmniRoute) take images as content parts, not a
+    separate field; Ollama's `images` key is silently dropped there.
+    """
+    msgs = [m.copy() for m in messages]
+    text = msgs[-1].get("content", "") or ""
+    msgs[-1]["content"] = [{"type": "text", "text": text}] + [
+        {"type": "image_url", "image_url": {"url": _image_data_url(img)}} for img in images
+    ]
+    return msgs
+
+
 class VllmBackend(InferenceBackend):
     """vLLM backend via OpenAI-compatible API. Supports multi-URL round-robin."""
 
@@ -318,11 +342,11 @@ class VllmBackend(InferenceBackend):
 
     @property
     def supports_vision(self) -> bool:
-        return False
+        return True
 
     def chat(self, model: str, messages: list[dict], images: list[bytes] | None = None, num_ctx: int | None = None) -> str:
         if images:
-            raise ValueError("vLLM backend does not support vision/image inputs. Configure OLLAMA_URL for vision OCR.")
+            messages = _openai_vision_messages(messages, images)
         url, client = self._get_client()
         try:
             response = client.chat.completions.create(model=model, messages=messages, temperature=0)
@@ -542,7 +566,7 @@ class MockBackend(InferenceBackend):
 # --- Singletons ---
 
 _backend: InferenceBackend | None = None
-_vision_backend: OllamaBackend | None = None
+_vision_backend: OllamaBackend | VllmBackend | MockBackend | None = None
 _embed_backend: InferenceBackend | None = None
 
 
@@ -588,8 +612,8 @@ def get_backend() -> InferenceBackend:
     return _backend
 
 
-def get_vision_backend() -> OllamaBackend | MockBackend:
-    """Get backend for vision tasks (Ollama or Mock, singleton)."""
+def get_vision_backend() -> OllamaBackend | VllmBackend | MockBackend:
+    """Get backend for vision tasks (Ollama, vLLM/OpenAI-compat, or Mock, singleton)."""
     global _vision_backend
     if _vision_backend is not None:
         return _vision_backend

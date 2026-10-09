@@ -169,7 +169,19 @@ def extraction_stage(self, doc_id: str):
                 )
                 if resp.status_code == 200:
                     extraction = resp.json()
-                    entities = extraction.get("entities") or extraction
+                    entities = extraction.get("entities") if isinstance(extraction, dict) else None
+                    # aiservice answers 200 with {"entities": null, "confidence": 0.0,
+                    # "error": "..."} when the model returns malformed JSON. The old
+                    # `or extraction` fallback saved that error dict as if it were
+                    # clinical data and marked the doc extracted/completed — the user
+                    # saw a "successful" import with nothing extracted. A missing,
+                    # empty or error-carrying payload is a failure: raise so the
+                    # stage is retried (autoretry_for) and ends as `failed`.
+                    if not isinstance(entities, dict) or not entities or extraction.get("error"):
+                        raise ValueError(
+                            "extraction returned no entities: "
+                            f"{extraction.get('error') or 'empty response'}"
+                        )
                     issued_date = None
                     # the model's date lives inside entities, not at the response top level
                     raw_date = entities.get("document_date") or entities.get("date")
