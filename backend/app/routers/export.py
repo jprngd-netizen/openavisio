@@ -74,7 +74,7 @@ async def export_fhir(
                     "coding": [{"code": obs.code}] if obs.code else [],
                 },
                 "subject": _PATIENT_REF(pid),
-                "effectiveDateTime": obs.effective_date_time,
+                "effectiveDateTime": obs.effective_date_time.isoformat() if obs.effective_date_time else None,
                 "valueQuantity": {"value": obs.value_quantity, "unit": obs.value_unit} if obs.value_quantity is not None else None,
                 "valueString": obs.value_string,
             },
@@ -93,7 +93,7 @@ async def export_fhir(
                 "code": {"text": cond.code_display, "coding": [{"code": cond.code}] if cond.code else []},
                 "clinicalStatus": {"coding": [{"code": cond.clinical_status}]} if cond.clinical_status else None,
                 "severity": {"text": cond.severity} if cond.severity else None,
-                "onsetDateTime": cond.onset_date_time,
+                "onsetDateTime": cond.onset_date_time.isoformat() if cond.onset_date_time else None,
             },
         })
 
@@ -145,8 +145,8 @@ async def export_fhir(
                 "status": evt.status or "booked",
                 "description": evt.title,
                 "comment": evt.purpose,
-                "start": evt.start_at,
-                "end": evt.end_at,
+                "start": evt.start_at.isoformat(),
+                "end": evt.end_at.isoformat() if evt.end_at else None,
                 "participant": [{"actor": _PATIENT_REF(pid), "status": "accepted"}],
                 "serviceType": [{"text": evt.provider}] if evt.provider else [],
                 "location": [{"location": {"display": evt.location}}] if evt.location else [],

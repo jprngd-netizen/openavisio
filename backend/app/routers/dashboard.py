@@ -48,7 +48,7 @@ async def get_dashboard(
             code=key,
             display=items[0].code_display or key,
             unit=items[0].value_unit,
-            data_points=[ObservationDataPointDto(date=o.effective_date_time or str(o.created_at)[:10], value=o.value_quantity) for o in items if o.value_quantity is not None],
+            data_points=[ObservationDataPointDto(date=o.effective_date_time.isoformat() if o.effective_date_time else str(o.created_at)[:10], value=o.value_quantity) for o in items if o.value_quantity is not None],
         )
         for key, items in list(trends_map.items())[:5]
     ]
@@ -59,7 +59,7 @@ async def get_dashboard(
     )
     meds = med_result.scalars().all()
     medication_timeline = [
-        MedicationTimelineDto(id=str(m.id), display=m.medication_display, status=m.status, start=m.effective_start, end=m.effective_end)
+        MedicationTimelineDto(id=str(m.id), display=m.medication_display, status=m.status, start=m.effective_start.isoformat() if m.effective_start else None, end=m.effective_end.isoformat() if m.effective_end else None)
         for m in meds
     ]
 
@@ -87,7 +87,7 @@ async def get_dashboard(
     )
     conditions = cond_result.scalars().all()
     condition_timeline = [
-        ConditionTimelineDto(id=str(c.id), display=c.code_display, status=c.clinical_status, onset=c.onset_date_time, severity=c.severity)
+        ConditionTimelineDto(id=str(c.id), display=c.code_display, status=c.clinical_status, onset=c.onset_date_time.isoformat() if c.onset_date_time else None, severity=c.severity)
         for c in conditions
     ]
 

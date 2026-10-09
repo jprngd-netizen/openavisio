@@ -451,7 +451,7 @@ async def memed_session(
     if patient.phone:
         patient_payload["telefone"] = patient.phone
     if patient.birth_date:
-        patient_payload["dataNascimento"] = patient.birth_date
+        patient_payload["dataNascimento"] = patient.birth_date.isoformat()
 
     # Include CPF if available — decrypt with patient KEK
     if patient.cpf_encrypted:

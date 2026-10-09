@@ -146,13 +146,12 @@ def retention_purge_scheduler():
     return _run(_purge())
 
 
-def _parse_event_dt(start_at: str, window_start, window_end) -> bool:
-    """Return True if start_at falls within the reminder window."""
-    from datetime import UTC, datetime, timezone
-    try:
-        dt = datetime.fromisoformat(start_at)
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=UTC)
-        return window_start <= dt <= window_end
-    except ValueError:
+def _parse_event_dt(start_at, window_start, window_end) -> bool:
+    """Return True if start_at (a typed datetime) falls within the reminder window."""
+    from datetime import UTC
+    if start_at is None:
         return False
+    dt = start_at
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=UTC)
+    return window_start <= dt <= window_end

@@ -1,5 +1,5 @@
 import uuid
-from datetime import date
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.access import AccessLevel, require_patient_access
 from app.core.database import get_db
+from app.core.datetimes import SAO_PAULO
 from app.deps import get_current_user
 from app.models.medication import MedicationStatement
 from app.models.user import User
@@ -15,22 +16,18 @@ from app.schemas.medication import MedicationCreateRequest, MedicationDto, Medic
 router = APIRouter()
 
 
-def parse_med_date(s: str | None) -> date | None:
-    """Best-effort ISO date parse; unparseable/empty → None (treated as open-ended)."""
-    if not s:
-        return None
-    try:
-        return date.fromisoformat(s[:10])
-    except ValueError:
-        return None
-
-
 def med_is_active(med: MedicationStatement) -> bool:
-    """Currently active = not manually stopped/completed and not past its end date (#68)."""
+    """Currently active = not manually stopped/completed and not past its end (#68)."""
     if med.status in ("stopped", "completed"):
         return False
-    end = parse_med_date(med.effective_end)
-    return end is None or end >= date.today()
+    if med.effective_end is None:
+        return True
+    return med.effective_end.astimezone(SAO_PAULO).date() >= datetime.now(SAO_PAULO).date()
+
+
+def _today_start() -> datetime:
+    """Midnight today in America/Sao_Paulo — the day a course is stopped on."""
+    return datetime.now(SAO_PAULO).replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 def _to_dto(med: MedicationStatement) -> MedicationDto:
@@ -103,7 +100,7 @@ async def update_medication(
     # Last resort only. The UI asks for the date (#128) — this catches API clients
     # that stop a medication without saying when.
     if med.status in ("stopped", "completed") and not med.effective_end:
-        med.effective_end = date.today().isoformat()
+        med.effective_end = _today_start()
     await db.commit()
     await db.refresh(med)
     return _to_dto(med)

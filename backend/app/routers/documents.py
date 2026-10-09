@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.access import AccessLevel, require_patient_access
 from app.core.database import get_db
+from app.core.datetimes import parse_datetime
 from app.core.encryption import decrypt_document, decrypt_str, encrypt_document
 from app.core.patient_keys import ensure_patient_kek, get_patient_kek
 from app.core.storage import get_storage
@@ -297,7 +298,7 @@ async def verify_document(
                 code_display=display,
                 category=category,
                 panel=panel,
-                effective_date_time=obs_data.get("date") or doc_date,
+                effective_date_time=parse_datetime(obs_data.get("date") or doc_date),
                 value_quantity=value_quantity,
                 value_string=value_string,
                 value_unit=obs_data.get("unit"),
@@ -338,7 +339,7 @@ async def verify_document(
                 code_display=name,
                 clinical_status=dx_data.get("status") or "active",
                 severity=dx_data.get("severity"),
-                onset_date_time=dx_data.get("onset_date"),
+                onset_date_time=parse_datetime(dx_data.get("onset_date")),
             )
             cond.sources.append(ConditionSource(document_reference_id=doc_id))
             db.add(cond)
@@ -379,9 +380,9 @@ async def verify_document(
                 # The letter of 19.03. tells us what she was taking THEN. We used to
                 # throw that away and leave the start empty (#128); the document's own
                 # date is the honest answer unless the document names one itself.
-                effective_start=med_data.get("start_date") or doc_date,
-                effective_end=med_data.get("end_date"),
-                date_asserted=doc_date,
+                effective_start=parse_datetime(med_data.get("start_date") or doc_date),
+                effective_end=parse_datetime(med_data.get("end_date")),
+                date_asserted=parse_datetime(doc_date),
             ))
 
         for appt in body.appointments:
@@ -404,7 +405,7 @@ async def verify_document(
                 owner_id=user.id,
                 document_reference_id=doc_id,
                 title=title,
-                start_at=start_at,
+                start_at=parse_datetime(start_at),
                 all_day=all_day,
                 provider=provider,
                 location=appt.get("location"),

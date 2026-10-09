@@ -3,7 +3,7 @@ and the retention purge (#15/#16)."""
 
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import Date, and_, or_, select, update
+from sqlalchemy import Date, DateTime, and_, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.audit import AuditLog
@@ -105,7 +105,12 @@ async def run_retention_purge(db: AsyncSession) -> dict[str, int]:
         field = DOMAIN_DATE_FIELDS.get(cat.code)
         if field:
             col = getattr(model, field)
-            domain_cutoff = cutoff.date() if isinstance(col.type, Date) else cutoff.date().isoformat()
+            if isinstance(col.type, Date):
+                domain_cutoff = cutoff.date()
+            elif isinstance(col.type, DateTime):
+                domain_cutoff = cutoff  # WS-5: typed instant, compare as datetime
+            else:
+                domain_cutoff = cutoff.date().isoformat()
             age_clause = or_(
                 and_(col.isnot(None), col < domain_cutoff),
                 and_(col.is_(None), age_clause),

@@ -1,6 +1,6 @@
 import uuid
 from collections import defaultdict
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.access import AccessLevel, require_patient_access
 from app.core.database import get_db
+from app.core.datetimes import SAO_PAULO, parse_datetime
 from app.deps import get_current_user
 from app.models.calendar import CalendarEvent
 from app.models.diary import DiaryEntry
@@ -51,10 +52,12 @@ async def list_events(
 ):
     await require_patient_access(patient_id, user, db)
     q = select(CalendarEvent).where(CalendarEvent.patient_id == patient_id, CalendarEvent.is_deleted == False)  # noqa: E712
-    if from_:
-        q = q.where(CalendarEvent.start_at >= from_)
-    if to:
-        q = q.where(CalendarEvent.start_at <= to)
+    from_dt = parse_datetime(from_)
+    to_dt = parse_datetime(to)
+    if from_dt:
+        q = q.where(CalendarEvent.start_at >= from_dt)
+    if to_dt:
+        q = q.where(CalendarEvent.start_at <= to_dt)
     result = await db.execute(q)
     return result.scalars().all()
 
@@ -138,18 +141,21 @@ async def get_feed(
     items: list[CalendarFeedItem] = []
 
     # Calendar events
+    from_dt = parse_datetime(from_)
+    to_dt = parse_datetime(to)
     ev_q = select(CalendarEvent).where(CalendarEvent.patient_id == patient_id, CalendarEvent.is_deleted == False)  # noqa: E712
-    if from_:
-        ev_q = ev_q.where(CalendarEvent.start_at >= from_)
-    if to:
-        ev_q = ev_q.where(CalendarEvent.start_at <= to)
+    if from_dt:
+        ev_q = ev_q.where(CalendarEvent.start_at >= from_dt)
+    if to_dt:
+        ev_q = ev_q.where(CalendarEvent.start_at <= to_dt)
     events = (await db.execute(ev_q)).scalars().all()
     for ev in events:
         ev_type = "milestone" if ev.category == "milestone" else "appointment"
         if not types or ev_type in types:
             if not q or q.lower() in ev.title.lower():
                 items.append(CalendarFeedItem(
-                    id=ev.id, title=ev.title, start=ev.start_at, end=ev.end_at,
+                    id=ev.id, title=ev.title, start=ev.start_at.astimezone(SAO_PAULO).isoformat(),
+                    end=ev.end_at.astimezone(SAO_PAULO).isoformat() if ev.end_at else None,
                     all_day=ev.all_day, type=ev_type, color=_TYPE_COLORS[ev_type],
                     developmental_domain=ev.developmental_domain,
                 ))
@@ -213,19 +219,20 @@ async def get_feed(
             if not m.effective_start:
                 continue
             # overlap, not containment: does the course touch the window at all?
-            if to and m.effective_start > to:
+            if to_dt and m.effective_start > to_dt:
                 continue
             # An open-ended course means "still running TODAY" — not "will still be
             # taken in 2030". Without this the bar marched through every future
             # month forever, which is a claim about the future we cannot make.
-            effective_end = m.effective_end or date.today().isoformat()
-            if from_ and effective_end < from_:
+            effective_end = m.effective_end or datetime.now(SAO_PAULO)
+            if from_dt and effective_end < from_dt:
                 continue
             # the dose is the point — "Valproat" alone sends you off to another page
             title = f"{m.medication_display} · {m.dosage_text}" if m.dosage_text else m.medication_display
             items.append(CalendarFeedItem(
-                id=m.id, title=title, start=m.effective_start,
-                end=m.effective_end, all_day=True, type="medication",
+                id=m.id, title=title, start=m.effective_start.astimezone(SAO_PAULO).isoformat(),
+                end=m.effective_end.astimezone(SAO_PAULO).isoformat() if m.effective_end else None,
+                all_day=True, type="medication",
                 color=_TYPE_COLORS["medication"], url=med_url,
             ))
 
