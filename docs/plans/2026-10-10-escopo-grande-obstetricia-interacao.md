@@ -140,3 +140,34 @@ isolada por flag) e Parte A (obstetrícia, maior). Rodar os workstreams de schem
 
 *Este plano não executa nada. Implementação/QA/release seguem skills próprias. Onde há "modelo proposto"
 é desenho de engenharia, não guideline clínico — depende de validação do Gabriel.*
+
+---
+
+## Adendo — decisões de 2ª rodada (2026-10-10)
+
+**Princípio de projeto — o registro é retrato da data.** O registro de uma consulta (e sua versão
+selada, WS-6) mostra o que era **fato naquela data**; nunca é reescrito por valor derivado/atual.
+- IG e GOP no registro de uma consulta são calculados **na data do atendimento**, não na data atual.
+- Diagnósticos já são snapshot no vínculo consulta↔Condition (WS-3) e na versão selada (WS-6). ✓
+- Painéis vivos (meds ativas, GOP corrente) ficam **fora** do registro histórico — são estado corrente.
+- Registros de enfermagem entram no mesmo regime (datados e congelados).
+
+**Decisões fechadas:**
+- **OB-DEC-1** = **GOP derivado** das gestações (sem campo manual no `Patient`).
+- **OB-DEC-2** = **tabela própria de pré-natal** (`PregnancyVisit`), não reusar `Encounter`.
+- **OB-DEC-3** = **desfechos completos** — parto vaginal/cesárea **+ abortamento (espontâneo/induzido)
+  + ectópica + óbito fetal** (terminologia adequada).
+- **NOVO ESCOPO** — **seção de cuidados de enfermagem (geral + obstétrica)**: anotações datadas por
+  atendimento, sob o princípio do retrato da data. Workstream novo (OB-5).
+- **IX-DEC-1 / IX-DEC-2** = fechadas pela pesquisa → `docs/research/2026-10-10-drug-interaction.md`.
+
+**Interação — desenho recomendado (pesquisa):** RxNav DDI **descontinuado** (02/01/2024) e DrugBank só
+pago → descartados como fonte de interação. **Primário**: alerta **nativo da Memed** (camada humana, PT)
++ **IMSES/CRF-MG** (base BR, grátis, só graves) para medicação em texto livre. **Fallback sempre-on e
+sem PHI**: **DDInter 2.0** (CC BY-NC-SA, uso pessoal) espelhado no repo. Mapeamento texto-livre→princípio
+ativo via **dados abertos ANVISA**. Cache por par, timeout curto, severidade só-grave, **advisory**,
+nenhuma PHI para terceiros.
+
+**Status:** R1 em produção (v0.8.0); R2 pronta para deploy (v0.9.0); WS-12 concluída — a suíte agora
+cobre o caminho de migração (`OA_TEST_SCHEMA=migrations`), fechando o RSK-5.
+
