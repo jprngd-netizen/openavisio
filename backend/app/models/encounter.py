@@ -12,10 +12,11 @@ from app.services.encounter_seal import content_hash, snapshot_from_encounter
 
 if TYPE_CHECKING:
     from app.models.calendar import CalendarEvent
+    from app.models.document import DocumentReference
     from app.models.encounter_condition import EncounterCondition
     from app.models.encounter_version import EncounterVersion
     from app.models.observation import Observation
-    from app.models.prescription import Prescriber
+    from app.models.prescription import Prescriber, Prescription
     from app.models.referral import Referral
 
 
@@ -110,6 +111,26 @@ class Encounter(OwnedResource):
         viewonly=True,
         lazy="selectin",
         order_by="Referral.created_at",
+    )
+    # WS-8: prescriptions issued from this consultation. View-only: the
+    # prescription router owns those rows; linking goes through the encounter
+    # router's /link endpoint, which writes Prescription.encounter_id.
+    prescriptions: Mapped[list["Prescription"]] = relationship(  # noqa: F821
+        "Prescription",
+        primaryjoin="and_(Encounter.id == Prescription.encounter_id, Prescription.is_deleted == False)",  # noqa: E712
+        viewonly=True,
+        lazy="selectin",
+        order_by="Prescription.created_at",
+    )
+    # WS-8: exams (lab reports stored as DocumentReference rows) requested or
+    # interpreted in this consultation. View-only: the document vault owns the
+    # rows; linking writes DocumentReference.encounter_id.
+    exams: Mapped[list["DocumentReference"]] = relationship(  # noqa: F821
+        "DocumentReference",
+        primaryjoin="and_(Encounter.id == DocumentReference.encounter_id, DocumentReference.is_deleted == False)",  # noqa: E712
+        viewonly=True,
+        lazy="selectin",
+        order_by="DocumentReference.created_at",
     )
 
     @property

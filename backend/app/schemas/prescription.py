@@ -62,6 +62,8 @@ class PrescriptionDto(OrmBase):
     patient_id: uuid.UUID
     prescriber_id: uuid.UUID
     owner_id: uuid.UUID
+    # WS-8: the consultation this prescription was issued from, if any.
+    encounter_id: uuid.UUID | None = None
     status: str
     version: int
     memed_prescription_id: str | None

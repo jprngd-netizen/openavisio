@@ -94,6 +94,11 @@ class Prescription(OwnedResource):
     prescriber_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("prescribers.id"), nullable=False, index=True,
     )
+    # WS-8: the consultation this prescription was issued from, if any. Nullable:
+    # a prescription created straight from the patient page has no encounter.
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=True, index=True,
+    )
     status: Mapped[str] = mapped_column(
         String(20), default=PrescriptionStatus.draft, index=True,
     )

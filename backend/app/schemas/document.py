@@ -24,6 +24,8 @@ class DocumentInsightsDto(BaseModel):
 class DocumentDto(OrmBase):
     id: uuid.UUID
     patient_id: uuid.UUID
+    # WS-8: the consultation this exam/report was linked to, if any.
+    encounter_id: uuid.UUID | None = None
     status: str
     type: str | None
     description: str | None

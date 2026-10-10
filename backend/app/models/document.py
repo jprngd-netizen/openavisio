@@ -13,6 +13,12 @@ class DocumentReference(OwnedResource):
     __tablename__ = "document_references"
 
     patient_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("patients.id"), nullable=False, index=True)
+    # WS-8: the consultation in which this exam/report was requested or
+    # interpreted, if any. Nullable and view-only from the encounter side; the
+    # document vault keeps owning the row.
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=True, index=True
+    )
     status: Mapped[str] = mapped_column(String(50), default="current")
     type: Mapped[str | None] = mapped_column(String(100))
     description: Mapped[str | None] = mapped_column(Text)

@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
 from pydantic import BaseModel, field_validator, model_validator
 
@@ -97,6 +97,40 @@ class EncounterVersionSummaryDto(OrmBase):
     board_state: str | None = None
 
 
+class LinkedPrescriptionDto(OrmBase):
+    """A prescription linked to a consultation (WS-8), as read back.
+
+    A lightweight summary on purpose: the full PrescriptionDto pulls in items
+    and the archived document, which the prescription's own endpoints own. Here
+    the consultation only needs to name what was prescribed.
+    """
+
+    id: uuid.UUID
+    status: str
+    version: int
+    issued_at: datetime | None = None
+    notes: str | None = None
+    signature_state: str | None = None
+    created_at: datetime
+
+
+class LinkedExamDto(OrmBase):
+    """A lab report (DocumentReference) linked to a consultation (WS-8).
+
+    The exam unit is the *document* (the report file), not each analyte: a
+    panel's individual values are Observation rows hanging off this document.
+    """
+
+    id: uuid.UUID
+    type: str | None = None
+    description: str | None = None
+    file_name: str | None = None
+    issued_date: date | None = None
+    processing_status: str
+    verification_status: str
+    created_at: datetime
+
+
 class EncounterDto(OrmBase):
     id: uuid.UUID
     patient_id: uuid.UUID
@@ -126,8 +160,29 @@ class EncounterDto(OrmBase):
     # and referrals issued from it.
     follow_ups: list[CalendarEventDto] = []
     referrals: list[ReferralDto] = []
+    # WS-8: what was prescribed and which exams were linked in this attendance.
+    prescriptions: list[LinkedPrescriptionDto] = []
+    exams: list[LinkedExamDto] = []
     created_at: datetime
     updated_at: datetime
+
+
+class EncounterLinkRequest(BaseModel):
+    """Link (or unlink) one resource to a consultation (WS-8).
+
+    Exactly one of ``prescription_id`` / ``document_id`` must be set; the other
+    stays null. The resource must belong to the same patient as the encounter
+    (422 otherwise).
+    """
+
+    prescription_id: uuid.UUID | None = None
+    document_id: uuid.UUID | None = None
+
+    @model_validator(mode="after")
+    def _exactly_one(self):
+        if (self.prescription_id is None) == (self.document_id is None):
+            raise ValueError("set exactly one of prescription_id or document_id")
+        return self
 
 
 class FollowUpCreateRequest(BaseModel):
