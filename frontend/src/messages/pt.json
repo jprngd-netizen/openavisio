@@ -152,6 +152,12 @@
     "typeOxygenSaturation": "Saturação de oxigênio",
     "typeHeartRate": "Frequência cardíaca",
     "typeBMI": "IMC",
+    "typeRespiratoryRate": "Frequência respiratória",
+    "typeCapillaryGlucose": "Glicemia capilar",
+    "typePainEva": "Dor (EVA)",
+    "typeHeadCircumference": "Perímetro cefálico",
+    "typeBP": "Pressão arterial",
+    "OutOfRange": "Valor de {name} fora da faixa plausível ({min}–{max}).",
     "ValuePlaceholder": "ex: 70",
     "FromEncounter": "Da consulta"
   },

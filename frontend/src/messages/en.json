@@ -152,6 +152,12 @@
     "typeOxygenSaturation": "Oxygen Saturation",
     "typeHeartRate": "Heart Rate",
     "typeBMI": "BMI",
+    "typeRespiratoryRate": "Respiratory rate",
+    "typeCapillaryGlucose": "Capillary glucose",
+    "typePainEva": "Pain (VAS)",
+    "typeHeadCircumference": "Head circumference",
+    "typeBP": "Blood pressure",
+    "OutOfRange": "{name} value is outside the plausible range ({min}–{max}).",
     "ValuePlaceholder": "e.g. 70",
     "FromEncounter": "From consultation"
   },

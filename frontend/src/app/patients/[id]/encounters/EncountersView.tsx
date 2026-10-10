@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { createEncounter, updateEncounter, deleteEncounter } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
-import { MEASUREMENT_TYPES, measurementType, computeBmi } from "@/lib/measurementTypes";
+import { MEASUREMENT_TYPES, measurementType, isPlausible, computeBmi } from "@/lib/measurementTypes";
 import { CidCombobox } from "@/components/CidCombobox";
 import { ActiveMedicationsPanel } from "./ActiveMedicationsPanel";
 import { Plus, X, Pencil, Trash2, Activity } from "lucide-react";
@@ -133,14 +133,38 @@ export function EncountersView({ patientId, encounters, activeMeds = [] }: { pat
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    const measurements = MEASUREMENT_TYPES.filter((m) => (vitals[m.code] ?? "").trim() !== "")
-      .map((m) => ({
-        code: m.code,
-        code_display: tm(m.key),
-        value_quantity: parseFloat(vitals[m.code]),
-        value_unit: m.unit,
-      }))
-      .filter((m) => !Number.isNaN(m.value_quantity));
+    const filled = MEASUREMENT_TYPES.filter((m) => (vitals[m.code] ?? "").trim() !== "")
+      .map((m) => ({ m, value: parseFloat(vitals[m.code]) }))
+      .filter(({ value }) => !Number.isNaN(value));
+
+    // WS-4: plausibility guard mirrored on the server (422). Warn locally, in the
+    // user's language, before hitting the API.
+    const outOfRange = filled.filter(({ m, value }) => !isPlausible(m.code, value));
+    if (outOfRange.length > 0) {
+      setError(
+        outOfRange
+          .map(({ m }) => tm("OutOfRange", { name: tm(m.key), min: m.min, max: m.max }))
+          .join(" ")
+      );
+      return;
+    }
+
+    // WS-4: systolic and diastolic belong to one blood-pressure panel — both
+    // rows share a component_group_id so the backend reads them as one reading.
+    const hasBpPair =
+      filled.some(({ m }) => m.code === "blood-pressure-systolic") &&
+      filled.some(({ m }) => m.code === "blood-pressure-diastolic");
+    const bpGroup = hasBpPair ? crypto.randomUUID() : null;
+    const measurements = filled.map(({ m, value }) => ({
+      code: m.code,
+      code_display: tm(m.key),
+      value_quantity: value,
+      value_unit: m.unit,
+      component_group_id:
+        bpGroup && (m.code === "blood-pressure-systolic" || m.code === "blood-pressure-diastolic")
+          ? bpGroup
+          : null,
+    }));
     const payload = {
       encounter_type: form.encounter_type || null,
       encounter_date: form.encounter_date || null,
@@ -191,6 +215,42 @@ export function EncountersView({ patientId, encounters, activeMeds = [] }: { pat
   function vitalLabel(code: string, fallback: string | null): string {
     const mt = measurementType(code);
     return mt ? tm(mt.key) : (fallback ?? code);
+  }
+
+  // WS-4: render vitals as chips, collapsing a blood-pressure panel (systolic +
+  // diastolic sharing a component_group_id) into a single "128/82 mmHg" chip.
+  function measurementChip(m: any) {
+    return {
+      key: m.id ?? `${m.code}-${m.effective_date_time ?? ""}`,
+      label: vitalLabel(m.code, m.code_display),
+      value: `${m.value_quantity}${m.value_unit ? ` ${m.value_unit}` : ""}`,
+    };
+  }
+
+  function vitalChips(rows: any[]) {
+    const chips = [];
+    const groups = new Map<string, any[]>();
+    for (const m of rows) {
+      if (m.component_group_id) {
+        groups.set(m.component_group_id, [...(groups.get(m.component_group_id) ?? []), m]);
+      } else {
+        chips.push(measurementChip(m));
+      }
+    }
+    for (const [gid, items] of groups) {
+      const sys = items.find((i) => i.code === "blood-pressure-systolic");
+      const dia = items.find((i) => i.code === "blood-pressure-diastolic");
+      if (sys && dia) {
+        chips.push({
+          key: gid,
+          label: tm("typeBP"),
+          value: `${sys.value_quantity}/${dia.value_quantity}${sys.value_unit ? ` ${sys.value_unit}` : ""}`,
+        });
+      } else {
+        for (const m of items) chips.push(measurementChip(m));
+      }
+    }
+    return chips;
   }
 
   const blocks: { key: keyof FormState; label: string }[] = [
@@ -470,16 +530,13 @@ export function EncountersView({ patientId, encounters, activeMeds = [] }: { pat
 
                 {vitalsRows.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2 border-t pt-3">
-                    {vitalsRows.map((m: any) => (
+                    {vitalChips(vitalsRows).map((c) => (
                       <span
-                        key={m.id ?? m.code}
+                        key={c.key}
                         className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs"
                       >
-                        <span className="text-muted-foreground">{vitalLabel(m.code, m.code_display)}</span>
-                        <span className="font-medium">
-                          {m.value_quantity}
-                          {m.value_unit ? ` ${m.value_unit}` : ""}
-                        </span>
+                        <span className="text-muted-foreground">{c.label}</span>
+                        <span className="font-medium">{c.value}</span>
                       </span>
                     ))}
                   </div>

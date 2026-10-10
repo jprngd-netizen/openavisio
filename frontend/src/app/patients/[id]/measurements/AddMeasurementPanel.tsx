@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { createObservation } from "@/lib/api";
 import { Plus, X } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { MEASUREMENT_TYPES as TYPES } from "@/lib/measurementTypes";
+import { MEASUREMENT_TYPES as TYPES, isPlausible } from "@/lib/measurementTypes";
 
 const inputCls =
   "w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background";
@@ -39,13 +39,26 @@ export function AddMeasurementPanel({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    // WS-4: reject implausible vitals locally, in the user's language, before the
+    // API call (the server enforces the same bounds with a 422).
+    const numeric = parseFloat(value);
+    if (!isPlausible(selectedType.code, numeric)) {
+      setError(
+        t("OutOfRange", {
+          name: t(selectedType.key),
+          min: selectedType.min,
+          max: selectedType.max,
+        })
+      );
+      return;
+    }
     startTransition(async () => {
       try {
         await createObservation(patientId, {
           category: "measurement",
           code: selectedType.code,
           code_display: t(selectedType.key),
-          value_quantity: parseFloat(value),
+          value_quantity: numeric,
           value_unit: selectedType.unit,
           effective_date_time: date,
         });

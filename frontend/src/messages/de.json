@@ -152,6 +152,12 @@
     "typeOxygenSaturation": "Sauerstoffsättigung",
     "typeHeartRate": "Herzfrequenz",
     "typeBMI": "BMI",
+    "typeRespiratoryRate": "Atemfrequenz",
+    "typeCapillaryGlucose": "Kapillarglukose",
+    "typePainEva": "Schmerz (VAS)",
+    "typeHeadCircumference": "Kopfumfang",
+    "typeBP": "Blutdruck",
+    "OutOfRange": "{name} liegt außerhalb des plausiblen Bereichs ({min}–{max}).",
     "ValuePlaceholder": "z. B. 70",
     "FromEncounter": "Aus der Konsultation"
   },
