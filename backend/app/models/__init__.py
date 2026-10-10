@@ -6,9 +6,10 @@ from app.models.patient import Patient
 from app.models.patient_key import PatientKey
 from app.models.observation import Observation
 from app.models.condition import Condition
-from app.models.encounter import Encounter
+from app.models.encounter import Encounter, EncounterType
 from app.models.encounter_condition import EncounterCondition
 from app.models.encounter_version import EncounterVersion
+from app.models.referral import Referral, ReferralStatus
 from app.models.clinical_history import ClinicalHistory
 from app.models.allergy import Allergy
 from app.models.immunization import Immunization, ImmunizationStatus
@@ -61,8 +62,11 @@ __all__ = [
     "Observation",
     "Condition",
     "Encounter",
+    "EncounterType",
     "EncounterCondition",
     "EncounterVersion",
+    "Referral",
+    "ReferralStatus",
     "ClinicalHistory",
     "Allergy",
     "Immunization",

@@ -1,12 +1,16 @@
 import uuid
 from datetime import datetime
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import OwnedResource
+
+if TYPE_CHECKING:
+    from app.models.encounter import Encounter
 
 
 class EventCategory(StrEnum):
@@ -39,6 +43,11 @@ class CalendarEvent(OwnedResource):
     source: Mapped[str] = mapped_column(String(50), default="manual")
     status: Mapped[str] = mapped_column(String(50), default="scheduled")
     document_reference_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("document_references.id"), nullable=True)
+    # WS-10: when this event is a follow-up scheduled from a consultation, the
+    # encounter it belongs to. Nullable — most events are manual.
+    encounter_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=True, index=True
+    )
     reminder_sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     patient: Mapped["Patient"] = relationship("Patient", back_populates="calendar_events")  # noqa: F821

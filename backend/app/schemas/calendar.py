@@ -22,6 +22,8 @@ class CalendarEventDto(OrmBase):
     status: str
     category: str
     developmental_domain: str | None
+    # WS-10: set when the event is a follow-up scheduled from a consultation.
+    encounter_id: uuid.UUID | None = None
     created_at: datetime
 
 
@@ -63,6 +65,8 @@ class CalendarFeedItem(BaseModel):
     color: str
     url: str | None = None
     developmental_domain: str | None = None
+    # WS-10: present when the appointment was scheduled from a consultation.
+    encounter_id: uuid.UUID | None = None
     # documents: the class slug (lab_report, doctor_letter, …) so the client can
     # show "Arztbrief · Diak Klinikum" instead of img20240405_08273634.pdf
     classification: str | None = None

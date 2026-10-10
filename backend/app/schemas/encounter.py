@@ -1,11 +1,40 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, field_validator, model_validator
 
+from app.models.encounter import EncounterType
+from app.schemas.calendar import CalendarEventDto
 from app.schemas.common import OrmBase, TzDateTime
 from app.schemas.observation import ObservationDto
+from app.schemas.referral import ReferralDto
 from app.services.vital_ranges import check_vital
+
+# WS-10 (DEC-3): the controlled taxonomy is the write contract, but the app
+# historically emitted free-text labels into the same column. Those legacy
+# values are accepted verbatim so existing clients/rows keep working.
+_TAXONOMY = {t.value for t in EncounterType}
+_LEGACY_ENCOUNTER_TYPES = {
+    "consulta",
+    "retorno",
+    "teleconsulta",
+    "urgencia",
+    "urgência",
+    "evolucao",
+    "evolução",
+    "procedimento",
+}
+
+
+def validate_encounter_type(value: str | None) -> str | None:
+    """Restrict ``encounter_type`` writes to the taxonomy (plus legacy labels)."""
+    if value is None:
+        return None
+    if value in _TAXONOMY or value.lower() in _LEGACY_ENCOUNTER_TYPES:
+        return value
+    raise ValueError(
+        "encounter_type must be one of: " + ", ".join(sorted(_TAXONOMY))
+    )
 
 
 class EncounterMeasurement(BaseModel):
@@ -93,8 +122,21 @@ class EncounterDto(OrmBase):
     modified_since_signed: bool = False
     measurements: list[ObservationDto] = []
     diagnoses: list[EncounterDiagnosisDto] = []
+    # WS-10: continuity of care — return appointments scheduled from this note
+    # and referrals issued from it.
+    follow_ups: list[CalendarEventDto] = []
+    referrals: list[ReferralDto] = []
     created_at: datetime
     updated_at: datetime
+
+
+class FollowUpCreateRequest(BaseModel):
+    """Schedule a return appointment from a consultation (WS-10)."""
+
+    start_at: TzDateTime
+    end_at: TzDateTime | None = None
+    title: str | None = None
+    purpose: str | None = None
 
 
 class EncounterCreateRequest(BaseModel):
@@ -117,6 +159,8 @@ class EncounterCreateRequest(BaseModel):
     measurements: list[EncounterMeasurement] = []
     diagnoses: list[DiagnosisInput] = []
 
+    _check_type = field_validator("encounter_type")(validate_encounter_type)
+
 
 class EncounterUpdateRequest(BaseModel):
     status: str | None = None
@@ -133,3 +177,5 @@ class EncounterUpdateRequest(BaseModel):
     prescriber_id: uuid.UUID | None = None
     measurements: list[EncounterMeasurement] | None = None
     diagnoses: list[DiagnosisInput] | None = None
+
+    _check_type = field_validator("encounter_type")(validate_encounter_type)

@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from enum import StrEnum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, ForeignKey, String, Text, and_
@@ -10,10 +11,28 @@ from app.models.base import OwnedResource
 from app.services.encounter_seal import content_hash, snapshot_from_encounter
 
 if TYPE_CHECKING:
+    from app.models.calendar import CalendarEvent
     from app.models.encounter_condition import EncounterCondition
     from app.models.encounter_version import EncounterVersion
     from app.models.observation import Observation
     from app.models.prescription import Prescriber
+    from app.models.referral import Referral
+
+
+class EncounterType(StrEnum):
+    """Controlled taxonomy for `encounter_type` (WS-10, DEC-3 approved).
+
+    The column stays a free ``String`` (legacy rows keep their raw value); the
+    schema restricts *writes* to these values, plus the small set of legacy
+    free-text labels the app already emitted (see ``schemas.encounter``).
+    """
+
+    outpatient = "outpatient"
+    emergency = "emergency"
+    telemedicine = "telemedicine"
+    follow_up = "follow_up"
+    home_visit = "home_visit"
+    other = "other"
 
 
 class Encounter(OwnedResource):
@@ -73,6 +92,24 @@ class Encounter(OwnedResource):
         viewonly=True,
         lazy="selectin",
         order_by="EncounterVersion.version",
+    )
+    # WS-10: follow-up appointments scheduled from this consultation — the
+    # CalendarEvent rows (category=appointment) that point back at it. View-only,
+    # like the vitals: the calendar router owns those rows.
+    follow_ups: Mapped[list["CalendarEvent"]] = relationship(  # noqa: F821
+        "CalendarEvent",
+        primaryjoin="and_(Encounter.id == CalendarEvent.encounter_id, CalendarEvent.is_deleted == False)",  # noqa: E712
+        viewonly=True,
+        lazy="selectin",
+        order_by="CalendarEvent.start_at",
+    )
+    # WS-10: referrals issued from this consultation. View-only and newest first.
+    referrals: Mapped[list["Referral"]] = relationship(  # noqa: F821
+        "Referral",
+        primaryjoin="and_(Encounter.id == Referral.encounter_id, Referral.is_deleted == False)",  # noqa: E712
+        viewonly=True,
+        lazy="selectin",
+        order_by="Referral.created_at",
     )
 
     @property
