@@ -34,6 +34,7 @@ from app.routers import (
     patients,
     prescriber,
     prescriptions,
+    safety,
     share_links,
     sharing,
 )
@@ -89,6 +90,7 @@ app.include_router(chat.router, prefix="/api", tags=["chat"])
 app.include_router(dashboard.router, prefix="/api", tags=["dashboard"])
 app.include_router(export.router, prefix="/api", tags=["export"])
 app.include_router(sharing.router, prefix="/api", tags=["sharing"])
+app.include_router(safety.router, prefix="/api", tags=["safety"])
 app.include_router(share_links.router, prefix="/api", tags=["share-links"])
 app.include_router(prescriptions.router, prefix="/api", tags=["prescriptions"])
 app.include_router(prescriber.router, prefix="/api/admin", tags=["prescriber"])
