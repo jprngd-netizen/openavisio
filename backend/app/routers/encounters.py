@@ -1,7 +1,8 @@
 import uuid
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.access import AccessLevel, require_patient_access
@@ -9,10 +10,13 @@ from app.core.database import get_db
 from app.deps import get_current_user
 from app.models.encounter import Encounter
 from app.models.encounter_condition import EncounterCondition
+from app.models.encounter_version import EncounterVersion
 from app.models.observation import Observation
+from app.models.prescription import PRESCRIBER_SINGLETON_ID, Prescriber
 from app.models.user import User
 from app.schemas.encounter import EncounterCreateRequest, EncounterDto, EncounterUpdateRequest
 from app.services.encounter_diagnoses import sync_encounter_diagnoses
+from app.services.encounter_seal import content_hash, snapshot_from_encounter
 
 router = APIRouter()
 
@@ -45,6 +49,13 @@ async def create_encounter(
     measurements = data.pop("measurements", [])
     diagnoses = data.pop("diagnoses", [])
     encounter = Encounter(patient_id=patient_id, owner_id=user.id, **data)
+    if encounter.prescriber_id is None:
+        # WS-6: attribute the note to the configured Prescriber singleton when
+        # the client did not choose one, so the responsible professional (and
+        # council) is always renderable.
+        singleton = await db.get(Prescriber, PRESCRIBER_SINGLETON_ID)
+        if singleton is not None and not singleton.is_deleted:
+            encounter.prescriber_id = singleton.id
     db.add(encounter)
     await db.flush()  # assign encounter.id before writing its linked vitals/diagnoses
     _add_measurements(db, patient_id, user.id, encounter.id, encounter.encounter_date, measurements)
@@ -100,6 +111,50 @@ async def update_encounter(
         # Reconcile the diagnosis links: dropped ones are un-linked (the
         # Condition itself survives as a problem), new ones are added.
         await sync_encounter_diagnoses(db, encounter, user.id, diagnoses)
+    await db.commit()
+    return await _reload(db, encounter.id)
+
+
+@router.post("/encounters/{encounter_id}/sign", response_model=EncounterDto)
+async def sign_encounter(
+    encounter_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Seal the current note into an immutable EncounterVersion (WS-6).
+
+    Takes a deterministic snapshot of the note (fields + diagnoses), hashes it
+    with SHA-256 and appends a new version. Re-signing appends ``version + 1``;
+    editing the note never mutates an existing version.
+    """
+    result = await db.execute(select(Encounter).where(Encounter.id == encounter_id, Encounter.is_deleted == False))  # noqa: E712
+    encounter = result.scalar_one_or_none()
+    if not encounter:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    await require_patient_access(encounter.patient_id, user, db, AccessLevel.contribute)
+
+    content = snapshot_from_encounter(encounter)
+    last_version = (
+        await db.execute(
+            select(func.max(EncounterVersion.version)).where(EncounterVersion.encounter_id == encounter.id)
+        )
+    ).scalar()
+    prescriber = encounter.prescriber
+    db.add(
+        EncounterVersion(
+            encounter_id=encounter.id,
+            version=(last_version or 0) + 1,
+            content_hash=content_hash(content),
+            content=content,
+            signed_at=datetime.now(UTC),
+            signed_by=user.id,
+            owner_id=user.id,
+            professional_name=encounter.prescriber_name,
+            board_code=prescriber.board_code if prescriber else None,
+            board_number=prescriber.board_number if prescriber else None,
+            board_state=prescriber.board_state if prescriber else None,
+        )
+    )
     await db.commit()
     return await _reload(db, encounter.id)
 
