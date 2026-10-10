@@ -8,13 +8,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.access import AccessLevel, require_patient_access
 from app.core.database import get_db
 from app.deps import get_current_user
+from app.models.calendar import CalendarEvent
 from app.models.encounter import Encounter
 from app.models.encounter_condition import EncounterCondition
 from app.models.encounter_version import EncounterVersion
 from app.models.observation import Observation
 from app.models.prescription import PRESCRIBER_SINGLETON_ID, Prescriber
 from app.models.user import User
-from app.schemas.encounter import EncounterCreateRequest, EncounterDto, EncounterUpdateRequest
+from app.schemas.calendar import CalendarEventDto
+from app.schemas.encounter import (
+    EncounterCreateRequest,
+    EncounterDto,
+    EncounterUpdateRequest,
+    FollowUpCreateRequest,
+)
 from app.services.encounter_diagnoses import sync_encounter_diagnoses
 from app.services.encounter_seal import content_hash, snapshot_from_encounter
 
@@ -157,6 +164,41 @@ async def sign_encounter(
     )
     await db.commit()
     return await _reload(db, encounter.id)
+
+
+@router.post("/encounters/{encounter_id}/follow-up", response_model=CalendarEventDto, status_code=status.HTTP_201_CREATED)
+async def schedule_follow_up(
+    encounter_id: uuid.UUID,
+    body: FollowUpCreateRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Schedule a return appointment from this consultation (WS-10).
+
+    Creates a ``CalendarEvent`` (category=appointment) linked to the encounter
+    through ``encounter_id``, so the return shows up on the calendar and reads
+    back on the consultation as part of its continuity of care.
+    """
+    result = await db.execute(select(Encounter).where(Encounter.id == encounter_id, Encounter.is_deleted == False))  # noqa: E712
+    encounter = result.scalar_one_or_none()
+    if not encounter:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    await require_patient_access(encounter.patient_id, user, db, AccessLevel.contribute)
+    event = CalendarEvent(
+        patient_id=encounter.patient_id,
+        owner_id=user.id,
+        title=(body.title or "").strip() or "Retorno",
+        category="appointment",
+        start_at=body.start_at,
+        end_at=body.end_at,
+        purpose=body.purpose,
+        source="encounter",
+        encounter_id=encounter.id,
+    )
+    db.add(event)
+    await db.commit()
+    await db.refresh(event)
+    return event
 
 
 @router.delete("/encounters/{encounter_id}", status_code=status.HTTP_204_NO_CONTENT)

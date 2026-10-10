@@ -36,6 +36,7 @@ from app.routers import (
     patients,
     prescriber,
     prescriptions,
+    referrals,
     safety,
     share_links,
     sharing,
@@ -81,6 +82,7 @@ app.include_router(groups.router, prefix="/api", tags=["groups"])
 app.include_router(medications.router, prefix="/api", tags=["medications"])
 app.include_router(conditions.router, prefix="/api", tags=["conditions"])
 app.include_router(encounters.router, prefix="/api", tags=["encounters"])
+app.include_router(referrals.router, prefix="/api", tags=["referrals"])
 app.include_router(clinical_history.router, prefix="/api", tags=["clinical-history"])
 app.include_router(allergies.router, prefix="/api", tags=["allergies"])
 app.include_router(immunizations.router, prefix="/api", tags=["immunizations"])

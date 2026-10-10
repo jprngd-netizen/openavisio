@@ -158,6 +158,9 @@ async def get_feed(
                     end=ev.end_at.astimezone(SAO_PAULO).isoformat() if ev.end_at else None,
                     all_day=ev.all_day, type=ev_type, color=_TYPE_COLORS[ev_type],
                     developmental_domain=ev.developmental_domain,
+                    # WS-10: a return scheduled from a consultation links back to it.
+                    encounter_id=ev.encounter_id,
+                    url=f"/patients/{patient_id}/encounters" if ev.encounter_id else None,
                 ))
 
     # Incidents
