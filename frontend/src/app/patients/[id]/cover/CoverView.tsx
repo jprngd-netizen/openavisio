@@ -4,14 +4,20 @@ import { useState } from "react";
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import {
+  AlertTriangle,
   Cake,
+  ChevronRight,
+  ClipboardList,
   Eye,
   EyeOff,
   IdCard,
   Mars,
   Pencil,
+  Pill,
+  ShieldAlert,
   User as UserIcon,
   Venus,
+  type LucideIcon,
 } from "lucide-react";
 import { PatientAvatar } from "@/components/PatientAvatar";
 import { formatDate, ageFromBirthDate } from "@/lib/utils";
@@ -34,16 +40,82 @@ function Field({ labelText, children }: { labelText: string; children: React.Rea
   );
 }
 
+// One clinical-safety block: a link to its section that lists the active items
+// (or a discreet empty state). `alert` switches the allergy block to the
+// destructive palette so a recorded allergy reads as a warning at a glance.
+function SafetyBlock({
+  href,
+  Icon,
+  title,
+  emptyLabel,
+  viewLabel,
+  items,
+  renderItem,
+  alert = false,
+}: {
+  href: string;
+  Icon: LucideIcon;
+  title: string;
+  emptyLabel: string;
+  viewLabel: string;
+  items: any[];
+  renderItem: (item: any) => React.ReactNode;
+  alert?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`group flex flex-col rounded-xl border p-4 transition-colors ${
+        alert
+          ? "border-destructive/40 bg-destructive/[0.06] hover:bg-destructive/[0.1]"
+          : "bg-card hover:bg-accent"
+      }`}
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div
+          className={`flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide ${
+            alert ? "text-destructive" : "text-muted-foreground"
+          }`}
+        >
+          <Icon className="size-3.5" />
+          {title}
+        </div>
+        <ChevronRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+      </div>
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{emptyLabel}</p>
+      ) : (
+        <ul className="space-y-1">
+          {items.map((item) => (
+            <li
+              key={item.id}
+              className={`truncate text-sm ${alert ? "font-medium" : ""}`}
+              title={String(item.substance_display ?? item.medication_display ?? item.code_display ?? "")}
+            >
+              {renderItem(item)}
+            </li>
+          ))}
+        </ul>
+      )}
+      <span className="mt-auto pt-2 text-xs text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+        {viewLabel}
+      </span>
+    </Link>
+  );
+}
+
 export function CoverView({
   patientId,
   patient,
   organizationName,
   recordNumber,
+  safety,
 }: {
   patientId: string;
   patient: any;
   organizationName: string | null;
   recordNumber: string;
+  safety: { allergies: any[]; medications: any[]; conditions: any[] };
 }) {
   const t = useTranslations("Cover");
   const tp = useTranslations("Patient");
@@ -91,6 +163,68 @@ export function CoverView({
 
   return (
     <div className="space-y-6">
+      {/* (B) Banner de segurança clínica (WS-9) — alergias, medicações ativas
+          e problemas ativos do paciente, agregados numa única leitura. A
+          alergia é o bloco de alerta: cor destrutiva quando há registro. */}
+      <section
+        aria-label={t("SafetyTitle")}
+        className="rounded-2xl border border-destructive/30 bg-destructive/[0.04] p-5"
+      >
+        <div className="mb-4 flex items-center gap-2">
+          <ShieldAlert className="size-4 text-destructive" />
+          <h2 className="text-sm font-semibold">{t("SafetyTitle")}</h2>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <SafetyBlock
+            href={`/patients/${patientId}/antecedents`}
+            Icon={AlertTriangle}
+            title={t("SafetyAllergies")}
+            emptyLabel={t("SafetyNoAllergies")}
+            viewLabel={t("SafetyView")}
+            items={safety.allergies}
+            alert
+            renderItem={(a: any) => (
+              <>
+                {a.substance_display}
+                {a.severity && (
+                  <span className="ml-1 text-xs font-normal text-destructive/80">{a.severity}</span>
+                )}
+              </>
+            )}
+          />
+          <SafetyBlock
+            href={`/patients/${patientId}/medications`}
+            Icon={Pill}
+            title={t("SafetyMedications")}
+            emptyLabel={t("SafetyNoMedications")}
+            viewLabel={t("SafetyView")}
+            items={safety.medications}
+            renderItem={(m: any) => (
+              <>
+                {m.medication_display}
+                {m.dosage_text && (
+                  <span className="ml-1 text-xs font-normal text-muted-foreground">{m.dosage_text}</span>
+                )}
+              </>
+            )}
+          />
+          <SafetyBlock
+            href={`/patients/${patientId}/conditions`}
+            Icon={ClipboardList}
+            title={t("SafetyConditions")}
+            emptyLabel={t("SafetyNoConditions")}
+            viewLabel={t("SafetyView")}
+            items={safety.conditions}
+            renderItem={(c: any) => (
+              <>
+                {c.code_display}
+                {c.code && <span className="ml-1 font-mono text-xs font-normal text-muted-foreground">{c.code}</span>}
+              </>
+            )}
+          />
+        </div>
+      </section>
+
       {/* (A) Identificação do paciente */}
       <section className="rounded-2xl border bg-card p-5">
         <h2 className="mb-4 text-sm font-semibold">{t("GroupWorker")}</h2>

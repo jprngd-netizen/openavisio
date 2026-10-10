@@ -203,6 +203,10 @@ export const updateCondition = async (id: string, data: any) => api.put<any>(`/a
 export const deleteCondition = async (id: string) => api.delete<void>(`/api/conditions/${id}`);
 export const mergeCondition = async (winnerId: string, otherId: string) => api.post<any>(`/api/conditions/${winnerId}/merge`, { other_id: otherId });
 
+// Safety summary (WS-9) — active allergies + active medications + active
+// problems, aggregated for the chart-cover clinical banner.
+export const getSafetySummary = async (patientId: string) => api.get<any>(`/api/patients/${patientId}/safety-summary`);
+
 // Encounters
 export const getEncounters = async (patientId: string) => api.get<any[]>(`/api/patients/${patientId}/encounters`);
 export const getEncounter = async (id: string) => api.get<any>(`/api/encounters/${id}`);
