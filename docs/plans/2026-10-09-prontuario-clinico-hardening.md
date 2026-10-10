@@ -22,8 +22,12 @@ migração↔modelo), WS-1, WS-2, WS-3, WS-4, WS-9 na branch `feat/prontuario-ha
 (tag `v0.8.0`); suíte 422 → 474 verdes. **R2 concluída** (WS-6 selo/versão, WS-7 imunizações+familiares,
 WS-10 continuidade, WS-8 vínculos exame/prescrição↔consulta); suíte 474 → 502 verdes. Escopo grande
 (obstetrícia DEC-1b, interação DEC-2b) tem plano próprio em
-`2026-10-10-escopo-grande-obstetricia-interacao.md`. RSK-5 (migrações não exercitadas) mitigada
-por `test_migration_parity`; reconciliação completa segue no WS-12.
+`2026-10-10-escopo-grande-obstetricia-interacao.md`. **WS-12 (paridade migração↔modelo) concluído**
+na branch `feat/hardening-ws12-migration-parity`: a suíte passa a exercitar o schema de migração via
+`OA_TEST_SCHEMA=migrations` (default continua `create_all`); migração corretiva `a9b8c7d6e5f4`
+reconcilia o drift `NOT NULL` modelo↔migração; o drift cosmético remanescente (colunas legadas do
+estágio S5 + nomes `uq_`/`ix_`) está documentado como aceito em `docs/runbooks/migration-parity.md`.
+RSK-5 mitigada por `test_migration_parity` + WS-12.
 
 ## 1. Work Breakdown
 
@@ -233,7 +237,7 @@ dados são PHI. Não há rollout por % de usuários; o "staged" é **de migraç�
 | RSK-2 | PHI: novos recursos precisam de envelope encryption + access grants (ADR-031) | Segurança/governança | Gabriel | contínuo | aberto |
 | RSK-3 | Paridade i18n pt/en/de em toda UI nova | Regressão de produto | Gabriel | contínuo | aberto |
 | RSK-4 | Escopo total (11 WS) = risco de entrega; sem fatiamento vira cauda longa | Cronograma | Gabriel | Fase 0 | aberto |
-| RSK-5 | **Suíte usa `create_all`, migrações nunca são exercitadas** → drift schema↔modelos fica invisível. Já causou um bug real (WS-5b: `calendar_events.start_at` legada NOT NULL quebra inserts no caminho de migração = produção). Há também drift pré-existente no app (nomes de `uq_`/`ix_`, nullable de `created_at`). | Produção usa migrações; deploy pode quebrar | Gabriel | antes do deploy R1 | **em correção (WS-5b)** + WS-12 |
+| RSK-5 | **Suíte usa `create_all`, migrações nunca são exercitadas** → drift schema↔modelos fica invisível. Já causou um bug real (WS-5b: `calendar_events.start_at` legada NOT NULL quebra inserts no caminho de migração = produção). Há também drift pré-existente no app (nomes de `uq_`/`ix_`, nullable de `created_at`). | Produção usa migrações; deploy pode quebrar | Gabriel | antes do deploy R1 | **corrigido (WS-5b + WS-12)** |
 
 ## 8. Pressupostos
 
