@@ -8,12 +8,16 @@ import { formatDate } from "@/lib/utils";
 import { MEASUREMENT_TYPES, measurementType, isPlausible, computeBmi } from "@/lib/measurementTypes";
 import { CidCombobox } from "@/components/CidCombobox";
 import { ActiveMedicationsPanel } from "./ActiveMedicationsPanel";
+import { EncounterContinuity } from "./EncounterContinuity";
 import { Plus, X, Pencil, Trash2, Activity, ShieldCheck } from "lucide-react";
 
 const inputCls = "w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background";
 const labelCls = "text-sm font-medium";
 
-const TYPE_KEYS = ["Consulta", "Retorno", "Teleconsulta", "Urgencia", "Evolucao", "Procedimento"] as const;
+// WS-10 (DEC-3): controlled taxonomy for encounter_type.
+const TYPE_KEYS = ["outpatient", "emergency", "telemedicine", "follow_up", "home_visit", "other"] as const;
+// Historical free-text labels still present on old rows — shown, never written.
+const LEGACY_TYPE_KEYS = ["Consulta", "Retorno", "Teleconsulta", "Urgencia", "Evolucao", "Procedimento"] as const;
 
 const EMPTY = {
   encounter_type: "",
@@ -229,6 +233,7 @@ export function EncountersView({ patientId, encounters, activeMeds = [] }: { pat
   function typeLabel(raw: string | null | undefined): string {
     if (!raw) return "";
     if ((TYPE_KEYS as readonly string[]).includes(raw)) return t(`Types.${raw}`);
+    if ((LEGACY_TYPE_KEYS as readonly string[]).includes(raw)) return t(`Types.${raw}`);
     return raw;
   }
 
@@ -612,6 +617,9 @@ export function EncountersView({ patientId, encounters, activeMeds = [] }: { pat
                     ))}
                   </div>
                 )}
+
+                {/* WS-10: continuity of care — returns and referrals */}
+                <EncounterContinuity patientId={patientId} encounter={e} />
               </div>
             );
           })}

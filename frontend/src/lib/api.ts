@@ -226,6 +226,14 @@ export const createEncounter = async (patientId: string, data: any) => api.post<
 export const updateEncounter = async (id: string, data: any) => api.patch<any>(`/api/encounters/${id}`, data);
 export const deleteEncounter = async (id: string) => api.delete<void>(`/api/encounters/${id}`);
 export const signEncounter = async (id: string) => api.post<any>(`/api/encounters/${id}/sign`);
+// WS-10: schedule a return appointment from a consultation
+export const scheduleFollowUp = async (id: string, data: any) => api.post<any>(`/api/encounters/${id}/follow-up`, data);
+
+// WS-10: referrals (encaminhamento)
+export const getReferrals = async (patientId: string) => api.get<any[]>(`/api/patients/${patientId}/referrals`);
+export const createReferral = async (patientId: string, data: any) => api.post<any>(`/api/patients/${patientId}/referrals`, data);
+export const updateReferral = async (id: string, data: any) => api.patch<any>(`/api/referrals/${id}`, data);
+export const deleteReferral = async (id: string) => api.delete<void>(`/api/referrals/${id}`);
 
 // Incidents
 export const getIncidents = async (patientId: string) => api.get<any[]>(`/api/patients/${patientId}/incidents`);

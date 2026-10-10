@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { ChevronLeft, ChevronRight, X, Plus, Pencil, Trash2, Pill } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, Plus, Pencil, Trash2, Pill, CalendarClock } from "lucide-react";
 import { getCalendarFeed, getCalendarEvent, createCalendarEvent, updateCalendarEvent, deleteCalendarEvent } from "@/lib/api";
 
 interface FeedItem {
@@ -16,6 +16,8 @@ interface FeedItem {
   color: string;
   url?: string | null;
   developmental_domain?: string | null;
+  // WS-10: set when the appointment was scheduled from a consultation
+  encounter_id?: string | null;
 }
 
 const DOMAINS = ["motor", "speech", "cognitive", "social"] as const;
@@ -174,8 +176,9 @@ export function CalendarGrid({ patientId, birthDate, weekStart = "sunday" }: { p
     setEventDetail(null);
     setConfirmDelete(false);
     setMutError("");
-    // medication pills and document markers are informational — jump to their page
-    if (item.url && (item.type === "medication" || item.type === "document")) {
+    // medication pills, document markers and consultation returns are informational
+    // — jump straight to their page (the return opens its consultation).
+    if (item.url && (item.type === "medication" || item.type === "document" || item.encounter_id)) {
       router.push(item.url);
       return;
     }
@@ -475,6 +478,11 @@ export function CalendarGrid({ patientId, birthDate, weekStart = "sunday" }: { p
                             {ev.type === "medication" && (
                               <Pill className="mr-1 inline size-3 shrink-0 align-[-2px]" />
                             )}
+                            {ev.encounter_id && (
+                              <span title={t("LinkedEncounter")}>
+                                <CalendarClock className="mr-1 inline size-3 shrink-0 align-[-2px]" />
+                              </span>
+                            )}
                             {eventLabel(ev)}
                           </button>
                         ))}
@@ -519,6 +527,11 @@ export function CalendarGrid({ patientId, birthDate, weekStart = "sunday" }: { p
                     <span className="min-w-0 flex-1 truncate text-sm">
                       {ev.type === "medication" && (
                         <Pill className="mr-1 inline size-3.5 shrink-0 align-[-2px] text-muted-foreground" />
+                      )}
+                      {ev.encounter_id && (
+                        <span title={t("LinkedEncounter")}>
+                          <CalendarClock className="mr-1 inline size-3.5 shrink-0 align-[-2px] text-muted-foreground" />
+                        </span>
                       )}
                       {eventLabel(ev)}
                     </span>
