@@ -17,6 +17,13 @@ poderia ser produzido (condição de parada da skill `implementation-planning`).
 
 **Não reabrir escopo sem nova decisão registrada.** Escopo aprovado = 11 workstreams.
 
+**Status 2026-10-10:** **R1 (safety clínico) concluída** — WS-5, WS-5b (correção de paridade
+migração↔modelo), WS-1, WS-2, WS-3, WS-4, WS-9 na branch `feat/prontuario-hardening`
+(tag `v0.8.0`); suíte 422 → 474 verdes. R2 (WS-6/7/8/10) liberada pelo Gabriel. Escopo grande
+(obstetrícia DEC-1b, interação DEC-2b) tem plano próprio em
+`2026-10-10-escopo-grande-obstetricia-interacao.md`. RSK-5 (migrações não exercitadas) mitigada
+por `test_migration_parity`; reconciliação completa segue no WS-12.
+
 ## 1. Work Breakdown
 
 Fatias verticais (valor ponta-a-ponta), não camadas. Esforço em **dev-dias** (projeto
@@ -218,9 +225,9 @@ dados são PHI. Não há rollout por % de usuários; o "staged" é **de migraç�
 
 | ID | Descrição | Impacto | Dono | Prazo | Status |
 |----|-----------|---------|------|-------|--------|
-| DEC-1 | Profundidade da modelagem obstétrica (episódio/pré-natal vs flag simples) | Define esforço do WS-11 | Gabriel | antes da Fase 3 | aberto |
-| DEC-2 | Checagem de interação medicamentosa: só duplicidade (v1) vs base externa | Dependência de terceiro / escopo do WS-2 | Gabriel | antes da Fase 2 | aberto |
-| DEC-3 | Origem da taxonomia de `encounter_type` (valores controlados) | Relatórios/WS-10 | Gabriel | antes da Fase 3 | aberto |
+| DEC-1 | Profundidade da modelagem obstétrica (episódio/pré-natal vs flag simples) | Define esforço do WS-11 | Gabriel | — | **resolvido 2026-10-10: episódio obstétrico completo (DEC-1b)** → plano `2026-10-10-escopo-grande-obstetricia-interacao.md` |
+| DEC-2 | Checagem de interação medicamentosa: só duplicidade (v1) vs base externa | Dependência de terceiro / escopo do WS-2 | Gabriel | — | **resolvido 2026-10-10: base externa (DEC-2b)** → plano `2026-10-10-escopo-grande-obstetricia-interacao.md` |
+| DEC-3 | Origem da taxonomia de `encounter_type` (valores controlados) | Relatórios/WS-10 | Gabriel | — | **resolvido 2026-10-10: aprovado** (aplicar no WS-10) |
 | RSK-1 | Parser de datas legadas falha em formato livre | Dados perdidos/viciados no backfill | Gabriel | Fase 1 | aberto |
 | RSK-2 | PHI: novos recursos precisam de envelope encryption + access grants (ADR-031) | Segurança/governança | Gabriel | contínuo | aberto |
 | RSK-3 | Paridade i18n pt/en/de em toda UI nova | Regressão de produto | Gabriel | contínuo | aberto |
