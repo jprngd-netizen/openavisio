@@ -17,6 +17,8 @@ from app.routers import (
     cid10,
     clinical_history,
     allergies,
+    immunizations,
+    family_history,
     conditions,
     correspondents,
     dashboard,
@@ -81,6 +83,8 @@ app.include_router(conditions.router, prefix="/api", tags=["conditions"])
 app.include_router(encounters.router, prefix="/api", tags=["encounters"])
 app.include_router(clinical_history.router, prefix="/api", tags=["clinical-history"])
 app.include_router(allergies.router, prefix="/api", tags=["allergies"])
+app.include_router(immunizations.router, prefix="/api", tags=["immunizations"])
+app.include_router(family_history.router, prefix="/api", tags=["family-history"])
 app.include_router(cid10.router, prefix="/api", tags=["cid10"])
 app.include_router(access.router, prefix="/api", tags=["access"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
