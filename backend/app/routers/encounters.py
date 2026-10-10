@@ -9,16 +9,18 @@ from app.auth.access import AccessLevel, require_patient_access
 from app.core.database import get_db
 from app.deps import get_current_user
 from app.models.calendar import CalendarEvent
+from app.models.document import DocumentReference
 from app.models.encounter import Encounter
 from app.models.encounter_condition import EncounterCondition
 from app.models.encounter_version import EncounterVersion
 from app.models.observation import Observation
-from app.models.prescription import PRESCRIBER_SINGLETON_ID, Prescriber
+from app.models.prescription import PRESCRIBER_SINGLETON_ID, Prescriber, Prescription
 from app.models.user import User
 from app.schemas.calendar import CalendarEventDto
 from app.schemas.encounter import (
     EncounterCreateRequest,
     EncounterDto,
+    EncounterLinkRequest,
     EncounterUpdateRequest,
     FollowUpCreateRequest,
 )
@@ -199,6 +201,90 @@ async def schedule_follow_up(
     await db.commit()
     await db.refresh(event)
     return event
+
+
+async def _apply_link(
+    db: AsyncSession, encounter: Encounter, body: EncounterLinkRequest, *, link: bool
+) -> None:
+    """Set (or clear) ``encounter_id`` on the resource named by *body* (WS-8).
+
+    Only a resource of the SAME patient may be linked: a cross-patient link is a
+    422, never a silent success. ``link=False`` detaches (sets the FK to null).
+    Ownership never moves — the prescription router and the document vault keep
+    owning their rows; only the optional back-reference changes.
+    """
+    target = encounter.id if link else None
+    if body.prescription_id is not None:
+        rx = await db.get(Prescription, body.prescription_id)
+        if rx is None or rx.is_deleted:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        if rx.patient_id != encounter.patient_id:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="prescription_id does not belong to this patient",
+            )
+        rx.encounter_id = target
+        return
+    doc = await db.get(DocumentReference, body.document_id)
+    if doc is None or doc.is_deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    if doc.patient_id != encounter.patient_id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="document_id does not belong to this patient",
+        )
+    doc.encounter_id = target
+
+
+async def _load_encounter_for_link(db: AsyncSession, encounter_id: uuid.UUID) -> Encounter:
+    result = await db.execute(
+        select(Encounter).where(Encounter.id == encounter_id, Encounter.is_deleted == False)  # noqa: E712
+    )
+    encounter = result.scalar_one_or_none()
+    if not encounter:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return encounter
+
+
+@router.post("/encounters/{encounter_id}/link", response_model=EncounterDto)
+async def link_encounter_resource(
+    encounter_id: uuid.UUID,
+    body: EncounterLinkRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Link an existing prescription or exam (document) to this consultation (WS-8).
+
+    Recovers "what was prescribed and which exams were requested/interpreted in
+    this attendance" straight from the consultation. ``prescription_id`` links a
+    Prescription; ``document_id`` links an exam (DocumentReference — the report
+    whose analytes are its Observation rows). The resource must belong to the
+    same patient, else 422.
+    """
+    encounter = await _load_encounter_for_link(db, encounter_id)
+    await require_patient_access(encounter.patient_id, user, db, AccessLevel.contribute)
+    await _apply_link(db, encounter, body, link=True)
+    await db.commit()
+    return await _reload(db, encounter.id)
+
+
+@router.post("/encounters/{encounter_id}/unlink", response_model=EncounterDto)
+async def unlink_encounter_resource(
+    encounter_id: uuid.UUID,
+    body: EncounterLinkRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Detach a prescription or exam from this consultation (WS-8).
+
+    Soft-unlink only: the FK is cleared, the prescription/exam itself survives
+    (it simply no longer belongs to this attendance).
+    """
+    encounter = await _load_encounter_for_link(db, encounter_id)
+    await require_patient_access(encounter.patient_id, user, db, AccessLevel.contribute)
+    await _apply_link(db, encounter, body, link=False)
+    await db.commit()
+    return await _reload(db, encounter.id)
 
 
 @router.delete("/encounters/{encounter_id}", status_code=status.HTTP_204_NO_CONTENT)

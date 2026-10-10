@@ -7,7 +7,7 @@ and ``routers/admin.py`` for audit logging.
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, Response, UploadFile, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +21,7 @@ from app.core.patient_keys import get_patient_kek
 from app.core.ratelimit import client_ip, enforce
 from app.deps import get_current_user, get_memed_client, get_session_factory
 from app.models.audit import AuditLog
+from app.models.encounter import Encounter
 from app.models.patient import Patient
 from app.models.prescription import (
     PRESCRIBER_SINGLETON_ID,
@@ -169,11 +170,24 @@ async def list_prescriptions(
 )
 async def create_prescription(
     patient_id: uuid.UUID,
+    encounter_id: uuid.UUID | None = Query(
+        None, description="WS-8: consultation this prescription is issued from, if any"
+    ),
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     await require_patient_access(patient_id, user, db, AccessLevel.contribute)
     prescriber = await _get_prescriber_or_409(db)
+
+    # WS-8: when created from a consultation, link it back. A consultation of
+    # another patient is rejected (422), never linked cross-patient.
+    if encounter_id is not None:
+        encounter = await db.get(Encounter, encounter_id)
+        if encounter is None or encounter.is_deleted or encounter.patient_id != patient_id:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="encounter_id does not belong to this patient",
+            )
 
     rx = Prescription(
         patient_id=patient_id,
@@ -181,6 +195,7 @@ async def create_prescription(
         owner_id=user.id,
         status=PrescriptionStatus.draft,
         version=1,
+        encounter_id=encounter_id,
     )
     db.add(rx)
     await db.commit()
