@@ -11,6 +11,8 @@ from app.models.encounter_condition import EncounterCondition
 from app.models.encounter_version import EncounterVersion
 from app.models.clinical_history import ClinicalHistory
 from app.models.allergy import Allergy
+from app.models.immunization import Immunization, ImmunizationStatus
+from app.models.family_history import FamilyHistory, FamilyRelationship
 from app.models.medication import MedicationStatement
 from app.models.document import DocumentReference
 from app.models.incident import Incident
@@ -63,6 +65,10 @@ __all__ = [
     "EncounterVersion",
     "ClinicalHistory",
     "Allergy",
+    "Immunization",
+    "ImmunizationStatus",
+    "FamilyHistory",
+    "FamilyRelationship",
     "MedicationStatement",
     "DocumentReference",
     "Incident",
