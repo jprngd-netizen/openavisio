@@ -191,6 +191,18 @@ export const getAllergyAlerts = async (patientId: string, substances: string[]) 
   return api.get<any[]>(`/api/patients/${patientId}/allergy-alerts${q ? `?${q}` : ""}`);
 };
 
+// Immunizations (structured Immunization, WS-7)
+export const getImmunizations = async (patientId: string) => api.get<any[]>(`/api/patients/${patientId}/immunizations`);
+export const createImmunization = async (patientId: string, data: any) => api.post<any>(`/api/patients/${patientId}/immunizations`, data);
+export const updateImmunization = async (id: string, data: any) => api.patch<any>(`/api/immunizations/${id}`, data);
+export const deleteImmunization = async (id: string) => api.delete<void>(`/api/immunizations/${id}`);
+
+// Family history, structured by kinship (WS-7)
+export const getFamilyHistory = async (patientId: string) => api.get<any[]>(`/api/patients/${patientId}/family-history`);
+export const createFamilyHistory = async (patientId: string, data: any) => api.post<any>(`/api/patients/${patientId}/family-history`, data);
+export const updateFamilyHistory = async (id: string, data: any) => api.patch<any>(`/api/family-history/${id}`, data);
+export const deleteFamilyHistory = async (id: string) => api.delete<void>(`/api/family-history/${id}`);
+
 // CID-10 catalogue (DATASUS, pt-BR) for diagnosis pickers.
 export type CidOption = { code: string; description: string };
 export const searchCid10 = async (q: string) =>

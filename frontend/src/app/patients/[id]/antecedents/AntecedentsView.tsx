@@ -15,6 +15,12 @@ import {
   createAllergy,
   updateAllergy,
   deleteAllergy,
+  createImmunization,
+  updateImmunization,
+  deleteImmunization,
+  createFamilyHistory,
+  updateFamilyHistory,
+  deleteFamilyHistory,
 } from "@/lib/api";
 import { CidCombobox } from "@/components/CidCombobox";
 
@@ -24,6 +30,8 @@ type Props = {
   conditions: any[];
   medications: any[];
   allergies: any[];
+  immunizations: any[];
+  familyHistory: any[];
 };
 
 const inputCls =
@@ -38,7 +46,7 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   );
 }
 
-export function AntecedentsView({ patientId, history, conditions, medications, allergies }: Props) {
+export function AntecedentsView({ patientId, history, conditions, medications, allergies, immunizations, familyHistory }: Props) {
   const t = useTranslations("Antecedents");
   const router = useRouter();
 
@@ -100,8 +108,10 @@ export function AntecedentsView({ patientId, history, conditions, medications, a
 
       {/* (B) Derived antecedents — the canonical resources, edited in place. */}
       <AllergiesEditor patientId={patientId} items={allergies} />
+      <FamilyHistoryEditor patientId={patientId} items={familyHistory} />
       <ConditionsEditor patientId={patientId} items={conditions} />
       <MedicationsEditor patientId={patientId} items={medications} />
+      <ImmunizationsEditor patientId={patientId} items={immunizations} />
     </div>
   );
 }
@@ -385,6 +395,212 @@ function AllergyRow({ allergy, busy, onChange }: { allergy: any; busy: boolean; 
         </button>
         <button type="button" disabled={busy || pending}
           onClick={() => start(async () => { await deleteAllergy(allergy.id); onChange(); })}
+          className="rounded-md p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50">
+          <Trash2 className="size-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const RELATIONSHIPS = [
+  "mother",
+  "father",
+  "brother",
+  "sister",
+  "son",
+  "daughter",
+  "grandparent",
+  "other",
+];
+
+function FamilyHistoryEditor({ patientId, items }: { patientId: string; items: any[] }) {
+  const t = useTranslations("Antecedents");
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [draft, setDraft] = useState({
+    relationship: "mother",
+    condition_display: "",
+    age_at_onset: "",
+  });
+
+  function add() {
+    if (!draft.condition_display.trim()) return;
+    start(async () => {
+      await createFamilyHistory(patientId, {
+        relationship: draft.relationship,
+        condition_display: draft.condition_display.trim(),
+        age_at_onset: draft.age_at_onset ? Number(draft.age_at_onset) : null,
+      });
+      setDraft({ relationship: "mother", condition_display: "", age_at_onset: "" });
+      router.refresh();
+    });
+  }
+
+  return (
+    <Card title={t("FamilyHistoryStructured")}>
+      <p className="mb-3 text-xs text-muted-foreground">{t("FamilyHistoryNote")}</p>
+      <div className="space-y-2">
+        {items.map((f) => (
+          <FamilyHistoryRow key={f.id} entry={f} busy={pending} onChange={() => start(async () => { router.refresh(); })} />
+        ))}
+        {items.length === 0 && <p className="text-xs text-muted-foreground">{t("None")}</p>}
+      </div>
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-[auto_2fr_auto_auto]">
+        <select className={inputCls} value={draft.relationship}
+          onChange={(e) => setDraft({ ...draft, relationship: e.target.value })} aria-label={t("Relationship")}>
+          {RELATIONSHIPS.map((r) => <option key={r} value={r}>{t(`Relationship_${r}`)}</option>)}
+        </select>
+        <input className={inputCls} placeholder={t("Condition")} value={draft.condition_display}
+          onChange={(e) => setDraft({ ...draft, condition_display: e.target.value })} data-testid="family-history-draft-condition" />
+        <input type="number" className={inputCls} placeholder={t("AgeAtOnset")} value={draft.age_at_onset}
+          onChange={(e) => setDraft({ ...draft, age_at_onset: e.target.value })} aria-label={t("AgeAtOnset")} />
+        <button type="button" onClick={add} disabled={pending}
+          className="inline-flex items-center justify-center gap-1 rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-accent disabled:opacity-60">
+          <Plus className="size-4" /> {t("Add")}
+        </button>
+      </div>
+    </Card>
+  );
+}
+
+function FamilyHistoryRow({ entry, busy, onChange }: { entry: any; busy: boolean; onChange: () => void }) {
+  const t = useTranslations("Antecedents");
+  const [row, setRow] = useState({
+    relationship: entry.relationship ?? "other",
+    condition_display: entry.condition_display ?? "",
+    age_at_onset: entry.age_at_onset ?? "",
+    deceased: entry.deceased === true,
+  });
+  const [pending, start] = useTransition();
+
+  return (
+    <div className="grid grid-cols-1 gap-2 rounded-md border p-2 sm:grid-cols-[auto_2fr_auto_auto_auto]">
+      <select className={inputCls} value={row.relationship} onChange={(e) => setRow({ ...row, relationship: e.target.value })} aria-label={t("Relationship")}>
+        {RELATIONSHIPS.map((r) => <option key={r} value={r}>{t(`Relationship_${r}`)}</option>)}
+      </select>
+      <input className={inputCls} value={row.condition_display} onChange={(e) => setRow({ ...row, condition_display: e.target.value })} />
+      <input type="number" className={inputCls} value={row.age_at_onset} placeholder={t("AgeAtOnset")}
+        onChange={(e) => setRow({ ...row, age_at_onset: e.target.value })} aria-label={t("AgeAtOnset")} />
+      <label className="flex items-center gap-1 text-xs text-muted-foreground">
+        <input type="checkbox" checked={row.deceased} onChange={(e) => setRow({ ...row, deceased: e.target.checked })} />
+        {t("Deceased")}
+      </label>
+      <div className="flex items-center gap-1">
+        <button type="button" disabled={busy || pending}
+          onClick={() => start(async () => { await updateFamilyHistory(entry.id, {
+            relationship: row.relationship,
+            condition_display: row.condition_display,
+            age_at_onset: row.age_at_onset === "" ? null : Number(row.age_at_onset),
+            deceased: row.deceased,
+          }); onChange(); })}
+          className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50">
+          <Save className="size-4" />
+        </button>
+        <button type="button" disabled={busy || pending}
+          onClick={() => start(async () => { await deleteFamilyHistory(entry.id); onChange(); })}
+          className="rounded-md p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50">
+          <Trash2 className="size-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const IMMUNIZATION_STATUSES = ["completed", "entered_in_error", "not_done"];
+
+function ImmunizationsEditor({ patientId, items }: { patientId: string; items: any[] }) {
+  const t = useTranslations("Antecedents");
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  const [draft, setDraft] = useState({
+    vaccine_display: "",
+    dose_number: "",
+    occurrence_date: "",
+    lot_number: "",
+    status: "completed",
+  });
+
+  function add() {
+    if (!draft.vaccine_display.trim()) return;
+    start(async () => {
+      await createImmunization(patientId, {
+        vaccine_display: draft.vaccine_display.trim(),
+        dose_number: draft.dose_number ? Number(draft.dose_number) : null,
+        occurrence_date: draft.occurrence_date || null,
+        lot_number: draft.lot_number || null,
+        status: draft.status,
+      });
+      setDraft({ vaccine_display: "", dose_number: "", occurrence_date: "", lot_number: "", status: "completed" });
+      router.refresh();
+    });
+  }
+
+  return (
+    <Card title={t("Immunizations")}>
+      <p className="mb-3 text-xs text-muted-foreground">{t("ImmunizationsNote")}</p>
+      <div className="space-y-2">
+        {items.map((i) => (
+          <ImmunizationRow key={i.id} immunization={i} busy={pending} onChange={() => start(async () => { router.refresh(); })} />
+        ))}
+        {items.length === 0 && <p className="text-xs text-muted-foreground">{t("None")}</p>}
+      </div>
+      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-[2fr_auto_auto_auto_auto_auto]">
+        <input className={inputCls} placeholder={t("Vaccine")} value={draft.vaccine_display}
+          onChange={(e) => setDraft({ ...draft, vaccine_display: e.target.value })} data-testid="immunization-draft-vaccine" />
+        <input type="number" className={inputCls} placeholder={t("Dose")} value={draft.dose_number}
+          onChange={(e) => setDraft({ ...draft, dose_number: e.target.value })} aria-label={t("Dose")} />
+        <input type="date" className={inputCls} value={draft.occurrence_date}
+          onChange={(e) => setDraft({ ...draft, occurrence_date: e.target.value })} aria-label={t("Date")} />
+        <input className={inputCls} placeholder={t("Lot")} value={draft.lot_number}
+          onChange={(e) => setDraft({ ...draft, lot_number: e.target.value })} aria-label={t("Lot")} />
+        <select className={inputCls} value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value })} aria-label={t("ClinicalStatus")}>
+          {IMMUNIZATION_STATUSES.map((s) => <option key={s} value={s}>{t(`ImmStatus_${s}`)}</option>)}
+        </select>
+        <button type="button" onClick={add} disabled={pending}
+          className="inline-flex items-center justify-center gap-1 rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-accent disabled:opacity-60">
+          <Plus className="size-4" /> {t("Add")}
+        </button>
+      </div>
+    </Card>
+  );
+}
+
+function ImmunizationRow({ immunization, busy, onChange }: { immunization: any; busy: boolean; onChange: () => void }) {
+  const t = useTranslations("Antecedents");
+  const [row, setRow] = useState({
+    vaccine_display: immunization.vaccine_display ?? "",
+    dose_number: immunization.dose_number ?? "",
+    occurrence_date: immunization.occurrence_date ? String(immunization.occurrence_date).slice(0, 10) : "",
+    lot_number: immunization.lot_number ?? "",
+    status: immunization.status ?? "completed",
+  });
+  const [pending, start] = useTransition();
+
+  return (
+    <div className="grid grid-cols-1 gap-2 rounded-md border p-2 sm:grid-cols-2 lg:grid-cols-[2fr_auto_auto_auto_auto_auto]">
+      <input className={inputCls} value={row.vaccine_display} onChange={(e) => setRow({ ...row, vaccine_display: e.target.value })} />
+      <input type="number" className={inputCls} value={row.dose_number} placeholder={t("Dose")}
+        onChange={(e) => setRow({ ...row, dose_number: e.target.value })} aria-label={t("Dose")} />
+      <input type="date" className={inputCls} value={row.occurrence_date} onChange={(e) => setRow({ ...row, occurrence_date: e.target.value })} aria-label={t("Date")} />
+      <input className={inputCls} value={row.lot_number} placeholder={t("Lot")} onChange={(e) => setRow({ ...row, lot_number: e.target.value })} aria-label={t("Lot")} />
+      <select className={inputCls} value={row.status} onChange={(e) => setRow({ ...row, status: e.target.value })} aria-label={t("ClinicalStatus")}>
+        {IMMUNIZATION_STATUSES.map((s) => <option key={s} value={s}>{t(`ImmStatus_${s}`)}</option>)}
+      </select>
+      <div className="flex items-center gap-1">
+        <button type="button" disabled={busy || pending}
+          onClick={() => start(async () => { await updateImmunization(immunization.id, {
+            vaccine_display: row.vaccine_display,
+            dose_number: row.dose_number === "" ? null : Number(row.dose_number),
+            occurrence_date: row.occurrence_date || null,
+            lot_number: row.lot_number || null,
+            status: row.status,
+          }); onChange(); })}
+          className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50">
+          <Save className="size-4" />
+        </button>
+        <button type="button" disabled={busy || pending}
+          onClick={() => start(async () => { await deleteImmunization(immunization.id); onChange(); })}
           className="rounded-md p-2 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50">
           <Trash2 className="size-4" />
         </button>

@@ -1,6 +1,14 @@
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Breadcrumb } from "@/components/Breadcrumb";
-import { getPatient, getConditions, getMedications, getClinicalHistory, getAllergies } from "@/lib/api";
+import {
+  getPatient,
+  getConditions,
+  getMedications,
+  getClinicalHistory,
+  getAllergies,
+  getImmunizations,
+  getFamilyHistory,
+} from "@/lib/api";
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { AntecedentsView } from "./AntecedentsView";
@@ -17,11 +25,13 @@ export default async function AntecedentsPage({ params }: { params: Promise<{ id
   ]);
   if (!patient) notFound();
 
-  const [clinicalHistory, conditions, medications, allergies] = await Promise.all([
+  const [clinicalHistory, conditions, medications, allergies, immunizations, familyHistory] = await Promise.all([
     getClinicalHistory(id).catch(() => null),
     getConditions(id).catch(() => []),
     getMedications(id).catch(() => []),
     getAllergies(id).catch(() => []),
+    getImmunizations(id).catch(() => []),
+    getFamilyHistory(id).catch(() => []),
   ]);
 
   return (
@@ -37,6 +47,8 @@ export default async function AntecedentsPage({ params }: { params: Promise<{ id
         conditions={conditions}
         medications={medications}
         allergies={allergies}
+        immunizations={immunizations}
+        familyHistory={familyHistory}
       />
     </AppLayout>
   );
