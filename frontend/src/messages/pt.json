@@ -1375,7 +1375,21 @@
     "StatusDraft": "Rascunho",
     "StatusSent": "Enviado",
     "StatusCompleted": "Concluído",
-    "StatusCancelled": "Cancelado"
+    "StatusCancelled": "Cancelado",
+    "PrescriptionsSection": "Prescrições emitidas",
+    "PrescriptionsLinkedEmpty": "Nenhuma prescrição vinculada",
+    "LinkPrescription": "Vincular prescrição",
+    "SelectPrescription": "Selecione uma prescrição",
+    "ExamsSection": "Exames vinculados",
+    "ExamsLinkedEmpty": "Nenhum exame vinculado",
+    "LinkExam": "Vincular exame",
+    "SelectExam": "Selecione um exame",
+    "LinkSave": "Vincular",
+    "Linking": "Vinculando…",
+    "LinkError": "Não foi possível vincular.",
+    "Unlink": "Desvincular",
+    "UnlinkError": "Não foi possível desvincular.",
+    "NoCandidates": "Nada disponível para vincular"
   },
   "Legal": {
     "ImprintBack": "Voltar ao aplicativo",

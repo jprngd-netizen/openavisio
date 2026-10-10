@@ -1375,7 +1375,21 @@
     "StatusDraft": "Draft",
     "StatusSent": "Sent",
     "StatusCompleted": "Completed",
-    "StatusCancelled": "Cancelled"
+    "StatusCancelled": "Cancelled",
+    "PrescriptionsSection": "Prescriptions issued",
+    "PrescriptionsLinkedEmpty": "No prescription linked",
+    "LinkPrescription": "Link prescription",
+    "SelectPrescription": "Select a prescription",
+    "ExamsSection": "Linked exams",
+    "ExamsLinkedEmpty": "No exam linked",
+    "LinkExam": "Link exam",
+    "SelectExam": "Select an exam",
+    "LinkSave": "Link",
+    "Linking": "Linking…",
+    "LinkError": "Could not link.",
+    "Unlink": "Unlink",
+    "UnlinkError": "Could not unlink.",
+    "NoCandidates": "Nothing available to link"
   },
   "Legal": {
     "ImprintBack": "Back to the app",

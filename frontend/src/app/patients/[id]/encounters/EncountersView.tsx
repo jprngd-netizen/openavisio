@@ -9,6 +9,7 @@ import { MEASUREMENT_TYPES, measurementType, isPlausible, computeBmi } from "@/l
 import { CidCombobox } from "@/components/CidCombobox";
 import { ActiveMedicationsPanel } from "./ActiveMedicationsPanel";
 import { EncounterContinuity } from "./EncounterContinuity";
+import { EncounterLinks } from "./EncounterLinks";
 import { Plus, X, Pencil, Trash2, Activity, ShieldCheck } from "lucide-react";
 
 const inputCls = "w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background";
@@ -39,7 +40,7 @@ function toLocalInput(iso: string | null | undefined): string {
   return String(iso).slice(0, 16);
 }
 
-export function EncountersView({ patientId, encounters, activeMeds = [] }: { patientId: string; encounters: any[]; activeMeds?: any[] }) {
+export function EncountersView({ patientId, encounters, activeMeds = [], prescriptions = [], documents = [] }: { patientId: string; encounters: any[]; activeMeds?: any[]; prescriptions?: any[]; documents?: any[] }) {
   const t = useTranslations("Enc");
   const tm = useTranslations("Measurement");
   const router = useRouter();
@@ -617,6 +618,9 @@ export function EncountersView({ patientId, encounters, activeMeds = [] }: { pat
                     ))}
                   </div>
                 )}
+
+                {/* WS-8: prescriptions issued and exams linked in this attendance */}
+                <EncounterLinks encounter={e} prescriptions={prescriptions} documents={documents} />
 
                 {/* WS-10: continuity of care — returns and referrals */}
                 <EncounterContinuity patientId={patientId} encounter={e} />

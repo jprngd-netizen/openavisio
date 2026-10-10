@@ -229,6 +229,16 @@ export const signEncounter = async (id: string) => api.post<any>(`/api/encounter
 // WS-10: schedule a return appointment from a consultation
 export const scheduleFollowUp = async (id: string, data: any) => api.post<any>(`/api/encounters/${id}/follow-up`, data);
 
+// WS-8: link/unlink a prescription or an exam (document) to a consultation
+export const linkEncounterPrescription = async (id: string, prescriptionId: string) =>
+  api.post<any>(`/api/encounters/${id}/link`, { prescription_id: prescriptionId });
+export const linkEncounterDocument = async (id: string, documentId: string) =>
+  api.post<any>(`/api/encounters/${id}/link`, { document_id: documentId });
+export const unlinkEncounterPrescription = async (id: string, prescriptionId: string) =>
+  api.post<any>(`/api/encounters/${id}/unlink`, { prescription_id: prescriptionId });
+export const unlinkEncounterDocument = async (id: string, documentId: string) =>
+  api.post<any>(`/api/encounters/${id}/unlink`, { document_id: documentId });
+
 // WS-10: referrals (encaminhamento)
 export const getReferrals = async (patientId: string) => api.get<any[]>(`/api/patients/${patientId}/referrals`);
 export const createReferral = async (patientId: string, data: any) => api.post<any>(`/api/patients/${patientId}/referrals`, data);

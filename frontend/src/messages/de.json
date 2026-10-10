@@ -1375,7 +1375,21 @@
     "StatusDraft": "Entwurf",
     "StatusSent": "Gesendet",
     "StatusCompleted": "Abgeschlossen",
-    "StatusCancelled": "Storniert"
+    "StatusCancelled": "Storniert",
+    "PrescriptionsSection": "Ausgestellte Rezepte",
+    "PrescriptionsLinkedEmpty": "Kein Rezept verknüpft",
+    "LinkPrescription": "Rezept verknüpfen",
+    "SelectPrescription": "Rezept auswählen",
+    "ExamsSection": "Verknüpfte Befunde",
+    "ExamsLinkedEmpty": "Kein Befund verknüpft",
+    "LinkExam": "Befund verknüpfen",
+    "SelectExam": "Befund auswählen",
+    "LinkSave": "Verknüpfen",
+    "Linking": "Verknüpfe…",
+    "LinkError": "Verknüpfen fehlgeschlagen.",
+    "Unlink": "Trennen",
+    "UnlinkError": "Trennen fehlgeschlagen.",
+    "NoCandidates": "Nichts zum Verknüpfen verfügbar"
   },
   "Legal": {
     "ImprintBack": "Zurück zur App",

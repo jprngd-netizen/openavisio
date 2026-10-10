@@ -1,5 +1,5 @@
 import { AppLayout } from "@/components/layout/AppLayout";
-import { getActiveMedications, getEncounters, getPatient } from "@/lib/api";
+import { getActiveMedications, getEncounters, getPatient, getPrescriptions, getDocuments } from "@/lib/api";
 import { getTranslations } from "next-intl/server";
 import { Breadcrumb } from "@/components/Breadcrumb";
 import { AlertCircle } from "lucide-react";
@@ -12,11 +12,16 @@ export default async function EncountersPage({ params }: { params: Promise<{ id:
   let patient: any = null;
   let encounters: any[] = [];
   let activeMeds: any[] = [];
+  // WS-8: candidates to link to a consultation (existing prescriptions/exams).
+  let prescriptions: any[] = [];
+  let documents: any[] = [];
   let fetchError = false;
 
   try { patient = await getPatient(id); } catch {}
   try { encounters = await getEncounters(id); } catch { fetchError = true; }
   try { activeMeds = await getActiveMedications(id); } catch {}
+  try { prescriptions = await getPrescriptions(id); } catch {}
+  try { documents = await getDocuments(id); } catch {}
 
   if (!patient) {
     return (
@@ -39,7 +44,7 @@ export default async function EncountersPage({ params }: { params: Promise<{ id:
           {t("LoadError")}
         </div>
       ) : (
-        <EncountersView patientId={id} encounters={encounters} activeMeds={activeMeds} />
+        <EncountersView patientId={id} encounters={encounters} activeMeds={activeMeds} prescriptions={prescriptions} documents={documents} />
       )}
       <AiNotice />
 
