@@ -8,6 +8,7 @@ from app.models.observation import Observation
 from app.models.condition import Condition
 from app.models.encounter import Encounter
 from app.models.encounter_condition import EncounterCondition
+from app.models.encounter_version import EncounterVersion
 from app.models.clinical_history import ClinicalHistory
 from app.models.allergy import Allergy
 from app.models.medication import MedicationStatement
@@ -59,6 +60,7 @@ __all__ = [
     "Condition",
     "Encounter",
     "EncounterCondition",
+    "EncounterVersion",
     "ClinicalHistory",
     "Allergy",
     "MedicationStatement",
