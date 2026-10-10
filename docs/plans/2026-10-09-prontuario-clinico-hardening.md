@@ -35,6 +35,7 @@ essencialmente solo: Gabriel + delegação de agentes, ex. `sentinela`).
 | WS-9 | Safety banner na capa | Capa exibe alergias, medicações ativas e problemas ativos | Banner clínico visível na capa, sem depender de outra seção | Baixo | ~2 |
 | WS-10 | Desfecho/continuidade | Taxonomia de `encounter_type`; retorno agendado (vínculo `CalendarEvent`); encaminhamento | Consulta gera retorno no calendário e encaminhamento registrado | Médio | ~4 |
 | WS-11 | Contrafactuais (3-C) | Grupo sanguíneo/Rh, gestação/obstetrícia, escalas clínicas (PHQ-9/GAD-7, dor), telemedicina (meio+consentimento), atestados/laudos vinculados | Cada item registrado e consultável; escalas com escore calculado | Médio | ~8 |
+| WS-12 | Paridade migração↔modelo | Reconciliar drift schema↔modelos e fazer a suíte exercitar o caminho de migração (hoje só `create_all`) | `alembic check` sem drift relevante; suíte passa contra schema de migração | **Alto** | ~3 |
 
 ### Detalhe dos workstreams
 
@@ -224,6 +225,7 @@ dados são PHI. Não há rollout por % de usuários; o "staged" é **de migraç�
 | RSK-2 | PHI: novos recursos precisam de envelope encryption + access grants (ADR-031) | Segurança/governança | Gabriel | contínuo | aberto |
 | RSK-3 | Paridade i18n pt/en/de em toda UI nova | Regressão de produto | Gabriel | contínuo | aberto |
 | RSK-4 | Escopo total (11 WS) = risco de entrega; sem fatiamento vira cauda longa | Cronograma | Gabriel | Fase 0 | aberto |
+| RSK-5 | **Suíte usa `create_all`, migrações nunca são exercitadas** → drift schema↔modelos fica invisível. Já causou um bug real (WS-5b: `calendar_events.start_at` legada NOT NULL quebra inserts no caminho de migração = produção). Há também drift pré-existente no app (nomes de `uq_`/`ix_`, nullable de `created_at`). | Produção usa migrações; deploy pode quebrar | Gabriel | antes do deploy R1 | **em correção (WS-5b)** + WS-12 |
 
 ## 8. Pressupostos
 
