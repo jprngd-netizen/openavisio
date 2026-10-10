@@ -151,6 +151,7 @@ export function MemedEmbed({ prescriptionId }: { prescriptionId: string }) {
 
   return (
     <>
+      <p className="mb-2 text-xs text-muted-foreground">{t("MemedInteractionsNote")}</p>
       <Script
         src={session.script_url}
         data-token={session.data_token}

@@ -1231,6 +1231,7 @@
     "Loading": "Loading…",
     "MemedLoading": "Loading prescription editor...",
     "MemedLoadError": "Failed to load prescription editor",
+    "MemedInteractionsNote": "Drug interactions are checked by the Memed module (minor/moderate/major). Free-text medications outside Memed are not automatically checked.",
     "LoadOneError": "Failed to load prescription",
     "ReloadError": "Failed to reload",
     "RetryError": "Retry failed",

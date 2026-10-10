@@ -1231,6 +1231,7 @@
     "Loading": "Laden…",
     "MemedLoading": "Rezept-Editor wird geladen...",
     "MemedLoadError": "Rezept-Editor konnte nicht geladen werden",
+    "MemedInteractionsNote": "Arzneimittelinteraktionen werden vom Memed-Modul geprüft (leicht/mittel/schwer). Freitext-Medikamente außerhalb von Memed werden nicht automatisch geprüft.",
     "LoadOneError": "Rezept konnte nicht geladen werden",
     "ReloadError": "Neuladen fehlgeschlagen",
     "RetryError": "Erneuter Versuch fehlgeschlagen",

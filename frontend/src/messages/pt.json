@@ -1231,6 +1231,7 @@
     "Loading": "Carregando…",
     "MemedLoading": "Carregando editor de receitas...",
     "MemedLoadError": "Falha ao carregar o editor de receitas",
+    "MemedInteractionsNote": "Interações medicamentosas são verificadas pelo módulo da Memed (leve/moderado/grave). Medicações em texto livre fora da Memed não são checadas automaticamente.",
     "LoadOneError": "Falha ao carregar a receita",
     "ReloadError": "Falha ao recarregar",
     "RetryError": "Falha ao tentar novamente",

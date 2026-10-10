@@ -20,6 +20,15 @@ nome/código de fármaco), **advisory** (nunca bloqueia), **degradação silenci
 - **DDInter 2.0** (CC BY-NC-SA, ~302k DDI, ATC) permite **uso offline** → melhor **fallback sempre-on**.
 - Mapear texto-livre PT → **princípio ativo** via **dados abertos ANVISA** + dicionário de sinônimos.
 
+## MVP — decisão do owner (2026-10-10)
+
+**Para o MVP, a checagem de interação vai pela própria Memed.** O módulo de prescrição da Memed já
+exibe o alerta de interação (leve/moderado/grave); o app **não** constrói base própria nesta fase.
+Consequências: **IX-1..IX-4 ficam para o pós-MVP (backlog)**, e o MVP entrega apenas (a) o
+realce/documentação do que a Memed já faz e (b) um aviso honesto na UI: a checagem ocorre **no fluxo
+Memed** e **medicação em texto livre fora do Memed não é checada automaticamente** (limitação conhecida).
+Nota: o alerta da Memed considera o que está na sessão Memed; a lista livre do app não entra nele.
+
 ## Decisões de engenharia (Senna, 2026-10-10)
 
 1. **Fonte primária do app = DDInter 2.0 local** (offline, sem chave, sem PHI). **IMSES fica opcional**
