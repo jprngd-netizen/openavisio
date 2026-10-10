@@ -3,12 +3,12 @@
 import { useState, useTransition } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { createEncounter, updateEncounter, deleteEncounter } from "@/lib/api";
+import { createEncounter, updateEncounter, deleteEncounter, signEncounter } from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { MEASUREMENT_TYPES, measurementType, isPlausible, computeBmi } from "@/lib/measurementTypes";
 import { CidCombobox } from "@/components/CidCombobox";
 import { ActiveMedicationsPanel } from "./ActiveMedicationsPanel";
-import { Plus, X, Pencil, Trash2, Activity } from "lucide-react";
+import { Plus, X, Pencil, Trash2, Activity, ShieldCheck } from "lucide-react";
 
 const inputCls = "w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background";
 const labelCls = "text-sm font-medium";
@@ -43,6 +43,9 @@ export function EncountersView({ patientId, encounters, activeMeds = [] }: { pat
   const [editingId, setEditingId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  // WS-6: which encounter is currently being sealed (per-row spinner).
+  const [signingId, setSigningId] = useState<string | null>(null);
+  const [signError, setSignError] = useState("");
   const [error, setError] = useState("");
   const [form, setForm] = useState<FormState>(EMPTY);
   const [vitals, setVitals] = useState<Record<string, string>>({});
@@ -197,6 +200,23 @@ export function EncountersView({ patientId, encounters, activeMeds = [] }: { pat
     });
   }
 
+  // WS-6: seal the current note as an immutable version. Re-signing appends a
+  // new version; the seal never changes what was signed before.
+  function handleSign(id: string) {
+    setSignError("");
+    setSigningId(id);
+    startTransition(async () => {
+      try {
+        await signEncounter(id);
+        router.refresh();
+      } catch {
+        setSignError(t("SignError"));
+      } finally {
+        setSigningId(null);
+      }
+    });
+  }
+
   function handleDelete(id: string) {
     if (confirmId !== id) { setConfirmId(id); return; }
     startTransition(async () => {
@@ -265,6 +285,10 @@ export function EncountersView({ patientId, encounters, activeMeds = [] }: { pat
   return (
     <div>
       <ActiveMedicationsPanel medications={activeMeds} />
+
+      {signError && (
+        <div className="rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm mb-4">{signError}</div>
+      )}
 
       <div className="mb-6 flex items-center justify-end">
         <button
@@ -505,6 +529,15 @@ export function EncountersView({ patientId, encounters, activeMeds = [] }: { pat
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     <button
+                      onClick={() => handleSign(e.id)}
+                      disabled={pending || signingId === e.id}
+                      title={t("Sign")}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted/70 transition-colors disabled:opacity-50"
+                    >
+                      <ShieldCheck className="h-3.5 w-3.5" />
+                      {signingId === e.id ? t("Signing") : t("Sign")}
+                    </button>
+                    <button
                       onClick={() => openEdit(e)}
                       className="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted/70 transition-colors"
                     >
@@ -527,6 +560,33 @@ export function EncountersView({ patientId, encounters, activeMeds = [] }: { pat
                     </button>
                   </div>
                 </div>
+
+                {(e.prescriber_name || e.last_version || e.modified_since_signed) && (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 border-t pt-3">
+                    {e.prescriber_name && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs">
+                        <span className="text-muted-foreground">{t("Responsible")}</span>
+                        <span className="font-medium">
+                          {e.prescriber_name}
+                          {[e.board_code, e.board_number, e.board_state].filter(Boolean).length > 0
+                            ? ` · ${[e.board_code, e.board_number, e.board_state].filter(Boolean).join(" ")}`
+                            : ""}
+                        </span>
+                      </span>
+                    )}
+                    {e.last_version && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        {t("Signed", { version: e.last_version.version, date: formatDate(e.last_version.signed_at) })}
+                      </span>
+                    )}
+                    {e.modified_since_signed && (
+                      <span className="rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+                        {t("ModifiedSinceSigned")}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {vitalsRows.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2 border-t pt-3">

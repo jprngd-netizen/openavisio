@@ -213,6 +213,7 @@ export const getEncounter = async (id: string) => api.get<any>(`/api/encounters/
 export const createEncounter = async (patientId: string, data: any) => api.post<any>(`/api/patients/${patientId}/encounters`, data);
 export const updateEncounter = async (id: string, data: any) => api.patch<any>(`/api/encounters/${id}`, data);
 export const deleteEncounter = async (id: string) => api.delete<void>(`/api/encounters/${id}`);
+export const signEncounter = async (id: string) => api.post<any>(`/api/encounters/${id}/sign`);
 
 // Incidents
 export const getIncidents = async (patientId: string) => api.get<any[]>(`/api/patients/${patientId}/incidents`);
