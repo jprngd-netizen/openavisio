@@ -1,19 +1,31 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from app.schemas.common import OrmBase, TzDateTime
 from app.schemas.observation import ObservationDto
+from app.services.vital_ranges import check_vital
 
 
 class EncounterMeasurement(BaseModel):
-    """A vital sign captured during the consultation (weight, BP, SpO2, ...)."""
+    """A vital sign captured during the consultation (weight, BP, SpO2, ...).
+
+    WS-4: systolic and diastolic readings taken at the same instant share a
+    ``component_group_id`` so they read back as one blood-pressure panel.
+    """
 
     code: str
     code_display: str | None = None
     value_quantity: float | None = None
     value_unit: str | None = None
+    component_group_id: uuid.UUID | None = None
+
+    @model_validator(mode="after")
+    def _validate_vital_range(self):
+        """Reject implausible vitals with a clear 422 before persisting."""
+        check_vital(self.code, self.value_quantity)
+        return self
 
 
 class DiagnosisInput(BaseModel):

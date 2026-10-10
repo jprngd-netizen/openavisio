@@ -17,6 +17,11 @@ class Observation(OwnedResource):
     code_display: Mapped[str | None] = mapped_column(String(256))
     category: Mapped[str | None] = mapped_column(String(100))
     panel: Mapped[str | None] = mapped_column(String(128))  # #69: report section, e.g. "Blutbild"
+    # WS-4: blood pressure is one panel made of two components (systolic +
+    # diastolic taken at the same instant). The two Observation rows carry the
+    # same component_group_id so they read back (and chart) as one measurement.
+    # Distinct from `panel`, which is the lab report section.
+    component_group_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
     # WS-5: typed instant (legacy ISO-8601 String column kept until cleanup).
     effective_date_time: Mapped[datetime | None] = mapped_column("effective_date_time_ts", DateTime(timezone=True))
     value_quantity: Mapped[float | None] = mapped_column(Float)

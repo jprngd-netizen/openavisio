@@ -137,8 +137,30 @@ async def delete_encounter(
 
 
 def _add_measurements(db, patient_id, owner_id, encounter_id, encounter_date, measurements):
-    """Write the vitals captured in a consultation as linked Observation rows."""
+    """Write the vitals captured in a consultation as linked Observation rows.
+
+    WS-4: systolic and diastolic readings belong to one blood-pressure panel and
+    must share a ``component_group_id``. If the client sent one we honour it;
+    otherwise a single id is minted for the pair captured in this encounter
+    (every measurement here shares the same ``effective_date_time``).
+    """
+    bp_codes = {"blood-pressure-systolic", "blood-pressure-diastolic"}
+    bp_present = {m["code"] for m in measurements if m.get("code") in bp_codes}
+    bp_pair = bp_codes <= bp_present
+    explicit = next(
+        (
+            m.get("component_group_id")
+            for m in measurements
+            if m.get("code") in bp_codes and m.get("component_group_id")
+        ),
+        None,
+    )
+    bp_group = explicit or (uuid.uuid4() if bp_pair else None)
+
     for m in measurements:
+        group_id = m.get("component_group_id")
+        if m.get("code") in bp_codes and group_id is None and bp_pair:
+            group_id = bp_group
         db.add(
             Observation(
                 patient_id=patient_id,
@@ -146,6 +168,7 @@ def _add_measurements(db, patient_id, owner_id, encounter_id, encounter_date, me
                 category="measurement",
                 encounter_id=encounter_id,
                 effective_date_time=encounter_date,
+                component_group_id=group_id,
                 code=m["code"],
                 code_display=m.get("code_display"),
                 value_quantity=m.get("value_quantity"),

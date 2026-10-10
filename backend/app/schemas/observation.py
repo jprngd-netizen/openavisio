@@ -1,8 +1,9 @@
 import uuid
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 from app.schemas.common import OrmBase, TzDateTime
+from app.services.vital_ranges import check_vital
 
 
 class ObservationDto(OrmBase):
@@ -13,6 +14,7 @@ class ObservationDto(OrmBase):
     code_display: str | None
     category: str | None
     panel: str | None
+    component_group_id: uuid.UUID | None = None
     effective_date_time: TzDateTime | None
     value_quantity: float | None
     value_unit: str | None
@@ -38,3 +40,10 @@ class ObservationCreateRequest(BaseModel):
     ref_low: float | None = None
     ref_high: float | None = None
     encounter_id: uuid.UUID | None = None
+    component_group_id: uuid.UUID | None = None
+
+    @model_validator(mode="after")
+    def _validate_vital_range(self):
+        """WS-4: reject implausible vitals (422) — labs pass through untouched."""
+        check_vital(self.code, self.value_quantity)
+        return self
