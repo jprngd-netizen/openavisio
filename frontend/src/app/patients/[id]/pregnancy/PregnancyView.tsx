@@ -24,6 +24,17 @@ import {
   getDocuments,
 } from "@/lib/api";
 import { Baby, Plus, X, Trash2, Pencil, CalendarClock, ChevronDown, ChevronRight, Link2 } from "lucide-react";
+import { PregnancyExtendedFields, VisitExtendedFields } from "./FexeoFields";
+import { PregnancyExtendedSummary, VisitExtendedSummary } from "./FexeoSummaries";
+import {
+  emptyPregnancyExtended,
+  emptyVisitExtended,
+  pregnancyExtendedFromEpisode,
+  pregnancyExtendedPayload,
+  visitExtendedFromVisit,
+  visitExtendedPayload,
+  type PregnancyExtended,
+} from "./fexeoModel";
 
 const inputCls =
   "w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background";
@@ -130,7 +141,14 @@ type Visit = {
 
 type Summary = { gravida: number; para: number; aborto: number };
 
-const emptyForm = { lmp_date: "", ultrasound_due_date: "", ultrasound_date: "", notes: "", status: "active" };
+const emptyForm = {
+  lmp_date: "",
+  ultrasound_due_date: "",
+  ultrasound_date: "",
+  notes: "",
+  status: "active",
+  fexeo: emptyPregnancyExtended(),
+};
 const emptyVisitForm = {
   visit_date: "",
   fundal_height_cm: "",
@@ -139,7 +157,17 @@ const emptyVisitForm = {
   edema: "",
   proteinuria: "",
   notes: "",
+  fexeo: emptyVisitExtended(),
 };
+
+// Fresh copies so resetForm() never shares the nested FExEO objects between
+// renders (state stays immutable).
+function freshEpisodeForm() {
+  return { ...emptyForm, fexeo: emptyPregnancyExtended() };
+}
+function freshVisitForm() {
+  return { ...emptyVisitForm, fexeo: emptyVisitExtended() };
+}
 
 export function PregnancyView({
   patientId,
@@ -162,7 +190,7 @@ export function PregnancyView({
   const [pending, startTransition] = useTransition();
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({ ...emptyForm });
+  const [form, setForm] = useState(freshEpisodeForm());
   const [error, setError] = useState("");
 
   // IG is recomputed on the server for the explicit reference date: the client
@@ -185,12 +213,12 @@ export function PregnancyView({
   }
 
   function resetForm() {
-    setForm({ ...emptyForm });
+    setForm(freshEpisodeForm());
     setError("");
   }
 
   function payload() {
-    const body: Record<string, unknown> = {};
+    const body: Record<string, unknown> = { ...pregnancyExtendedPayload(form.fexeo) };
     if (form.lmp_date) body.lmp_date = form.lmp_date;
     if (form.ultrasound_due_date) body.ultrasound_due_date = form.ultrasound_due_date;
     if (form.ultrasound_date) body.ultrasound_date = form.ultrasound_date;
@@ -249,6 +277,7 @@ export function PregnancyView({
       ultrasound_date: ep.ultrasound_date ?? "",
       notes: ep.notes ?? "",
       status: ep.status,
+      fexeo: pregnancyExtendedFromEpisode(ep),
     });
   }
 
@@ -373,6 +402,9 @@ export function PregnancyView({
                   {ep.notes && <Meta label={t("Notes")} value={ep.notes} />}
                 </dl>
               )}
+
+              {/* FExEO-SUS structured fields (R4) — risk, obstetric history, etc. */}
+              <PregnancyExtendedSummary episode={ep} />
 
               {/* Prenatal visits — dated obstetric records of this episode (OB-2). */}
               <VisitTimeline
@@ -1074,12 +1106,12 @@ function VisitTimeline({
   }
 
   function resetForm() {
-    setForm({ ...emptyVisitForm });
+    setForm(freshVisitForm());
     setError("");
   }
 
   function payload() {
-    const body: Record<string, unknown> = { visit_date: form.visit_date };
+    const body: Record<string, unknown> = { visit_date: form.visit_date, ...visitExtendedPayload(form.fexeo) };
     if (form.fundal_height_cm) body.fundal_height_cm = Number(form.fundal_height_cm);
     if (form.fetal_heart_rate_bpm) body.fetal_heart_rate_bpm = Number(form.fetal_heart_rate_bpm);
     if (form.presentation) body.presentation = form.presentation;
@@ -1119,6 +1151,7 @@ function VisitTimeline({
       edema: v.edema ?? "",
       proteinuria: v.proteinuria ?? "",
       notes: v.notes ?? "",
+      fexeo: visitExtendedFromVisit(v),
     });
   }
 
@@ -1220,6 +1253,8 @@ function VisitTimeline({
                             <span>{t("Proteinuria")}: {t(`Prot_${v.proteinuria}`)}</span>
                           )}
                         </div>
+                        {/* FExEO-SUS visit fields (R4). */}
+                        <VisitExtendedSummary visit={v} />
                         {v.notes && <p className="mt-1 text-xs text-foreground">{v.notes}</p>}
                       </div>
                       <div className="flex items-center gap-1.5">
@@ -1356,6 +1391,12 @@ function VisitForm({
           />
         </label>
       </div>
+      <div className="mt-3">
+        <VisitExtendedFields
+          value={form.fexeo}
+          onChange={(patch) => setForm({ ...form, fexeo: { ...form.fexeo, ...patch } })}
+        />
+      </div>
       <div className="mt-3 flex items-center gap-3">
         <button
           type="submit"
@@ -1385,7 +1426,14 @@ function EpisodeForm({
   onSubmit,
 }: {
   t: (key: string) => string;
-  form: { lmp_date: string; ultrasound_due_date: string; ultrasound_date: string; notes: string; status: string };
+  form: {
+    lmp_date: string;
+    ultrasound_due_date: string;
+    ultrasound_date: string;
+    notes: string;
+    status: string;
+    fexeo: PregnancyExtended;
+  };
   setForm: (f: any) => void;
   pending: boolean;
   onCancel: () => void;
@@ -1449,6 +1497,12 @@ function EpisodeForm({
             className={inputCls}
           />
         </label>
+      </div>
+      <div className="mt-3">
+        <PregnancyExtendedFields
+          value={form.fexeo}
+          onChange={(patch) => setForm({ ...form, fexeo: { ...form.fexeo, ...patch } })}
+        />
       </div>
       <div className="mt-4 flex items-center gap-3">
         <button
