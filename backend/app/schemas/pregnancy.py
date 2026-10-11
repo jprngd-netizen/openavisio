@@ -5,12 +5,17 @@ from pydantic import BaseModel, Field, model_validator
 
 from app.models.pregnancy import (
     LIVE_BIRTH_OUTCOMES,
+    ConsultationType,
+    EdemaClass,
     EdemaSeverity,
     FetalPresentation,
+    ImcPreGestationalClass,
+    MainCareProvider,
     NewbornSex,
     PregnancyOutcomeType,
     PregnancyStatus,
     Proteinuria,
+    RiskClassification,
 )
 from app.schemas.common import OrmBase
 from app.schemas.encounter import LinkedExamDto
@@ -150,6 +155,25 @@ class PregnancyDto(OrmBase):
     ultrasound_date: date | None
     ended_at: date | None
     notes: str | None
+    # FExEO-SUS structured prenatal fields (R4 Fase 1) — all optional.
+    risk_classification: str | None = None
+    planned_pregnancy: bool | None = None
+    contraceptive_at_conception: str | None = None
+    gravida: int | None = None
+    para_vaginal: int | None = None
+    para_cesarean: int | None = None
+    abortions: int | None = None
+    living_children: int | None = None
+    preeclampsia_risk_factors: list | None = None
+    preeclampsia_moderate_risk_factors: list | None = None
+    aspirin_prophylaxis: bool | None = None
+    aspirin_start_week: int | None = None
+    imc_pre_gestational_class: str | None = None
+    perinatal_mental_health_history: bool | None = None
+    domestic_violence_investigated: bool | None = None
+    family_history: dict | None = None
+    reference_maternity: str | None = None
+    linked_to_maternity: bool | None = None
     created_at: datetime
     updated_at: datetime
     # Computed on demand. For an ended episode it is frozen at ``ended_at``;
@@ -196,6 +220,24 @@ class PregnancyDto(OrmBase):
             ultrasound_date=pregnancy.ultrasound_date,
             ended_at=pregnancy.ended_at,
             notes=pregnancy.notes,
+            risk_classification=pregnancy.risk_classification,
+            planned_pregnancy=pregnancy.planned_pregnancy,
+            contraceptive_at_conception=pregnancy.contraceptive_at_conception,
+            gravida=pregnancy.gravida,
+            para_vaginal=pregnancy.para_vaginal,
+            para_cesarean=pregnancy.para_cesarean,
+            abortions=pregnancy.abortions,
+            living_children=pregnancy.living_children,
+            preeclampsia_risk_factors=pregnancy.preeclampsia_risk_factors,
+            preeclampsia_moderate_risk_factors=pregnancy.preeclampsia_moderate_risk_factors,
+            aspirin_prophylaxis=pregnancy.aspirin_prophylaxis,
+            aspirin_start_week=pregnancy.aspirin_start_week,
+            imc_pre_gestational_class=pregnancy.imc_pre_gestational_class,
+            perinatal_mental_health_history=pregnancy.perinatal_mental_health_history,
+            domestic_violence_investigated=pregnancy.domestic_violence_investigated,
+            family_history=pregnancy.family_history,
+            reference_maternity=pregnancy.reference_maternity,
+            linked_to_maternity=pregnancy.linked_to_maternity,
             created_at=pregnancy.created_at,
             updated_at=pregnancy.updated_at,
             gestational_age=(
@@ -232,6 +274,25 @@ class PregnancyCreateRequest(BaseModel):
     ultrasound_date: date | None = None
     ended_at: date | None = None
     notes: str | None = None
+    # FExEO-SUS structured prenatal fields (R4 Fase 1) — all optional.
+    risk_classification: RiskClassification | None = None
+    planned_pregnancy: bool | None = None
+    contraceptive_at_conception: str | None = None
+    gravida: int | None = Field(default=None, ge=0)
+    para_vaginal: int | None = Field(default=None, ge=0)
+    para_cesarean: int | None = Field(default=None, ge=0)
+    abortions: int | None = Field(default=None, ge=0)
+    living_children: int | None = Field(default=None, ge=0)
+    preeclampsia_risk_factors: list | None = None
+    preeclampsia_moderate_risk_factors: list | None = None
+    aspirin_prophylaxis: bool | None = None
+    aspirin_start_week: int | None = Field(default=None, ge=0, le=42)
+    imc_pre_gestational_class: ImcPreGestationalClass | None = None
+    perinatal_mental_health_history: bool | None = None
+    domestic_violence_investigated: bool | None = None
+    family_history: dict | None = None
+    reference_maternity: str | None = None
+    linked_to_maternity: bool | None = None
 
     @model_validator(mode="after")
     def _default_due_date(self) -> "PregnancyCreateRequest":
@@ -249,6 +310,25 @@ class PregnancyUpdateRequest(BaseModel):
     ultrasound_date: date | None = None
     ended_at: date | None = None
     notes: str | None = None
+    # FExEO-SUS structured prenatal fields (R4 Fase 1) — all optional.
+    risk_classification: RiskClassification | None = None
+    planned_pregnancy: bool | None = None
+    contraceptive_at_conception: str | None = None
+    gravida: int | None = Field(default=None, ge=0)
+    para_vaginal: int | None = Field(default=None, ge=0)
+    para_cesarean: int | None = Field(default=None, ge=0)
+    abortions: int | None = Field(default=None, ge=0)
+    living_children: int | None = Field(default=None, ge=0)
+    preeclampsia_risk_factors: list | None = None
+    preeclampsia_moderate_risk_factors: list | None = None
+    aspirin_prophylaxis: bool | None = None
+    aspirin_start_week: int | None = Field(default=None, ge=0, le=42)
+    imc_pre_gestational_class: ImcPreGestationalClass | None = None
+    perinatal_mental_health_history: bool | None = None
+    domestic_violence_investigated: bool | None = None
+    family_history: dict | None = None
+    reference_maternity: str | None = None
+    linked_to_maternity: bool | None = None
 
 
 class PregnancyOutcomeCreateRequest(BaseModel):
@@ -303,6 +383,25 @@ class PregnancyVisitDto(OrmBase):
     edema: str | None
     proteinuria: str | None
     notes: str | None
+    # FExEO-SUS structured prenatal fields (R4 Fase 1) — all optional.
+    consultation_type: str | None = None
+    first_visit_before_12w: bool | None = None
+    main_care_provider: str | None = None
+    remote_consult: bool | None = None
+    dental_health_activity: bool | None = None
+    complaints: list | None = None
+    warning_signs: list | None = None
+    current_intercurrences: list | None = None
+    edema_class: str | None = None
+    leopold_done: bool | None = None
+    fundal_height_recorded_on_chart: bool | None = None
+    bcf_change: bool | None = None
+    physical_exam: dict | None = None
+    vaccination_status: dict | None = None
+    vaccines_in_gestation: dict | None = None
+    orientation_topics: list | None = None
+    weight_gain_weekly_ok: bool | None = None
+    birth_plan_elaborated: bool | None = None
     created_at: datetime
     updated_at: datetime
     gestational_age: GestationalAgeDto | None = None
@@ -328,6 +427,24 @@ class PregnancyVisitDto(OrmBase):
             edema=visit.edema,
             proteinuria=visit.proteinuria,
             notes=visit.notes,
+            consultation_type=visit.consultation_type,
+            first_visit_before_12w=visit.first_visit_before_12w,
+            main_care_provider=visit.main_care_provider,
+            remote_consult=visit.remote_consult,
+            dental_health_activity=visit.dental_health_activity,
+            complaints=visit.complaints,
+            warning_signs=visit.warning_signs,
+            current_intercurrences=visit.current_intercurrences,
+            edema_class=visit.edema_class,
+            leopold_done=visit.leopold_done,
+            fundal_height_recorded_on_chart=visit.fundal_height_recorded_on_chart,
+            bcf_change=visit.bcf_change,
+            physical_exam=visit.physical_exam,
+            vaccination_status=visit.vaccination_status,
+            vaccines_in_gestation=visit.vaccines_in_gestation,
+            orientation_topics=visit.orientation_topics,
+            weight_gain_weekly_ok=visit.weight_gain_weekly_ok,
+            birth_plan_elaborated=visit.birth_plan_elaborated,
             created_at=visit.created_at,
             updated_at=visit.updated_at,
             gestational_age=(
@@ -354,6 +471,25 @@ class PregnancyVisitCreateRequest(BaseModel):
     edema: EdemaSeverity | None = None
     proteinuria: Proteinuria | None = None
     notes: str | None = None
+    # FExEO-SUS structured prenatal fields (R4 Fase 1) — all optional.
+    consultation_type: ConsultationType | None = None
+    first_visit_before_12w: bool | None = None
+    main_care_provider: MainCareProvider | None = None
+    remote_consult: bool | None = None
+    dental_health_activity: bool | None = None
+    complaints: list | None = None
+    warning_signs: list | None = None
+    current_intercurrences: list | None = None
+    edema_class: EdemaClass | None = None
+    leopold_done: bool | None = None
+    fundal_height_recorded_on_chart: bool | None = None
+    bcf_change: bool | None = None
+    physical_exam: dict | None = None
+    vaccination_status: dict | None = None
+    vaccines_in_gestation: dict | None = None
+    orientation_topics: list | None = None
+    weight_gain_weekly_ok: bool | None = None
+    birth_plan_elaborated: bool | None = None
 
 
 class PregnancyVisitUpdateRequest(BaseModel):
@@ -364,3 +500,22 @@ class PregnancyVisitUpdateRequest(BaseModel):
     edema: EdemaSeverity | None = None
     proteinuria: Proteinuria | None = None
     notes: str | None = None
+    # FExEO-SUS structured prenatal fields (R4 Fase 1) — all optional.
+    consultation_type: ConsultationType | None = None
+    first_visit_before_12w: bool | None = None
+    main_care_provider: MainCareProvider | None = None
+    remote_consult: bool | None = None
+    dental_health_activity: bool | None = None
+    complaints: list | None = None
+    warning_signs: list | None = None
+    current_intercurrences: list | None = None
+    edema_class: EdemaClass | None = None
+    leopold_done: bool | None = None
+    fundal_height_recorded_on_chart: bool | None = None
+    bcf_change: bool | None = None
+    physical_exam: dict | None = None
+    vaccination_status: dict | None = None
+    vaccines_in_gestation: dict | None = None
+    orientation_topics: list | None = None
+    weight_gain_weekly_ok: bool | None = None
+    birth_plan_elaborated: bool | None = None
