@@ -227,6 +227,12 @@ export const updatePregnancyVisit = async (id: string, data: any) =>
 export const deletePregnancyVisit = async (id: string) =>
   api.delete<void>(`/api/pregnancy-visits/${id}`);
 
+// Outcome (OB-3) — registering it closes the episode. Returns the updated
+// episode (with status/ended_at and the embedded outcome). The GA of the
+// outcome is computed server-side for the outcome's own date (never "today").
+export const registerPregnancyOutcome = async (patientId: string, pregnancyId: string, data: any) =>
+  api.post<any>(`/api/patients/${patientId}/pregnancies/${pregnancyId}/outcome`, data);
+
 // CID-10 catalogue (DATASUS, pt-BR) for diagnosis pickers.
 export type CidOption = { code: string; description: string };
 export const searchCid10 = async (q: string) =>

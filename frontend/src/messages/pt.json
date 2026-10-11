@@ -1794,6 +1794,24 @@
     "Prot_plus1": "1+",
     "Prot_plus2": "2+",
     "Prot_plus3": "3+",
-    "Prot_plus4": "4+"
+    "Prot_plus4": "4+",
+    "Outcome": "Desfecho",
+    "OutcomeRegister": "Registrar desfecho",
+    "OutcomeType": "Tipo de desfecho",
+    "OutcomeDate": "Data do desfecho",
+    "OutcomeGA": "IG no desfecho",
+    "NewbornWeight": "Peso do RN (g)",
+    "Apgar1": "Apgar 1º min",
+    "Apgar5": "Apgar 5º min",
+    "NewbornSex": "Sexo do RN",
+    "Outcome_vaginal_delivery": "Parto vaginal",
+    "Outcome_cesarean_delivery": "Cesárea",
+    "Outcome_miscarriage": "Abortamento espontâneo",
+    "Outcome_induced_abortion": "Abortamento induzido",
+    "Outcome_ectopic": "Gravidez ectópica",
+    "Outcome_fetal_death": "Óbito fetal",
+    "Sex_female": "Feminino",
+    "Sex_male": "Masculino",
+    "Sex_unknown": "Ignorado"
   }
 }

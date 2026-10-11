@@ -1794,6 +1794,24 @@
     "Prot_plus1": "1+",
     "Prot_plus2": "2+",
     "Prot_plus3": "3+",
-    "Prot_plus4": "4+"
+    "Prot_plus4": "4+",
+    "Outcome": "Ausgang",
+    "OutcomeRegister": "Ausgang erfassen",
+    "OutcomeType": "Ausgangsart",
+    "OutcomeDate": "Ausgangsdatum",
+    "OutcomeGA": "SSW beim Ausgang",
+    "NewbornWeight": "Gewicht des Neugeborenen (g)",
+    "Apgar1": "Apgar nach 1 Min.",
+    "Apgar5": "Apgar nach 5 Min.",
+    "NewbornSex": "Geschlecht des Neugeborenen",
+    "Outcome_vaginal_delivery": "Vaginale Geburt",
+    "Outcome_cesarean_delivery": "Kaiserschnitt",
+    "Outcome_miscarriage": "Fehlgeburt",
+    "Outcome_induced_abortion": "Schwangerschaftsabbruch",
+    "Outcome_ectopic": "Extrauterinschwangerschaft",
+    "Outcome_fetal_death": "Fetaltod",
+    "Sex_female": "Weiblich",
+    "Sex_male": "Männlich",
+    "Sex_unknown": "Unbekannt"
   }
 }

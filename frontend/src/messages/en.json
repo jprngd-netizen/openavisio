@@ -1794,6 +1794,24 @@
     "Prot_plus1": "1+",
     "Prot_plus2": "2+",
     "Prot_plus3": "3+",
-    "Prot_plus4": "4+"
+    "Prot_plus4": "4+",
+    "Outcome": "Outcome",
+    "OutcomeRegister": "Record outcome",
+    "OutcomeType": "Outcome type",
+    "OutcomeDate": "Outcome date",
+    "OutcomeGA": "GA at outcome",
+    "NewbornWeight": "Newborn weight (g)",
+    "Apgar1": "Apgar 1 min",
+    "Apgar5": "Apgar 5 min",
+    "NewbornSex": "Newborn sex",
+    "Outcome_vaginal_delivery": "Vaginal delivery",
+    "Outcome_cesarean_delivery": "Cesarean delivery",
+    "Outcome_miscarriage": "Miscarriage",
+    "Outcome_induced_abortion": "Induced abortion",
+    "Outcome_ectopic": "Ectopic pregnancy",
+    "Outcome_fetal_death": "Fetal death",
+    "Sex_female": "Female",
+    "Sex_male": "Male",
+    "Sex_unknown": "Unknown"
   }
 }

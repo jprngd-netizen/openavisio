@@ -14,6 +14,7 @@ import {
   createPregnancyVisit,
   updatePregnancyVisit,
   deletePregnancyVisit,
+  registerPregnancyOutcome,
 } from "@/lib/api";
 import { Baby, Plus, X, Trash2, Pencil, CalendarClock, ChevronDown, ChevronRight } from "lucide-react";
 
@@ -31,6 +32,18 @@ const STATUS_COLORS: Record<string, string> = {
   fetal_death: "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
 };
 
+// Complete outcome taxonomy (OB-DEC-3): deliveries carry newborn data, losses do not.
+const OUTCOME_TYPES = [
+  "vaginal_delivery",
+  "cesarean_delivery",
+  "miscarriage",
+  "induced_abortion",
+  "ectopic",
+  "fetal_death",
+] as const;
+const DELIVERY_TYPES: readonly string[] = ["vaginal_delivery", "cesarean_delivery"];
+const NEWBORN_SEXES = ["female", "male", "unknown"] as const;
+
 const PRESENTATIONS = ["cephalic", "breech", "transverse", "oblique", "variable", "not_assessed"] as const;
 const EDEMA_GRADES = ["none", "mild", "moderate", "severe"] as const;
 const PROTEINURIA_GRADES = ["negative", "trace", "plus1", "plus2", "plus3", "plus4"] as const;
@@ -45,6 +58,20 @@ type Episode = {
   ended_at: string | null;
   notes: string | null;
   visit_count?: number;
+  gestational_age?: { weeks: number; days: number; basis: string; as_of: string } | null;
+  outcome?: Outcome | null;
+};
+
+type Outcome = {
+  id: string;
+  pregnancy_id: string;
+  outcome_type: string;
+  outcome_date: string;
+  newborn_weight_g: number | null;
+  apgar_1: number | null;
+  apgar_5: number | null;
+  newborn_sex: string | null;
+  notes: string | null;
   gestational_age?: { weeks: number; days: number; basis: string; as_of: string } | null;
 };
 
@@ -318,9 +345,257 @@ export function PregnancyView({
                   )
                 }
               />
+
+              {/* Outcome — the dated record that closes the episode (OB-3). */}
+              <OutcomeSection
+                patientId={patientId}
+                episode={ep}
+                onRecorded={() => {
+                  void reload(asOf);
+                  router.refresh();
+                }}
+              />
             </li>
           ))}
         </ul>
+      )}
+    </div>
+  );
+}
+
+// Outcome (OB-3) — registering it CLOSES the episode. Newborn fields are only
+// shown/accepted for a live birth; the GA shown is the server-computed age on
+// the outcome's own date (the client never substitutes "today").
+function OutcomeSection({
+  patientId,
+  episode,
+  onRecorded,
+}: {
+  patientId: string;
+  episode: Episode;
+  onRecorded: () => void;
+}) {
+  const t = useTranslations("Pregnancy");
+  const tc = useTranslations("Common");
+  const locale = useLocale();
+  const [showForm, setShowForm] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState("");
+  const [form, setForm] = useState({
+    outcome_type: "vaginal_delivery",
+    outcome_date: "",
+    newborn_weight_g: "",
+    apgar_1: "",
+    apgar_5: "",
+    newborn_sex: "",
+    notes: "",
+  });
+
+  const outcome = episode.outcome;
+  const isDeliveryType = (type: string) => DELIVERY_TYPES.includes(type);
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.outcome_date) return;
+    setError("");
+    startTransition(async () => {
+      try {
+        const body: Record<string, unknown> = {
+          outcome_type: form.outcome_type,
+          outcome_date: form.outcome_date,
+        };
+        if (isDeliveryType(form.outcome_type)) {
+          if (form.newborn_weight_g) body.newborn_weight_g = Number(form.newborn_weight_g);
+          if (form.apgar_1) body.apgar_1 = Number(form.apgar_1);
+          if (form.apgar_5) body.apgar_5 = Number(form.apgar_5);
+          if (form.newborn_sex) body.newborn_sex = form.newborn_sex;
+        }
+        if (form.notes) body.notes = form.notes;
+        await registerPregnancyOutcome(patientId, episode.id, body);
+        setShowForm(false);
+        onRecorded();
+      } catch {
+        setError(t("None"));
+      }
+    });
+  }
+
+  const gaText = (ga?: Outcome["gestational_age"] | null) => {
+    if (!ga) return t("NoDate");
+    return `${ga.weeks}${t("Weeks")} ${ga.days}${t("Days")}`;
+  };
+
+  const showNewborn =
+    outcome != null &&
+    isDeliveryType(outcome.outcome_type) &&
+    (outcome.newborn_weight_g != null ||
+      outcome.apgar_1 != null ||
+      outcome.apgar_5 != null ||
+      outcome.newborn_sex != null);
+
+  return (
+    <div className="mt-3 border-t pt-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {t("Outcome")}
+        </span>
+        {!outcome && (
+          <button
+            type="button"
+            onClick={() => setShowForm((v) => !v)}
+            className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted transition-colors"
+          >
+            <Plus className="size-3.5" />
+            {t("OutcomeRegister")}
+          </button>
+        )}
+      </div>
+
+      {error && (
+        <div className="mt-2 rounded-lg bg-destructive/10 px-4 py-2 text-sm text-destructive">{error}</div>
+      )}
+
+      {!outcome && showForm && (
+        <form onSubmit={submit} className="mt-3 rounded-xl border bg-muted/20 p-3">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="space-y-1.5 text-sm">
+              <span className="font-medium">{t("OutcomeType")}</span>
+              <select
+                value={form.outcome_type}
+                onChange={(e) => setForm({ ...form, outcome_type: e.target.value })}
+                className={inputCls}
+              >
+                {OUTCOME_TYPES.map((o) => (
+                  <option key={o} value={o}>
+                    {t(`Outcome_${o}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="space-y-1.5 text-sm">
+              <span className="font-medium">{t("OutcomeDate")}</span>
+              <input
+                type="date"
+                required
+                value={form.outcome_date}
+                onChange={(e) => setForm({ ...form, outcome_date: e.target.value })}
+                className={inputCls}
+              />
+            </label>
+          </div>
+          {isDeliveryType(form.outcome_type) && (
+            <div className="mt-3 grid gap-3 sm:grid-cols-4">
+              <label className="space-y-1.5 text-sm">
+                <span className="font-medium">{t("NewbornWeight")}</span>
+                <input
+                  type="number"
+                  value={form.newborn_weight_g}
+                  onChange={(e) => setForm({ ...form, newborn_weight_g: e.target.value })}
+                  className={inputCls}
+                />
+              </label>
+              <label className="space-y-1.5 text-sm">
+                <span className="font-medium">{t("Apgar1")}</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={10}
+                  value={form.apgar_1}
+                  onChange={(e) => setForm({ ...form, apgar_1: e.target.value })}
+                  className={inputCls}
+                />
+              </label>
+              <label className="space-y-1.5 text-sm">
+                <span className="font-medium">{t("Apgar5")}</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={10}
+                  value={form.apgar_5}
+                  onChange={(e) => setForm({ ...form, apgar_5: e.target.value })}
+                  className={inputCls}
+                />
+              </label>
+              <label className="space-y-1.5 text-sm">
+                <span className="font-medium">{t("NewbornSex")}</span>
+                <select
+                  value={form.newborn_sex}
+                  onChange={(e) => setForm({ ...form, newborn_sex: e.target.value })}
+                  className={inputCls}
+                >
+                  <option value="">{t("NoDate")}</option>
+                  {NEWBORN_SEXES.map((s) => (
+                    <option key={s} value={s}>
+                      {t(`Sex_${s}`)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          )}
+          <label className="mt-3 block space-y-1.5 text-sm">
+            <span className="font-medium">{t("Notes")}</span>
+            <textarea
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              rows={2}
+              className={inputCls}
+            />
+          </label>
+          <div className="mt-3 flex items-center gap-3">
+            <button
+              type="submit"
+              disabled={pending}
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+            >
+              {t("Save")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+            >
+              {tc("Cancel")}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {outcome && (
+        <div className="mt-2 rounded-xl border bg-background p-3">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span className="text-sm font-medium">{t(`Outcome_${outcome.outcome_type}`)}</span>
+            <span className="text-xs text-muted-foreground">{formatDate(outcome.outcome_date, locale)}</span>
+            <span className="text-xs text-muted-foreground">
+              {t("OutcomeGA")}: {gaText(outcome.gestational_age)}
+            </span>
+          </div>
+          {showNewborn && (
+            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
+              {outcome!.newborn_weight_g != null && (
+                <span>
+                  {t("NewbornWeight")}: {outcome!.newborn_weight_g}
+                </span>
+              )}
+              {outcome!.apgar_1 != null && (
+                <span>
+                  {t("Apgar1")}: {outcome!.apgar_1}
+                </span>
+              )}
+              {outcome!.apgar_5 != null && (
+                <span>
+                  {t("Apgar5")}: {outcome!.apgar_5}
+                </span>
+              )}
+              {outcome!.newborn_sex && (
+                <span>
+                  {t("NewbornSex")}: {t(`Sex_${outcome!.newborn_sex}`)}
+                </span>
+              )}
+            </div>
+          )}
+          {outcome.notes && <p className="mt-1 text-xs text-foreground">{outcome.notes}</p>}
+        </div>
       )}
     </div>
   );
