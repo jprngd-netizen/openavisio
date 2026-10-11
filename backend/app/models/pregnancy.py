@@ -3,8 +3,8 @@ from datetime import date
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Date, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, Date, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import BaseModel, OwnedResource
@@ -30,6 +30,31 @@ class PregnancyStatus(StrEnum):
     terminated = "terminated"
     ectopic = "ectopic"
     fetal_death = "fetal_death"
+
+
+class RiskClassification(StrEnum):
+    """Gestational-risk classification of the episode (FExEO I.1/I.2).
+
+    A controlled vocabulary (habitual / intermediário / alto) — the field is
+    optional/nullable because it is often not classified at first contact.
+    """
+
+    habitual = "habitual"
+    intermediario = "intermediario"
+    alto = "alto"
+
+
+class ImcPreGestationalClass(StrEnum):
+    """Pre-gestational (or 1st-trimester) BMI classification (FExEO I.1).
+
+    Mirrors the caderneta vocabulary; nullable because it depends on a known
+    pre-gestational weight.
+    """
+
+    baixo_peso = "baixo_peso"
+    adequado = "adequado"
+    sobrepeso = "sobrepeso"
+    obesidade = "obesidade"
 
 
 class Pregnancy(OwnedResource):
@@ -71,6 +96,36 @@ class Pregnancy(OwnedResource):
     ended_at: Mapped[date | None] = mapped_column(Date)
     notes: Mapped[str | None] = mapped_column(Text)
 
+    # --- FExEO-SUS structured fields (R4 Fase 1). All nullable/additive so
+    # existing episodes and data are never broken by the new columns. ---
+    # Classificação de risco gestacional (habitual/intermediário/alto).
+    risk_classification: Mapped[str | None] = mapped_column(String(30))
+    # Gravidez planejada? Se não, usava contraceptivo? Qual.
+    planned_pregnancy: Mapped[bool | None] = mapped_column(Boolean)
+    contraceptive_at_conception: Mapped[str | None] = mapped_column(String(256))
+    # Obstetric history (G/P/A) as charted for this episode.
+    gravida: Mapped[int | None] = mapped_column(Integer)
+    para_vaginal: Mapped[int | None] = mapped_column(Integer)
+    para_cesarean: Mapped[int | None] = mapped_column(Integer)
+    abortions: Mapped[int | None] = mapped_column(Integer)
+    living_children: Mapped[int | None] = mapped_column(Integer)
+    # Fatores de risco para pré-eclâmpsia (alto e moderado) — JSON lists.
+    preeclampsia_risk_factors: Mapped[list | None] = mapped_column(JSONB)
+    preeclampsia_moderate_risk_factors: Mapped[list | None] = mapped_column(JSONB)
+    # Uso de AAS para prevenção e semana de início (12–16 sem).
+    aspirin_prophylaxis: Mapped[bool | None] = mapped_column(Boolean)
+    aspirin_start_week: Mapped[int | None] = mapped_column(Integer)
+    # IMC pré-gestacional/1º tri (baixo_peso/adequado/sobrepeso/obesidade).
+    imc_pre_gestational_class: Mapped[str | None] = mapped_column(String(30))
+    # Saúde mental perinatal e violência doméstica investigada.
+    perinatal_mental_health_history: Mapped[bool | None] = mapped_column(Boolean)
+    domestic_violence_investigated: Mapped[bool | None] = mapped_column(Boolean)
+    # Antecedentes familiares (diabetes, HAS, gemelar, outros) — JSON.
+    family_history: Mapped[dict | None] = mapped_column(JSONB)
+    # Maternidade de referência e vinculação.
+    reference_maternity: Mapped[str | None] = mapped_column(String(256))
+    linked_to_maternity: Mapped[bool | None] = mapped_column(Boolean)
+
 
 class FetalPresentation(StrEnum):
     """Presenting part at the prenatal visit (nullable = not assessed yet)."""
@@ -101,6 +156,38 @@ class Proteinuria(StrEnum):
     plus2 = "plus2"
     plus3 = "plus3"
     plus4 = "plus4"
+
+
+class ConsultationType(StrEnum):
+    """Whether the prenatal visit is the first or a subsequent one (FExEO I.1)."""
+
+    primeira = "primeira"
+    subsequente = "subsequente"
+
+
+class MainCareProvider(StrEnum):
+    """Principal provider of prenatal care in the visit (FExEO I.1)."""
+
+    enfermeiro = "enfermeiro"
+    medico = "medico"
+    obstetriz = "obstetriz"
+    parteira = "parteira"
+    outro = "outro"
+
+
+class EdemaClass(StrEnum):
+    """Edema grade as charted in the prenatal physical exam (FExEO I.1).
+
+    A controlled vocabulary (ausente / + / ++ / +++ / ++++) distinct from the
+    pre-eclampsia screening ``EdemaSeverity`` — kept verbatim as the caderneta
+    records it.
+    """
+
+    ausente = "ausente"
+    plus1 = "+"
+    plus2 = "++"
+    plus3 = "+++"
+    plus4 = "++++"
 
 
 class PregnancyOutcomeType(StrEnum):
@@ -223,6 +310,37 @@ class PregnancyVisit(OwnedResource):
     edema: Mapped[str | None] = mapped_column(String(20))
     proteinuria: Mapped[str | None] = mapped_column(String(20))
     notes: Mapped[str | None] = mapped_column(Text)
+
+    # --- FExEO-SUS structured fields (R4 Fase 1). All nullable/additive so
+    # existing visits and data are never broken by the new columns. ---
+    # Tipo de consulta (primeira/subsequente) e principal prestador de cuidado.
+    consultation_type: Mapped[str | None] = mapped_column(String(20))
+    first_visit_before_12w: Mapped[bool | None] = mapped_column(Boolean)
+    main_care_provider: Mapped[str | None] = mapped_column(String(20))
+    remote_consult: Mapped[bool | None] = mapped_column(Boolean)
+    dental_health_activity: Mapped[bool | None] = mapped_column(Boolean)
+    # Queixas / sinais de alerta / intercorrências na consulta — JSON lists.
+    complaints: Mapped[list | None] = mapped_column(JSONB)
+    warning_signs: Mapped[list | None] = mapped_column(JSONB)
+    current_intercurrences: Mapped[list | None] = mapped_column(JSONB)
+    # Avaliação/classificação do edema (ausente/+/++/+++/++++).
+    edema_class: Mapped[str | None] = mapped_column(String(10))
+    # Manobras de Leopold e registro da AU no gráfico da caderneta.
+    leopold_done: Mapped[bool | None] = mapped_column(Boolean)
+    fundal_height_recorded_on_chart: Mapped[bool | None] = mapped_column(Boolean)
+    # Alteração do BCF (a ausculta em si já existe em ``fetal_heart_rate_bpm``).
+    bcf_change: Mapped[bool | None] = mapped_column(Boolean)
+    # Exame físico dirigido: pele/mucosas, tireoide, mamas, ausculta cardíaca e
+    # pulmonar — cada item com bool + alteração (JSON).
+    physical_exam: Mapped[dict | None] = mapped_column(JSONB)
+    # Vacinação: esquema anterior e imunizações na gestação — JSON.
+    vaccination_status: Mapped[dict | None] = mapped_column(JSONB)
+    vaccines_in_gestation: Mapped[dict | None] = mapped_column(JSONB)
+    # Orientações gerais realizadas na consulta — JSON list of topics.
+    orientation_topics: Mapped[list | None] = mapped_column(JSONB)
+    # Ganho ponderal semanal dentro do esperado e plano de parto elaborado.
+    weight_gain_weekly_ok: Mapped[bool | None] = mapped_column(Boolean)
+    birth_plan_elaborated: Mapped[bool | None] = mapped_column(Boolean)
 
 
 class PregnancyCondition(BaseModel):
