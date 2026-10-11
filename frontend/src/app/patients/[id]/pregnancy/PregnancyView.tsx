@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { formatDate } from "@/lib/utils";
 import {
   getPregnancies,
+  getPregnancy,
   getObstetricSummary,
   createPregnancy,
   updatePregnancy,
@@ -15,8 +16,14 @@ import {
   updatePregnancyVisit,
   deletePregnancyVisit,
   registerPregnancyOutcome,
+  addPregnancyCondition,
+  removePregnancyCondition,
+  linkPregnancyResource,
+  unlinkPregnancyResource,
+  getObservations,
+  getDocuments,
 } from "@/lib/api";
-import { Baby, Plus, X, Trash2, Pencil, CalendarClock, ChevronDown, ChevronRight } from "lucide-react";
+import { Baby, Plus, X, Trash2, Pencil, CalendarClock, ChevronDown, ChevronRight, Link2 } from "lucide-react";
 
 const inputCls =
   "w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background";
@@ -60,6 +67,39 @@ type Episode = {
   visit_count?: number;
   gestational_age?: { weeks: number; days: number; basis: string; as_of: string } | null;
   outcome?: Outcome | null;
+  // OB-4 clinical integrations.
+  condition_count?: number;
+  vital_count?: number;
+  exam_count?: number;
+  conditions?: ConditionLink[];
+  vitals?: VitalObs[];
+  exams?: ExamDoc[];
+};
+
+// An intercorrência at the problem list (Condition), with its CID-10 snapshot.
+type ConditionLink = {
+  condition_id: string;
+  cid10_code: string | null;
+  cid10_display: string | null;
+};
+
+// A vital (Observation) attributed to the episode.
+type VitalObs = {
+  id: string;
+  code: string | null;
+  code_display: string | null;
+  value_quantity: number | null;
+  value_unit: string | null;
+  effective_date_time: string | null;
+};
+
+// An exam (document) attributed to the episode.
+type ExamDoc = {
+  id: string;
+  type: string | null;
+  description: string | null;
+  file_name: string | null;
+  issued_date: string | null;
 };
 
 type Outcome = {
@@ -355,6 +395,17 @@ export function PregnancyView({
                   router.refresh();
                 }}
               />
+
+              {/* Clinical integrations — intercorrências (Conditions) and the
+                  vitals/exams attributed to the episode (OB-4). */}
+              <ClinicalIntegrations
+                patientId={patientId}
+                episode={ep}
+                onChanged={() => {
+                  void reload(asOf);
+                  router.refresh();
+                }}
+              />
             </li>
           ))}
         </ul>
@@ -595,6 +646,379 @@ function OutcomeSection({
             </div>
           )}
           {outcome.notes && <p className="mt-1 text-xs text-foreground">{outcome.notes}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// OB-4 — the episode's clinical integrations. Intercorrências are linked to the
+// problem list as Conditions (found-or-created server-side by patient + code, so
+// the same diagnosis never duplicates); vitals and exams are attributed to the
+// episode. Every mutating call returns the updated episode, which re-seeds the
+// local lists; the parent is told so it refreshes the counts.
+function ClinicalIntegrations({
+  patientId,
+  episode,
+  onChanged,
+}: {
+  patientId: string;
+  episode: Episode;
+  onChanged: () => void;
+}) {
+  const t = useTranslations("Pregnancy");
+  const tc = useTranslations("Common");
+  const locale = useLocale();
+  const [open, setOpen] = useState(false);
+  const [conditions, setConditions] = useState<ConditionLink[]>(episode.conditions ?? []);
+  const [vitals, setVitals] = useState<VitalObs[]>(episode.vitals ?? []);
+  const [exams, setExams] = useState<ExamDoc[]>(episode.exams ?? []);
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState("");
+
+  const [showCond, setShowCond] = useState(false);
+  const [condForm, setCondForm] = useState({ cid10_code: "", cid10_display: "" });
+
+  const [pickVital, setPickVital] = useState(false);
+  const [pickExam, setPickExam] = useState(false);
+  const [obsOptions, setObsOptions] = useState<VitalObs[] | null>(null);
+  const [docOptions, setDocOptions] = useState<ExamDoc[] | null>(null);
+  const [chosenVital, setChosenVital] = useState("");
+  const [chosenExam, setChosenExam] = useState("");
+
+  function apply(ep: Episode) {
+    setConditions(ep.conditions ?? []);
+    setVitals(ep.vitals ?? []);
+    setExams(ep.exams ?? []);
+    onChanged();
+  }
+
+  function run(fn: () => Promise<Episode>) {
+    setError("");
+    startTransition(async () => {
+      try {
+        apply(await fn());
+      } catch {
+        setError(t("None"));
+      }
+    });
+  }
+
+  function addCondition(e: React.FormEvent) {
+    e.preventDefault();
+    if (!condForm.cid10_code && !condForm.cid10_display) return;
+    run(async () => {
+      const ep = await addPregnancyCondition(patientId, episode.id, {
+        cid10_code: condForm.cid10_code || null,
+        cid10_display: condForm.cid10_display || null,
+      });
+      setCondForm({ cid10_code: "", cid10_display: "" });
+      setShowCond(false);
+      return ep;
+    });
+  }
+
+  function removeCondition(conditionId: string) {
+    setError("");
+    startTransition(async () => {
+      try {
+        await removePregnancyCondition(patientId, episode.id, conditionId);
+        // DELETE returns 204 (no body): re-read the episode for the new lists.
+        apply(await getPregnancy(episode.id));
+      } catch {
+        setError(t("None"));
+      }
+    });
+  }
+
+  function openVitalPicker() {
+    setPickVital(true);
+    if (obsOptions === null) {
+      startTransition(async () => {
+        const all = (await getObservations(patientId, { category: "measurement" })) as VitalObs[];
+        const linked = new Set(vitals.map((v) => v.id));
+        setObsOptions(all.filter((o) => !linked.has(o.id)));
+      });
+    }
+  }
+
+  function openExamPicker() {
+    setPickExam(true);
+    if (docOptions === null) {
+      startTransition(async () => {
+        const all = (await getDocuments(patientId)) as ExamDoc[];
+        const linked = new Set(exams.map((x) => x.id));
+        setDocOptions(all.filter((d) => !linked.has(d.id)));
+      });
+    }
+  }
+
+  const vitalLabel = (v: VitalObs) => v.code_display || v.code || v.id.slice(0, 8);
+  const examLabel = (d: ExamDoc) => d.description || d.file_name || d.type || d.id.slice(0, 8);
+
+  return (
+    <div className="mt-3 border-t pt-3">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+        {t("Integrations")} ({conditions.length + vitals.length + exams.length})
+      </button>
+
+      {open && (
+        <div className="mt-3 space-y-4">
+          {error && (
+            <div className="rounded-lg bg-destructive/10 px-4 py-2 text-sm text-destructive">{error}</div>
+          )}
+
+          {/* Intercorrências (linked Conditions). */}
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("Intercorrences")} ({conditions.length})
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowCond((v) => !v)}
+                className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted transition-colors"
+              >
+                <Plus className="size-3.5" />
+                {t("AddIntercorrence")}
+              </button>
+            </div>
+
+            {showCond && (
+              <form onSubmit={addCondition} className="mt-2 flex flex-wrap items-end gap-2 rounded-xl border bg-muted/20 p-3">
+                <label className="space-y-1.5 text-sm">
+                  <span className="font-medium">{t("Cid10Code")}</span>
+                  <input
+                    value={condForm.cid10_code}
+                    onChange={(e) => setCondForm({ ...condForm, cid10_code: e.target.value })}
+                    className={inputCls + " w-32"}
+                  />
+                </label>
+                <label className="space-y-1.5 text-sm">
+                  <span className="font-medium">{t("Cid10Display")}</span>
+                  <input
+                    value={condForm.cid10_display}
+                    onChange={(e) => setCondForm({ ...condForm, cid10_display: e.target.value })}
+                    className={inputCls + " w-64"}
+                  />
+                </label>
+                <button
+                  type="submit"
+                  disabled={pending}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {t("Save")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowCond(false)}
+                  className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+                >
+                  {tc("Cancel")}
+                </button>
+              </form>
+            )}
+
+            {conditions.length === 0 ? (
+              <p className="mt-2 text-xs text-muted-foreground">{t("IntercorrencesNone")}</p>
+            ) : (
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {conditions.map((c) => (
+                  <li
+                    key={c.condition_id}
+                    className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs"
+                  >
+                    {c.cid10_code && <span className="font-semibold">{c.cid10_code}</span>}
+                    <span>{c.cid10_display || t("NoDate")}</span>
+                    <button
+                      type="button"
+                      onClick={() => removeCondition(c.condition_id)}
+                      disabled={pending}
+                      aria-label={t("Delete")}
+                      className="text-destructive hover:opacity-70 disabled:opacity-50"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Linked exams (DocumentReferences). */}
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("Exams")} ({exams.length})
+              </span>
+              <button
+                type="button"
+                onClick={openExamPicker}
+                className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted transition-colors"
+              >
+                <Link2 className="size-3.5" />
+                {t("LinkExisting")}
+              </button>
+            </div>
+            {pickExam && (
+              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border bg-muted/20 p-3">
+                <select
+                  value={chosenExam}
+                  onChange={(e) => setChosenExam(e.target.value)}
+                  className={inputCls + " w-72"}
+                >
+                  <option value="">{t("SelectExam")}</option>
+                  {(docOptions ?? []).map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {examLabel(d)}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={pending || !chosenExam}
+                  onClick={() =>
+                    run(async () => {
+                      const ep = await linkPregnancyResource(patientId, episode.id, { document_id: chosenExam });
+                      setChosenExam("");
+                      setPickExam(false);
+                      setDocOptions(null);
+                      return ep;
+                    })
+                  }
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {t("Save")}
+                </button>
+                <button type="button" onClick={() => setPickExam(false)} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">
+                  {tc("Cancel")}
+                </button>
+              </div>
+            )}
+            {exams.length === 0 ? (
+              <p className="mt-2 text-xs text-muted-foreground">{t("ExamsNone")}</p>
+            ) : (
+              <ul className="mt-2 space-y-1">
+                {exams.map((d) => (
+                  <li key={d.id} className="flex items-center justify-between rounded-lg border bg-background px-3 py-1.5 text-xs">
+                    <span>
+                      <span className="font-medium">{d.description || d.file_name || d.type || d.id.slice(0, 8)}</span>
+                      {d.issued_date && <span className="ml-2 text-muted-foreground">{formatDate(d.issued_date, locale)}</span>}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        run(async () =>
+                          unlinkPregnancyResource(patientId, episode.id, { document_id: d.id }),
+                        )
+                      }
+                      disabled={pending}
+                      aria-label={t("Delete")}
+                      className="text-destructive hover:opacity-70 disabled:opacity-50"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Linked vitals (Observations, category=measurement). */}
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("Vitals")} ({vitals.length})
+              </span>
+              <button
+                type="button"
+                onClick={openVitalPicker}
+                className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted transition-colors"
+              >
+                <Link2 className="size-3.5" />
+                {t("LinkExisting")}
+              </button>
+            </div>
+            {pickVital && (
+              <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border bg-muted/20 p-3">
+                <select
+                  value={chosenVital}
+                  onChange={(e) => setChosenVital(e.target.value)}
+                  className={inputCls + " w-72"}
+                >
+                  <option value="">{t("SelectVital")}</option>
+                  {(obsOptions ?? []).map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {vitalLabel(o)}
+                      {o.value_quantity != null ? ` — ${o.value_quantity}${o.value_unit ? ` ${o.value_unit}` : ""}` : ""}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  disabled={pending || !chosenVital}
+                  onClick={() =>
+                    run(async () => {
+                      const ep = await linkPregnancyResource(patientId, episode.id, { observation_id: chosenVital });
+                      setChosenVital("");
+                      setPickVital(false);
+                      setObsOptions(null);
+                      return ep;
+                    })
+                  }
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {t("Save")}
+                </button>
+                <button type="button" onClick={() => setPickVital(false)} className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors">
+                  {tc("Cancel")}
+                </button>
+              </div>
+            )}
+            {vitals.length === 0 ? (
+              <p className="mt-2 text-xs text-muted-foreground">{t("VitalsNone")}</p>
+            ) : (
+              <ul className="mt-2 space-y-1">
+                {vitals.map((o) => (
+                  <li key={o.id} className="flex items-center justify-between rounded-lg border bg-background px-3 py-1.5 text-xs">
+                    <span>
+                      <span className="font-medium">{vitalLabel(o)}</span>
+                      {o.value_quantity != null && (
+                        <span className="ml-2 text-muted-foreground">
+                          {o.value_quantity}
+                          {o.value_unit ? ` ${o.value_unit}` : ""}
+                        </span>
+                      )}
+                      {o.effective_date_time && (
+                        <span className="ml-2 text-muted-foreground">
+                          {formatDate(o.effective_date_time, locale)}
+                        </span>
+                      )}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        run(async () =>
+                          unlinkPregnancyResource(patientId, episode.id, { observation_id: o.id }),
+                        )
+                      }
+                      disabled={pending}
+                      aria-label={t("Delete")}
+                      className="text-destructive hover:opacity-70 disabled:opacity-50"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
     </div>

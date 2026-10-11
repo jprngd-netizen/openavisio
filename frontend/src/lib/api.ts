@@ -209,6 +209,10 @@ export const deleteFamilyHistory = async (id: string) => api.delete<void>(`/api/
 export const getPregnancies = async (patientId: string, asOf?: string) =>
   api.get<any[]>(`/api/patients/${patientId}/pregnancies${asOf ? `?as_of=${asOf}` : ""}`);
 export const createPregnancy = async (patientId: string, data: any) => api.post<any>(`/api/patients/${patientId}/pregnancies`, data);
+// Single episode with its OB-2/OB-3/OB-4 children (visits, outcome, intercorrências,
+// linked vitals/exams). `asOf` is the explicit GA reference date (never assumed).
+export const getPregnancy = async (id: string, asOf?: string) =>
+  api.get<any>(`/api/pregnancies/${id}${asOf ? `?as_of=${asOf}` : ""}`);
 export const updatePregnancy = async (id: string, data: any) => api.patch<any>(`/api/pregnancies/${id}`, data);
 export const deletePregnancy = async (id: string) => api.delete<void>(`/api/pregnancies/${id}`);
 export const getGestationalAge = async (id: string, asOf: string) =>
@@ -232,6 +236,19 @@ export const deletePregnancyVisit = async (id: string) =>
 // outcome is computed server-side for the outcome's own date (never "today").
 export const registerPregnancyOutcome = async (patientId: string, pregnancyId: string, data: any) =>
   api.post<any>(`/api/patients/${patientId}/pregnancies/${pregnancyId}/outcome`, data);
+
+// Clinical integrations (OB-4). Intercorrências are linked to the episode's
+// problem list (Condition, found-or-created server-side by patient + code);
+// vitals and exams are attributed to the episode. All return the updated
+// episode. Links are same-patient only (server rejects cross-patient with 422).
+export const addPregnancyCondition = async (patientId: string, pregnancyId: string, data: any) =>
+  api.post<any>(`/api/patients/${patientId}/pregnancies/${pregnancyId}/conditions`, data);
+export const removePregnancyCondition = async (patientId: string, pregnancyId: string, conditionId: string) =>
+  api.delete<void>(`/api/patients/${patientId}/pregnancies/${pregnancyId}/conditions/${conditionId}`);
+export const linkPregnancyResource = async (patientId: string, pregnancyId: string, data: any) =>
+  api.post<any>(`/api/patients/${patientId}/pregnancies/${pregnancyId}/link`, data);
+export const unlinkPregnancyResource = async (patientId: string, pregnancyId: string, data: any) =>
+  api.post<any>(`/api/patients/${patientId}/pregnancies/${pregnancyId}/unlink`, data);
 
 // CID-10 catalogue (DATASUS, pt-BR) for diagnosis pickers.
 export type CidOption = { code: string; description: string };
