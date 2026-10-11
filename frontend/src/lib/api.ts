@@ -216,6 +216,17 @@ export const getGestationalAge = async (id: string, asOf: string) =>
 export const getObstetricSummary = async (patientId: string) =>
   api.get<{ gravida: number; para: number; aborto: number }>(`/api/patients/${patientId}/obstetric-summary`);
 
+// Prenatal visits (OB-2) — dated, per-episode obstetric records. The GA of each
+// visit is computed server-side for the visit's own date (never "today").
+export const getPregnancyVisits = async (patientId: string, pregnancyId: string) =>
+  api.get<any[]>(`/api/patients/${patientId}/pregnancies/${pregnancyId}/visits`);
+export const createPregnancyVisit = async (patientId: string, pregnancyId: string, data: any) =>
+  api.post<any>(`/api/patients/${patientId}/pregnancies/${pregnancyId}/visits`, data);
+export const updatePregnancyVisit = async (id: string, data: any) =>
+  api.patch<any>(`/api/pregnancy-visits/${id}`, data);
+export const deletePregnancyVisit = async (id: string) =>
+  api.delete<void>(`/api/pregnancy-visits/${id}`);
+
 // CID-10 catalogue (DATASUS, pt-BR) for diagnosis pickers.
 export type CidOption = { code: string; description: string };
 export const searchCid10 = async (q: string) =>

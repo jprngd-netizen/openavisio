@@ -10,8 +10,12 @@ import {
   createPregnancy,
   updatePregnancy,
   deletePregnancy,
+  getPregnancyVisits,
+  createPregnancyVisit,
+  updatePregnancyVisit,
+  deletePregnancyVisit,
 } from "@/lib/api";
-import { Baby, Plus, X, Trash2, Pencil, CalendarClock } from "lucide-react";
+import { Baby, Plus, X, Trash2, Pencil, CalendarClock, ChevronDown, ChevronRight } from "lucide-react";
 
 const inputCls =
   "w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-background";
@@ -27,6 +31,10 @@ const STATUS_COLORS: Record<string, string> = {
   fetal_death: "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
 };
 
+const PRESENTATIONS = ["cephalic", "breech", "transverse", "oblique", "variable", "not_assessed"] as const;
+const EDEMA_GRADES = ["none", "mild", "moderate", "severe"] as const;
+const PROTEINURIA_GRADES = ["negative", "trace", "plus1", "plus2", "plus3", "plus4"] as const;
+
 type Episode = {
   id: string;
   status: string;
@@ -36,12 +44,35 @@ type Episode = {
   ultrasound_date: string | null;
   ended_at: string | null;
   notes: string | null;
+  visit_count?: number;
+  gestational_age?: { weeks: number; days: number; basis: string; as_of: string } | null;
+};
+
+type Visit = {
+  id: string;
+  pregnancy_id: string;
+  visit_date: string;
+  fundal_height_cm: number | null;
+  fetal_heart_rate_bpm: number | null;
+  presentation: string | null;
+  edema: string | null;
+  proteinuria: string | null;
+  notes: string | null;
   gestational_age?: { weeks: number; days: number; basis: string; as_of: string } | null;
 };
 
 type Summary = { gravida: number; para: number; aborto: number };
 
 const emptyForm = { lmp_date: "", ultrasound_due_date: "", ultrasound_date: "", notes: "", status: "active" };
+const emptyVisitForm = {
+  visit_date: "",
+  fundal_height_cm: "",
+  fetal_heart_rate_bpm: "",
+  presentation: "",
+  edema: "",
+  proteinuria: "",
+  notes: "",
+};
 
 export function PregnancyView({
   patientId,
@@ -154,8 +185,7 @@ export function PregnancyView({
     });
   }
 
-  const gaText = (ep: Episode) => {
-    const ga = ep.gestational_age;
+  const gaText = (ga: Visit["gestational_age"] | Episode["gestational_age"]) => {
     if (!ga) return t("NoDate");
     return `${ga.weeks}${t("Weeks")} ${ga.days}${t("Days")}`;
   };
@@ -235,7 +265,7 @@ export function PregnancyView({
                         {t(`Status_${ep.status}`)}
                       </span>
                       <span className="text-sm font-medium">
-                        {t("GestationalAge")}: {gaText(ep)}
+                        {t("GestationalAge")}: {gaText(ep.gestational_age)}
                       </span>
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
@@ -276,6 +306,18 @@ export function PregnancyView({
                   {ep.notes && <Meta label={t("Notes")} value={ep.notes} />}
                 </dl>
               )}
+
+              {/* Prenatal visits — dated obstetric records of this episode (OB-2). */}
+              <VisitTimeline
+                patientId={patientId}
+                episodeId={ep.id}
+                initialCount={ep.visit_count ?? 0}
+                onCountChange={(count) =>
+                  setEpisodes((prev) =>
+                    prev.map((e) => (e.id === ep.id ? { ...e, visit_count: count } : e)),
+                  )
+                }
+              />
             </li>
           ))}
         </ul>
@@ -290,6 +332,348 @@ function Meta({ label, value }: { label: string; value: string }) {
       <dt className="uppercase tracking-wide text-muted-foreground">{label}</dt>
       <dd className="font-medium text-foreground">{value}</dd>
     </div>
+  );
+}
+
+// Gestational age shown for a visit is the server-computed age for the visit's
+// own date — the client never derives it and never substitutes "today".
+function VisitTimeline({
+  patientId,
+  episodeId,
+  initialCount,
+  onCountChange,
+}: {
+  patientId: string;
+  episodeId: string;
+  initialCount: number;
+  onCountChange: (count: number) => void;
+}) {
+  const t = useTranslations("Pregnancy");
+  const locale = useLocale();
+  const [open, setOpen] = useState(false);
+  const [visits, setVisits] = useState<Visit[] | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState({ ...emptyVisitForm });
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState("");
+
+  async function load() {
+    const list = (await getPregnancyVisits(patientId, episodeId)) as Visit[];
+    setVisits(list);
+    onCountChange(list.length);
+  }
+
+  function toggle() {
+    const next = !open;
+    setOpen(next);
+    if (next && visits === null) {
+      startTransition(() => {
+        void load();
+      });
+    }
+  }
+
+  function resetForm() {
+    setForm({ ...emptyVisitForm });
+    setError("");
+  }
+
+  function payload() {
+    const body: Record<string, unknown> = { visit_date: form.visit_date };
+    if (form.fundal_height_cm) body.fundal_height_cm = Number(form.fundal_height_cm);
+    if (form.fetal_heart_rate_bpm) body.fetal_heart_rate_bpm = Number(form.fetal_heart_rate_bpm);
+    if (form.presentation) body.presentation = form.presentation;
+    if (form.edema) body.edema = form.edema;
+    if (form.proteinuria) body.proteinuria = form.proteinuria;
+    if (form.notes) body.notes = form.notes;
+    return body;
+  }
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.visit_date) return;
+    setError("");
+    startTransition(async () => {
+      try {
+        if (editingId) await updatePregnancyVisit(editingId, payload());
+        else await createPregnancyVisit(patientId, episodeId, payload());
+        await load();
+        resetForm();
+        setEditingId(null);
+        setShowAdd(false);
+      } catch {
+        setError(t("None"));
+      }
+    });
+  }
+
+  function startEdit(v: Visit) {
+    setEditingId(v.id);
+    setShowAdd(false);
+    setError("");
+    setForm({
+      visit_date: v.visit_date,
+      fundal_height_cm: v.fundal_height_cm != null ? String(v.fundal_height_cm) : "",
+      fetal_heart_rate_bpm: v.fetal_heart_rate_bpm != null ? String(v.fetal_heart_rate_bpm) : "",
+      presentation: v.presentation ?? "",
+      edema: v.edema ?? "",
+      proteinuria: v.proteinuria ?? "",
+      notes: v.notes ?? "",
+    });
+  }
+
+  function remove(id: string) {
+    startTransition(async () => {
+      await deletePregnancyVisit(id);
+      await load();
+    });
+  }
+
+  const count = visits?.length ?? initialCount;
+  const gaText = (v: Visit) => {
+    const ga = v.gestational_age;
+    if (!ga) return t("NoDate");
+    return `${ga.weeks}${t("Weeks")} ${ga.days}${t("Days")}`;
+  };
+
+  return (
+    <div className="mt-3 border-t pt-3">
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={toggle}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          aria-expanded={open}
+        >
+          {open ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+          {t("Visits")} ({count})
+        </button>
+        {open && (
+          <button
+            type="button"
+            onClick={() => {
+              resetForm();
+              setEditingId(null);
+              setShowAdd((v) => !v);
+            }}
+            className="inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs font-medium hover:bg-muted transition-colors"
+          >
+            <Plus className="size-3.5" />
+            {t("NewVisit")}
+          </button>
+        )}
+      </div>
+
+      {open && (
+        <div className="mt-3 space-y-3">
+          {error && (
+            <div className="rounded-lg bg-destructive/10 px-4 py-2 text-sm text-destructive">{error}</div>
+          )}
+
+          {(showAdd || editingId) && (
+            <VisitForm
+              t={t}
+              form={form}
+              setForm={setForm}
+              pending={pending}
+              onCancel={() => {
+                resetForm();
+                setShowAdd(false);
+                setEditingId(null);
+              }}
+              onSubmit={submit}
+            />
+          )}
+
+          {visits === null ? (
+            <div className="py-3 text-center text-sm text-muted-foreground">…</div>
+          ) : visits.length === 0 ? (
+            <div className="rounded-xl border bg-muted/30 py-6 text-center text-sm text-muted-foreground">
+              {t("VisitsNone")}
+            </div>
+          ) : (
+            <ol className="relative space-y-2 border-l pl-4">
+              {visits.map((v) => (
+                <li key={v.id} className="relative">
+                  <span className="absolute -left-[21px] top-2 size-2 rounded-full bg-pink-500" />
+                  <div className="rounded-xl border bg-background p-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">{formatDate(v.visit_date, locale)}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {t("GestationalAge")}: {gaText(v)}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-muted-foreground">
+                          {v.fundal_height_cm != null && (
+                            <span>{t("FundalHeight")}: {v.fundal_height_cm}</span>
+                          )}
+                          {v.fetal_heart_rate_bpm != null && (
+                            <span>{t("FetalHeartRate")}: {v.fetal_heart_rate_bpm}</span>
+                          )}
+                          {v.presentation && (
+                            <span>{t("Presentation")}: {t(`Pres_${v.presentation}`)}</span>
+                          )}
+                          {v.edema && <span>{t("Edema")}: {t(`Edema_${v.edema}`)}</span>}
+                          {v.proteinuria && (
+                            <span>{t("Proteinuria")}: {t(`Prot_${v.proteinuria}`)}</span>
+                          )}
+                        </div>
+                        {v.notes && <p className="mt-1 text-xs text-foreground">{v.notes}</p>}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(v)}
+                          aria-label={t("Save")}
+                          className="inline-flex items-center rounded-md border p-1 text-xs hover:bg-muted transition-colors"
+                        >
+                          <Pencil className="size-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => remove(v.id)}
+                          disabled={pending}
+                          aria-label={t("Delete")}
+                          className="inline-flex items-center rounded-md border p-1 text-xs text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                        >
+                          <Trash2 className="size-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VisitForm({
+  t,
+  form,
+  setForm,
+  pending,
+  onCancel,
+  onSubmit,
+}: {
+  t: (key: string) => string;
+  form: typeof emptyVisitForm;
+  setForm: (f: any) => void;
+  pending: boolean;
+  onCancel: () => void;
+  onSubmit: (e: React.FormEvent) => void;
+}) {
+  const tc = useTranslations("Common");
+  return (
+    <form onSubmit={onSubmit} className="rounded-xl border bg-muted/20 p-3">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-sm font-semibold">{t("NewVisit")}</span>
+        <button type="button" onClick={onCancel} className="text-muted-foreground hover:text-foreground">
+          <X className="size-4" />
+        </button>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className="space-y-1.5 text-sm">
+          <span className="font-medium">{t("VisitDate")}</span>
+          <input
+            type="date"
+            required
+            value={form.visit_date}
+            onChange={(e) => setForm({ ...form, visit_date: e.target.value })}
+            className={inputCls}
+          />
+        </label>
+        <label className="space-y-1.5 text-sm">
+          <span className="font-medium">{t("FundalHeight")}</span>
+          <input
+            type="number"
+            step="0.1"
+            value={form.fundal_height_cm}
+            onChange={(e) => setForm({ ...form, fundal_height_cm: e.target.value })}
+            className={inputCls}
+          />
+        </label>
+        <label className="space-y-1.5 text-sm">
+          <span className="font-medium">{t("FetalHeartRate")}</span>
+          <input
+            type="number"
+            value={form.fetal_heart_rate_bpm}
+            onChange={(e) => setForm({ ...form, fetal_heart_rate_bpm: e.target.value })}
+            className={inputCls}
+          />
+        </label>
+        <label className="space-y-1.5 text-sm">
+          <span className="font-medium">{t("Presentation")}</span>
+          <select
+            value={form.presentation}
+            onChange={(e) => setForm({ ...form, presentation: e.target.value })}
+            className={inputCls}
+          >
+            <option value="">{t("NoDate")}</option>
+            {PRESENTATIONS.map((p) => (
+              <option key={p} value={p}>{t(`Pres_${p}`)}</option>
+            ))}
+          </select>
+        </label>
+        <label className="space-y-1.5 text-sm">
+          <span className="font-medium">{t("Edema")}</span>
+          <select
+            value={form.edema}
+            onChange={(e) => setForm({ ...form, edema: e.target.value })}
+            className={inputCls}
+          >
+            <option value="">{t("NoDate")}</option>
+            {EDEMA_GRADES.map((g) => (
+              <option key={g} value={g}>{t(`Edema_${g}`)}</option>
+            ))}
+          </select>
+        </label>
+        <label className="space-y-1.5 text-sm">
+          <span className="font-medium">{t("Proteinuria")}</span>
+          <select
+            value={form.proteinuria}
+            onChange={(e) => setForm({ ...form, proteinuria: e.target.value })}
+            className={inputCls}
+          >
+            <option value="">{t("NoDate")}</option>
+            {PROTEINURIA_GRADES.map((g) => (
+              <option key={g} value={g}>{t(`Prot_${g}`)}</option>
+            ))}
+          </select>
+        </label>
+        <label className="space-y-1.5 text-sm sm:col-span-3">
+          <span className="font-medium">{t("Notes")}</span>
+          <textarea
+            value={form.notes}
+            onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            rows={2}
+            className={inputCls}
+          />
+        </label>
+      </div>
+      <div className="mt-3 flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={pending}
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50"
+        >
+          {t("Save")}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted transition-colors"
+        >
+          {tc("Cancel")}
+        </button>
+      </div>
+    </form>
   );
 }
 
