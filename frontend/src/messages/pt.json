@@ -272,7 +272,8 @@
       "Prescriptions": "Gerenciar receitas",
       "Encounters": "Consultas, evolução e exame físico",
       "Cover": "Identificação e cabeçalho do prontuário",
-      "Antecedents": "Antecedentes pessoais, familiares e hábitos"
+      "Antecedents": "Antecedentes pessoais, familiares e hábitos",
+      "Pregnancy": "Episódios gestacionais, IG e DPP"
     },
     "TodayAtGlance": "Hoje em resumo",
     "ShowAllAppointments": "Ver todas as consultas",
@@ -297,7 +298,8 @@
     "Erasing": "Apagando…",
     "ErasePermanently": "Apagar permanentemente",
     "Cover": "Capa do Prontuário",
-    "Antecedents": "Antecedentes"
+    "Antecedents": "Antecedentes",
+    "Pregnancy": "Gestação"
   },
   "PatientForm": {
     "NewTitle": "Novo paciente",
@@ -1736,5 +1738,37 @@
     "ImmStatus_completed": "Aplicada",
     "ImmStatus_entered_in_error": "Erro de registro",
     "ImmStatus_not_done": "Não realizada"
+  },
+  "Pregnancy": {
+    "Title": "Gestação",
+    "Add": "Adicionar",
+    "Save": "Salvar",
+    "Delete": "Excluir",
+    "None": "Nenhuma gestação registrada.",
+    "NewEpisode": "Nova gestação",
+    "LmpDate": "DUM (data da última menstruação)",
+    "DueDate": "DPP",
+    "UltrasoundDueDate": "DPP corrigida por USG",
+    "UltrasoundDate": "Data do USG",
+    "EndedAt": "Encerrada em",
+    "Notes": "Observações",
+    "Status": "Situação",
+    "GestationalAge": "Idade gestacional",
+    "AsOf": "em",
+    "Weeks": "sem",
+    "Days": "d",
+    "Gop": "GOP",
+    "Gravida": "G · gestações",
+    "Para": "P · partos",
+    "Aborto": "A · abortos",
+    "Note": "A idade gestacional é calculada para a data informada; episódios encerrados mostram a IG na data de encerramento.",
+    "Status_active": "Em curso",
+    "Status_completed": "Concluída (parto)",
+    "Status_miscarriage": "Abortamento",
+    "Status_terminated": "Interrupção",
+    "Status_ectopic": "Ectópica",
+    "Status_fetal_death": "Óbito fetal",
+    "End": "Encerrar",
+    "NoDate": "—"
   }
 }

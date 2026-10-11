@@ -272,7 +272,8 @@
       "Prescriptions": "Manage prescriptions",
       "Encounters": "Consultations, progress notes and physical exam",
       "Cover": "Chart identification and header",
-      "Antecedents": "Personal, family history and habits"
+      "Antecedents": "Personal, family history and habits",
+      "Pregnancy": "Pregnancy episodes, GA and due date"
     },
     "TodayAtGlance": "Today at a glance",
     "ShowAllAppointments": "Show all appointments",
@@ -297,7 +298,8 @@
     "Erasing": "Erasing…",
     "ErasePermanently": "Erase permanently",
     "Cover": "Record Cover",
-    "Antecedents": "Antecedents"
+    "Antecedents": "Antecedents",
+    "Pregnancy": "Pregnancy"
   },
   "PatientForm": {
     "NewTitle": "New patient",
@@ -1736,5 +1738,37 @@
     "ImmStatus_completed": "Completed",
     "ImmStatus_entered_in_error": "Entered in error",
     "ImmStatus_not_done": "Not done"
+  },
+  "Pregnancy": {
+    "Title": "Pregnancy",
+    "Add": "Add",
+    "Save": "Save",
+    "Delete": "Delete",
+    "None": "No pregnancy recorded.",
+    "NewEpisode": "New pregnancy",
+    "LmpDate": "LMP (last menstrual period)",
+    "DueDate": "Due date",
+    "UltrasoundDueDate": "Ultrasound-corrected due date",
+    "UltrasoundDate": "Ultrasound date",
+    "EndedAt": "Ended on",
+    "Notes": "Notes",
+    "Status": "Status",
+    "GestationalAge": "Gestational age",
+    "AsOf": "on",
+    "Weeks": "w",
+    "Days": "d",
+    "Gop": "GTPAL",
+    "Gravida": "G · pregnancies",
+    "Para": "P · deliveries",
+    "Aborto": "A · losses",
+    "Note": "Gestational age is computed for the informed date; ended episodes show the GA on the end date.",
+    "Status_active": "Ongoing",
+    "Status_completed": "Completed (delivery)",
+    "Status_miscarriage": "Miscarriage",
+    "Status_terminated": "Termination",
+    "Status_ectopic": "Ectopic",
+    "Status_fetal_death": "Fetal death",
+    "End": "End",
+    "NoDate": "—"
   }
 }

@@ -272,7 +272,8 @@
       "Prescriptions": "Rezepte verwalten",
       "Encounters": "Untersuchungen, Verlauf und körperliche Untersuchung",
       "Cover": "Identifikation und Kopf des Datensatzes",
-      "Antecedents": "Eigen-, Familienanamnese und Gewohnheiten"
+      "Antecedents": "Eigen-, Familienanamnese und Gewohnheiten",
+      "Pregnancy": "Schwangerschaftsepisoden, SSW und Termin"
     },
     "TodayAtGlance": "Heute auf einen Blick",
     "ShowAllAppointments": "Alle Termine anzeigen",
@@ -297,7 +298,8 @@
     "Erasing": "Wird gelöscht…",
     "ErasePermanently": "Dauerhaft löschen",
     "Cover": "Deckblatt der Akte",
-    "Antecedents": "Anamnese"
+    "Antecedents": "Anamnese",
+    "Pregnancy": "Schwangerschaft"
   },
   "PatientForm": {
     "NewTitle": "Neuer Patient",
@@ -1736,5 +1738,37 @@
     "ImmStatus_completed": "Abgeschlossen",
     "ImmStatus_entered_in_error": "Fehleingabe",
     "ImmStatus_not_done": "Nicht erfolgt"
+  },
+  "Pregnancy": {
+    "Title": "Schwangerschaft",
+    "Add": "Hinzufügen",
+    "Save": "Speichern",
+    "Delete": "Löschen",
+    "None": "Keine Schwangerschaft erfasst.",
+    "NewEpisode": "Neue Schwangerschaft",
+    "LmpDate": "LMP (letzte Menstruation)",
+    "DueDate": "Entbindungstermin",
+    "UltrasoundDueDate": "Korrigierter Termin (Ultraschall)",
+    "UltrasoundDate": "Ultraschalldatum",
+    "EndedAt": "Beendet am",
+    "Notes": "Notizen",
+    "Status": "Status",
+    "GestationalAge": "Gestationsalter",
+    "AsOf": "am",
+    "Weeks": "Wo",
+    "Days": "T",
+    "Gop": "GTPAL",
+    "Gravida": "G · Schwangerschaften",
+    "Para": "P · Geburten",
+    "Aborto": "A · Verluste",
+    "Note": "Das Gestationsalter wird für das angegebene Datum berechnet; beendete Episoden zeigen den SSW am Enddatum.",
+    "Status_active": "Laufend",
+    "Status_completed": "Abgeschlossen (Geburt)",
+    "Status_miscarriage": "Fehlgeburt",
+    "Status_terminated": "Abbruch",
+    "Status_ectopic": "Extrauterin",
+    "Status_fetal_death": "Fetaltod",
+    "End": "Beenden",
+    "NoDate": "—"
   }
 }

@@ -203,6 +203,19 @@ export const createFamilyHistory = async (patientId: string, data: any) => api.p
 export const updateFamilyHistory = async (id: string, data: any) => api.patch<any>(`/api/family-history/${id}`, data);
 export const deleteFamilyHistory = async (id: string) => api.delete<void>(`/api/family-history/${id}`);
 
+// Obstetric episodes (Pregnancy, OB-1)
+// `asOf` is the explicit date the gestational age is computed for (never assumed
+// server-side); ended episodes freeze their age at `ended_at` regardless.
+export const getPregnancies = async (patientId: string, asOf?: string) =>
+  api.get<any[]>(`/api/patients/${patientId}/pregnancies${asOf ? `?as_of=${asOf}` : ""}`);
+export const createPregnancy = async (patientId: string, data: any) => api.post<any>(`/api/patients/${patientId}/pregnancies`, data);
+export const updatePregnancy = async (id: string, data: any) => api.patch<any>(`/api/pregnancies/${id}`, data);
+export const deletePregnancy = async (id: string) => api.delete<void>(`/api/pregnancies/${id}`);
+export const getGestationalAge = async (id: string, asOf: string) =>
+  api.get<any>(`/api/pregnancies/${id}/gestational-age?as_of=${asOf}`);
+export const getObstetricSummary = async (patientId: string) =>
+  api.get<{ gravida: number; para: number; aborto: number }>(`/api/patients/${patientId}/obstetric-summary`);
+
 // CID-10 catalogue (DATASUS, pt-BR) for diagnosis pickers.
 export type CidOption = { code: string; description: string };
 export const searchCid10 = async (q: string) =>

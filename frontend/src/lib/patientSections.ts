@@ -10,6 +10,7 @@ import {
   Stethoscope,
   IdCard,
   History,
+  Baby,
   type LucideIcon,
 } from "lucide-react";
 
@@ -29,4 +30,5 @@ export const PATIENT_SECTIONS: { key: string; segment: string; Icon: LucideIcon;
   { key: "LabResults", segment: "lab-results", Icon: FlaskConical, tint: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
   { key: "Calendar", segment: "calendar", Icon: Calendar, tint: "bg-teal-500/10 text-teal-600 dark:text-teal-400" },
   { key: "Prescriptions", segment: "prescriptions", Icon: FileSignature, tint: "bg-sky-500/10 text-sky-600 dark:text-sky-400" },
+  { key: "Pregnancy", segment: "pregnancy", Icon: Baby, tint: "bg-pink-500/10 text-pink-600 dark:text-pink-400" },
 ];
