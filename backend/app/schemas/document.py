@@ -91,3 +91,9 @@ class VerifyDocumentRequest(BaseModel):
     medications: list[dict] = []
     appointments: list[dict] = []
     recommendations: list[str] = []
+    # FExEO-SUS clinical instruments (R4 Fase 3). Optional object, present only
+    # when ``document_classification`` is one of the FExEO clinical types. Its
+    # shape varies per instrument; the router sanitises every sub-object against
+    # the real model fields and silently drops unknown keys (OCR is a suggestion,
+    # never a 500).
+    fexeo: dict | None = None

@@ -228,6 +228,16 @@ async def verify_document(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     await require_patient_access(doc.patient_id, user, db, AccessLevel.contribute)
 
+    # Formative competency assessment (FExEO Parte II): not prontuário (plan D2).
+    # The document is archived/verified, but nothing clinical is materialised —
+    # no observations, conditions, medications or obstetric records.
+    from app.services.fexeo_verify import CLASSIFICATION_COMPETENCY
+    if doc.document_classification == CLASSIFICATION_COMPETENCY:
+        doc.verification_status = "verified"
+        await db.commit()
+        await db.refresh(doc)
+        return await _reveal(doc, db)
+
     from app.models.calendar import CalendarEvent
     from app.models.condition import Condition
     from app.models.medication import MedicationStatement
@@ -416,6 +426,13 @@ async def verify_document(
         for rec_text in body.recommendations:
             if rec_text and rec_text.strip():
                 db.add(Recommendation(patient_id=doc.patient_id, owner_id=user.id, document_reference_id=doc_id, text=rec_text.strip()))
+
+        # FExEO-SUS instruments (R4 Fase 3): retract only the records THIS
+        # document created on a previous verify, then materialise the ones its
+        # classification routes to. A no-op for every other document type.
+        from app.services.fexeo_verify import materialize_fexeo, retract_fexeo
+        await retract_fexeo(db, doc_id)
+        await materialize_fexeo(db, doc=doc, user=user, payload=body.fexeo)
 
         doc.verification_status = "verified"
         await db.commit()
