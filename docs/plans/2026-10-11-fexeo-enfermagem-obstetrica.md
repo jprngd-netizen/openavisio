@@ -55,7 +55,10 @@ reconhecer esse tipo de documento e rotear a extração para as seções correta
   subformulários parto / pós-parto / saúde sexual) e novo painel **RN** (vinculado ao desfecho).
 - Campos opcionais onde houver dado sensível ("prefere não informar"). i18n pt/en/de em paridade.
 
-### Fase 3 — Pipeline de IA (item b)
+### Fase 3 — Pipeline de IA (item b) — ✅ **CONCLUÍDA**
+
+> Prompts FExEO no `aiservice` (`3499b14`); roteamento no `verify` (`3124541`, rev `e4f5a6b7c8d9`, 567/567);
+> UI de confirmação na tela de verificar documento (`8731871`).
 
 - Novos `document_type`: `fexeo_prenatal_monitoring`, `fexeo_labor_birth_record`,
   `fexeo_postpartum_rooming_record`, `fexeo_sexual_reproductive_visit`, `fexeo_competency_assessment` (formativo).

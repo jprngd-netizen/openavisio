@@ -112,3 +112,23 @@ caminhos, `tsc` 0, i18n pt/en/de, head Alembic **`e2f3a4b5c6d7`**. Tags: v0.10.0
 
 **Resta apenas:** backlog de interação (IX-1..IX-4, engine próprio; o MVP usou a Memed) —
 `docs/plans/2026-10-10-parte-b-interacao.md`.
+
+---
+
+## Atualização — 2026-10-11 (R4 Completa — instrumentos FExEO-SUS, enfermagem obstétrica)
+
+**R4 concluída** (Fases 1–3) na base `feat/prontuario-hardening` (`8731871`), plano em
+`docs/plans/2026-10-11-fexeo-enfermagem-obstetrica.md`:
+
+- **Fase 1 (schema)**: `Pregnancy`/`PregnancyVisit` enriquecidos (rev `f3a4b5c6d7e8`); `NursingCare`
+  (`subcategory`/`instrument_type`/`structured_data`) + novo **`NewbornRecord`** 1:1 com o desfecho
+  (rev `b7c8d9e0f1a2`).
+- **Fase 2 (UI)**: campos expostos em **Gestação / Pré-natal / Enfermagem** + nova seção **Recém-nascido**
+  (i18n 2217).
+- **Fase 3 (IA)**: classificador e extrator reconhecem os instrumentos FExEO e o `POST /documents/{id}/verify`
+  **roteia** para `Pregnancy`/`PregnancyVisit`/`NursingCare`/`NewbornRecord`/`PregnancyOutcome`
+  (rev `e4f5a6b7c8d9`, com proveniência/retração); documento formativo (avaliação de competências)
+  **não materializa** nada; UI de confirmação na tela de verificar.
+
+Suíte backend **567** nos dois caminhos; `tsc`/`build` 0; i18n pt/en/de **2310** em paridade exata.
+**Ainda NÃO deployado** (produção PHI exige ok explícito + backup).
