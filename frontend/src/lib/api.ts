@@ -216,6 +216,38 @@ export const updateNursingCare = async (id: string, data: any) =>
 export const deleteNursingCare = async (id: string) =>
   api.delete<void>(`/api/nursing-care/${id}`);
 
+// Newborn record (R4) — 1:1 with a PregnancyOutcome (only live births). It has
+// no patient_id of its own and no flat collection endpoint: it is created and
+// read through the outcome it belongs to, so every call carries the episode.
+export const getNewbornRecordForOutcome = async (patientId: string, pregnancyId: string) =>
+  api.get<any>(`/api/patients/${patientId}/pregnancies/${pregnancyId}/outcome/newborn`);
+export const createNewbornRecord = async (patientId: string, pregnancyId: string, data: any) =>
+  api.post<any>(`/api/patients/${patientId}/pregnancies/${pregnancyId}/outcome/newborn`, data);
+export const getNewbornRecord = async (id: string) => api.get<any>(`/api/newborn-records/${id}`);
+export const updateNewbornRecord = async (id: string, data: any) =>
+  api.patch<any>(`/api/newborn-records/${id}`, data);
+export const deleteNewbornRecord = async (id: string) => api.delete<void>(`/api/newborn-records/${id}`);
+// List every newborn record of a patient: walk the closed live-birth outcomes
+// and read the outcome-scoped record for each (404 → no record yet). Returns
+// one entry per outcome, so the section can offer create/edit/remove per link.
+export const listNewbornRecords = async (patientId: string) => {
+  const pregnancies = await getPregnancies(patientId);
+  const liveBirthTypes = ["vaginal_delivery", "cesarean_delivery"];
+  const live = pregnancies.filter(
+    (p: any) => p.outcome && liveBirthTypes.includes(p.outcome.outcome_type),
+  );
+  const records = await Promise.all(
+    live.map(async (p: any) => {
+      try {
+        return await getNewbornRecordForOutcome(patientId, p.id);
+      } catch {
+        return null;
+      }
+    }),
+  );
+  return live.map((p: any, i: number) => ({ pregnancy: p, record: records[i] }));
+};
+
 // Obstetric episodes (Pregnancy, OB-1)
 // `asOf` is the explicit date the gestational age is computed for (never assumed
 // server-side); ended episodes freeze their age at `ended_at` regardless.
