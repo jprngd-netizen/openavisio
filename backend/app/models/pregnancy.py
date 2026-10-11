@@ -1,12 +1,16 @@
 import uuid
 from datetime import date
 from enum import StrEnum
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Date, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import OwnedResource
+from app.models.base import BaseModel, OwnedResource
+
+if TYPE_CHECKING:
+    from app.models.condition import Condition
 
 
 class PregnancyStatus(StrEnum):
@@ -219,3 +223,32 @@ class PregnancyVisit(OwnedResource):
     edema: Mapped[str | None] = mapped_column(String(20))
     proteinuria: Mapped[str | None] = mapped_column(String(20))
     notes: Mapped[str | None] = mapped_column(Text)
+
+
+class PregnancyCondition(BaseModel):
+    """An intercorrência (gestational diagnosis) linked to a ``Pregnancy`` (OB-4).
+
+    Mirrors ``EncounterCondition`` (WS-3): the episode cites the patient's
+    canonical problem-list ``Condition`` — find-or-created by
+    ``(patient_id, code)`` through ``app.services.encounter_diagnoses`` (reused,
+    not reimplemented) — so DMG, pre-eclampsia, etc. show up in the problem list
+    with the gestation as their origin. The CID-10 snapshot
+    (``cid10_code``/``cid10_display``) is kept as it read when linked, so renaming
+    the Condition later does not rewrite history. The Condition is **never
+    deleted**; removing an intercorrência soft-deletes only this link.
+    """
+
+    __tablename__ = "pregnancy_conditions"
+    __table_args__ = (UniqueConstraint("pregnancy_id", "condition_id"),)
+
+    pregnancy_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("pregnancies.id"), nullable=False, index=True
+    )
+    condition_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("conditions.id"), nullable=False, index=True
+    )
+    cid10_code: Mapped[str | None] = mapped_column(String(20))
+    cid10_display: Mapped[str | None] = mapped_column(String(256))
+
+    condition: Mapped["Condition"] = relationship("Condition", viewonly=True)  # noqa: F821
+    pregnancy: Mapped["Pregnancy"] = relationship("Pregnancy", viewonly=True)

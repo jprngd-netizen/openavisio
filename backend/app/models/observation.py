@@ -34,5 +34,9 @@ class Observation(OwnedResource):
     # Vitals recorded during a consultation point back at that encounter, so the
     # measurements history and the encounter record stay one single source of truth.
     encounter_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=True, index=True)
+    # OB-4: a vital (weight, blood pressure) measured during a gestation points
+    # back at the episode, so prenatal monitoring reads the same Observation rows
+    # instead of duplicating PA/weight into PregnancyVisit.
+    pregnancy_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("pregnancies.id"), nullable=True, index=True)
 
     patient: Mapped["Patient"] = relationship("Patient", back_populates="observations")  # noqa: F821

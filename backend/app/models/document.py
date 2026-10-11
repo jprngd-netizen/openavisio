@@ -19,6 +19,12 @@ class DocumentReference(OwnedResource):
     encounter_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("encounters.id"), nullable=True, index=True
     )
+    # OB-4: the gestation in which this exam/report was requested or interpreted,
+    # if any — same soft back-reference as ``encounter_id`` (WS-8): the document
+    # vault keeps owning the row, only the optional link changes.
+    pregnancy_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("pregnancies.id"), nullable=True, index=True
+    )
     status: Mapped[str] = mapped_column(String(50), default="current")
     type: Mapped[str | None] = mapped_column(String(100))
     description: Mapped[str | None] = mapped_column(Text)

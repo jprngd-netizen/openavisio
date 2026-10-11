@@ -18,6 +18,7 @@ from app.models.pregnancy import (
     FetalPresentation,
     NewbornSex,
     Pregnancy,
+    PregnancyCondition,
     PregnancyOutcome,
     PregnancyOutcomeType,
     PregnancyStatus,
