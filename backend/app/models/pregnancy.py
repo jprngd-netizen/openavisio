@@ -99,6 +99,90 @@ class Proteinuria(StrEnum):
     plus4 = "plus4"
 
 
+class PregnancyOutcomeType(StrEnum):
+    """Complete outcome taxonomy for an obstetric episode (**OB-DEC-3**).
+
+    Covers the full approved vocabulary — a term/cesarean for a live birth, and
+    every loss (miscarriage, induced abortion, ectopic, fetal death/``natimorto``).
+    The delivery route (vaginal vs cesarean) is encoded in the type itself so
+    there is a single source of truth for the mode; the episode status never
+    needs a lossy ``completed/miscarriage`` collapse.
+    """
+
+    vaginal_delivery = "vaginal_delivery"
+    cesarean_delivery = "cesarean_delivery"
+    miscarriage = "miscarriage"
+    induced_abortion = "induced_abortion"
+    ectopic = "ectopic"
+    fetal_death = "fetal_death"
+
+
+class NewbornSex(StrEnum):
+    """Sex recorded for a live newborn (nullable — often not charted at once)."""
+
+    female = "female"
+    male = "male"
+    unknown = "unknown"
+
+
+# Outcomes that deliver a live newborn and therefore carry the RN fields.
+LIVE_BIRTH_OUTCOMES = frozenset(
+    {PregnancyOutcomeType.vaginal_delivery, PregnancyOutcomeType.cesarean_delivery}
+)
+
+# Registering an outcome *closes* the episode (OB-3): the terminal status is the
+# adequate one for the loss/term — never a blanket ``completed``.
+OUTCOME_STATUS: dict[str, PregnancyStatus] = {
+    PregnancyOutcomeType.vaginal_delivery: PregnancyStatus.completed,
+    PregnancyOutcomeType.cesarean_delivery: PregnancyStatus.completed,
+    PregnancyOutcomeType.miscarriage: PregnancyStatus.miscarriage,
+    PregnancyOutcomeType.induced_abortion: PregnancyStatus.terminated,
+    PregnancyOutcomeType.ectopic: PregnancyStatus.ectopic,
+    PregnancyOutcomeType.fetal_death: PregnancyStatus.fetal_death,
+}
+
+
+class PregnancyOutcome(OwnedResource):
+    """The dated, frozen outcome that closes a ``Pregnancy`` episode (OB-3).
+
+    A **separate 1:1 table** rather than columns embedded in ``Pregnancy``: the
+    outcome is a record of its own with a date it is anchored to, and it either
+    exists (the episode is closed) or it does not (the episode is open) — the
+    unique constraint on ``pregnancy_id`` makes "at most one outcome per
+    gestation" a database invariant, so a second registration can never happen
+    even under a race. Following the "the record is a snapshot of its date"
+    principle, the gestational age *at the outcome* is derived for
+    ``as_of=outcome_date`` (see ``app.services.gestation``), never stored and
+    never computed for "today".
+
+    The newborn fields (``newborn_weight_g`` / ``apgar_*`` / ``newborn_sex``)
+    are only meaningful for a live birth; for a loss they are NULL (enforced by
+    the create schema).
+    """
+
+    __tablename__ = "pregnancy_outcomes"
+    __table_args__ = (
+        # 1:1 with the episode; also the idempotency guard for "one outcome only".
+        UniqueConstraint("pregnancy_id", name="uq_pregnancy_outcomes_pregnancy"),
+    )
+
+    pregnancy_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("pregnancies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    outcome_type: Mapped[str] = mapped_column(String(30), nullable=False)
+    outcome_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    # Newborn data — live birth only (NULL for losses).
+    newborn_weight_g: Mapped[int | None] = mapped_column(Integer)
+    apgar_1: Mapped[int | None] = mapped_column(Integer)
+    apgar_5: Mapped[int | None] = mapped_column(Integer)
+    newborn_sex: Mapped[str | None] = mapped_column(String(20))
+    # Intercorrências / free-text notes about the outcome.
+    notes: Mapped[str | None] = mapped_column(Text)
+
+
 class PregnancyVisit(OwnedResource):
     """A prenatal consultation recorded against a ``Pregnancy`` episode (OB-2).
 
