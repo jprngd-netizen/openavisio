@@ -24,6 +24,8 @@ class ObservationDto(OrmBase):
     ref_high: float | None
     document_reference_id: uuid.UUID | None
     encounter_id: uuid.UUID | None = None
+    # OB-4: the gestation this vital was attributed to, if any.
+    pregnancy_id: uuid.UUID | None = None
 
 
 class ObservationCreateRequest(BaseModel):

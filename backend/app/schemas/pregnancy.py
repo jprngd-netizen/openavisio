@@ -13,6 +13,8 @@ from app.models.pregnancy import (
     Proteinuria,
 )
 from app.schemas.common import OrmBase
+from app.schemas.encounter import LinkedExamDto
+from app.schemas.observation import ObservationDto
 from app.services.gestation import (
     display_gestational_age,
     gestational_age,
@@ -85,6 +87,59 @@ class PregnancyOutcomeDto(OrmBase):
         )
 
 
+class PregnancyConditionDto(OrmBase):
+    """An intercorrência linked to an episode, as read back (OB-4).
+
+    The linked problem-list ``Condition`` plus the CID-10 snapshot as it read
+    when it was recorded — mirrors ``EncounterDiagnosisDto`` (WS-3).
+    """
+
+    condition_id: uuid.UUID
+    cid10_code: str | None
+    cid10_display: str | None
+
+    @classmethod
+    def from_model(cls, link) -> "PregnancyConditionDto":
+        return cls(
+            condition_id=link.condition_id,
+            cid10_code=link.cid10_code,
+            cid10_display=link.cid10_display,
+        )
+
+
+class PregnancyConditionInput(BaseModel):
+    """Register an intercorrência in a gestation (OB-4).
+
+    ``cid10_code``/``cid10_display`` are the CID-10 snapshot as picked in the
+    editor; ``condition_id`` optionally pins the intercorrência to an existing
+    problem-list Condition instead of resolving one by code. When omitted, the
+    router finds-or-creates the patient's Condition by (patient_id, code) reusing
+    the WS-3 service — so the same diagnosis never duplicates in the problem list.
+    """
+
+    cid10_code: str | None = None
+    cid10_display: str | None = None
+    condition_id: uuid.UUID | None = None
+
+
+class PregnancyLinkRequest(BaseModel):
+    """Link (or unlink) one resource to an episode (OB-4).
+
+    Exactly one of ``observation_id`` (a vital, category=measurement) or
+    ``document_id`` (an exam / lab report) must be set; the other stays null. The
+    resource must belong to the same patient as the gestation (422 otherwise).
+    """
+
+    observation_id: uuid.UUID | None = None
+    document_id: uuid.UUID | None = None
+
+    @model_validator(mode="after")
+    def _exactly_one(self) -> "PregnancyLinkRequest":
+        if (self.observation_id is None) == (self.document_id is None):
+            raise ValueError("set exactly one of observation_id or document_id")
+        return self
+
+
 class PregnancyDto(OrmBase):
     id: uuid.UUID
     patient_id: uuid.UUID
@@ -106,6 +161,14 @@ class PregnancyDto(OrmBase):
     visit_count: int = 0
     # The outcome that closed the episode, when one was recorded (OB-3).
     outcome: PregnancyOutcomeDto | None = None
+    # OB-4 clinical integrations: intercorrências (linked Conditions), linked
+    # vitals (Observations) and linked exams (DocumentReferences), with counts.
+    condition_count: int = 0
+    vital_count: int = 0
+    exam_count: int = 0
+    conditions: list[PregnancyConditionDto] = []
+    vitals: list[ObservationDto] = []
+    exams: list[LinkedExamDto] = []
 
     @classmethod
     def from_model(
@@ -115,7 +178,13 @@ class PregnancyDto(OrmBase):
         as_of: date | None = None,
         visit_count: int = 0,
         outcome=None,
+        conditions: list[PregnancyConditionDto] | None = None,
+        vitals: list[ObservationDto] | None = None,
+        exams: list[LinkedExamDto] | None = None,
     ) -> "PregnancyDto":
+        conditions = conditions or []
+        vitals = vitals or []
+        exams = exams or []
         ga = display_gestational_age(pregnancy, as_of=as_of)
         return cls(
             id=pregnancy.id,
@@ -146,6 +215,12 @@ class PregnancyDto(OrmBase):
                 if outcome is not None
                 else None
             ),
+            condition_count=len(conditions),
+            vital_count=len(vitals),
+            exam_count=len(exams),
+            conditions=conditions,
+            vitals=vitals,
+            exams=exams,
         )
 
 

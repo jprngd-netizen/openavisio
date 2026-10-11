@@ -26,6 +26,8 @@ class DocumentDto(OrmBase):
     patient_id: uuid.UUID
     # WS-8: the consultation this exam/report was linked to, if any.
     encounter_id: uuid.UUID | None = None
+    # OB-4: the gestation this exam/report was attributed to, if any.
+    pregnancy_id: uuid.UUID | None = None
     status: str
     type: str | None
     description: str | None

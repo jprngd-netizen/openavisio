@@ -8,19 +8,27 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.access import AccessLevel, require_patient_access
 from app.core.database import get_db
 from app.deps import get_current_user
+from app.models.document import DocumentReference
+from app.models.observation import Observation
 from app.models.pregnancy import (
     OUTCOME_STATUS,
     Pregnancy,
+    PregnancyCondition,
     PregnancyOutcome,
     PregnancyStatus,
     PregnancyVisit,
 )
 from app.models.user import User
+from app.schemas.encounter import LinkedExamDto
+from app.schemas.observation import ObservationDto
 from app.schemas.pregnancy import (
     GestationalAgeDto,
     ObstetricSummaryDto,
+    PregnancyConditionDto,
+    PregnancyConditionInput,
     PregnancyCreateRequest,
     PregnancyDto,
+    PregnancyLinkRequest,
     PregnancyOutcomeCreateRequest,
     PregnancyOutcomeDto,
     PregnancyUpdateRequest,
@@ -28,6 +36,7 @@ from app.schemas.pregnancy import (
     PregnancyVisitDto,
     PregnancyVisitUpdateRequest,
 )
+from app.services.encounter_diagnoses import resolve_condition
 from app.services.gestation import display_gestational_age, naegele_due_date
 
 router = APIRouter()
@@ -62,6 +71,63 @@ async def _load_outcome(db: AsyncSession, pregnancy_id: uuid.UUID) -> PregnancyO
         )
     )
     return result.scalar_one_or_none()
+
+
+async def _load_conditions(db: AsyncSession, pregnancy_id: uuid.UUID) -> list[PregnancyCondition]:
+    """Intercorrências (linked Conditions) of an episode, oldest first (OB-4)."""
+    result = await db.execute(
+        select(PregnancyCondition)
+        .where(
+            PregnancyCondition.pregnancy_id == pregnancy_id,
+            PregnancyCondition.is_deleted == False,  # noqa: E712
+        )
+        .order_by(PregnancyCondition.created_at.asc())
+    )
+    return list(result.scalars().all())
+
+
+async def _load_vitals(db: AsyncSession, pregnancy_id: uuid.UUID) -> list[Observation]:
+    """Vitals (Observations) attributed to an episode, oldest first (OB-4)."""
+    result = await db.execute(
+        select(Observation)
+        .where(
+            Observation.pregnancy_id == pregnancy_id,
+            Observation.is_deleted == False,  # noqa: E712
+        )
+        .order_by(Observation.effective_date_time.asc().nullsfirst(), Observation.created_at.asc())
+    )
+    return list(result.scalars().all())
+
+
+async def _load_exams(db: AsyncSession, pregnancy_id: uuid.UUID) -> list[DocumentReference]:
+    """Exams (DocumentReferences) attributed to an episode, newest first (OB-4)."""
+    result = await db.execute(
+        select(DocumentReference)
+        .where(
+            DocumentReference.pregnancy_id == pregnancy_id,
+            DocumentReference.is_deleted == False,  # noqa: E712
+        )
+        .order_by(DocumentReference.created_at.desc())
+    )
+    return list(result.scalars().all())
+
+
+async def _pregnancy_dto(db: AsyncSession, pregnancy: Pregnancy, *, as_of=None) -> PregnancyDto:
+    """Build the full DTO for one episode, with its OB-2/OB-3/OB-4 children."""
+    return PregnancyDto.from_model(
+        pregnancy,
+        as_of=as_of,
+        visit_count=await _visit_count(db, pregnancy.id),
+        outcome=await _load_outcome(db, pregnancy.id),
+        conditions=[
+            PregnancyConditionDto.from_model(link)
+            for link in await _load_conditions(db, pregnancy.id)
+        ],
+        vitals=[
+            ObservationDto.model_validate(obs) for obs in await _load_vitals(db, pregnancy.id)
+        ],
+        exams=[LinkedExamDto.model_validate(doc) for doc in await _load_exams(db, pregnancy.id)],
+    )
 
 
 async def _load_pregnancy_for_patient(
@@ -122,12 +188,61 @@ async def list_pregnancies(
         )
     )
     outcome_by_pregnancy = {o.pregnancy_id: o for o in outcomes.scalars().all()}
+    # OB-4: expose each episode's intercorrências / linked vitals / linked exams
+    # in grouped queries too, so the listing stays O(1) in round-trips.
+    ids = [p.id for p in pregnancies]
+    cond_rows = (
+        await db.execute(
+            select(PregnancyCondition).where(
+                PregnancyCondition.pregnancy_id.in_(ids),
+                PregnancyCondition.is_deleted == False,  # noqa: E712
+            )
+        )
+    ).scalars().all()
+    conditions_by_pregnancy: dict[uuid.UUID, list[PregnancyConditionDto]] = {}
+    for link in cond_rows:
+        conditions_by_pregnancy.setdefault(link.pregnancy_id, []).append(
+            PregnancyConditionDto.from_model(link)
+        )
+    vital_rows = (
+        await db.execute(
+            select(Observation).where(
+                Observation.pregnancy_id.in_(ids),
+                Observation.is_deleted == False,  # noqa: E712
+            )
+        )
+    ).scalars().all()
+    vitals_by_pregnancy: dict[uuid.UUID, list[ObservationDto]] = {}
+    for obs in vital_rows:
+        if obs.pregnancy_id is None:  # filtered above; guards the type
+            continue
+        vitals_by_pregnancy.setdefault(obs.pregnancy_id, []).append(
+            ObservationDto.model_validate(obs)
+        )
+    exam_rows = (
+        await db.execute(
+            select(DocumentReference).where(
+                DocumentReference.pregnancy_id.in_(ids),
+                DocumentReference.is_deleted == False,  # noqa: E712
+            )
+        )
+    ).scalars().all()
+    exams_by_pregnancy: dict[uuid.UUID, list[LinkedExamDto]] = {}
+    for doc in exam_rows:
+        if doc.pregnancy_id is None:  # filtered above; guards the type
+            continue
+        exams_by_pregnancy.setdefault(doc.pregnancy_id, []).append(
+            LinkedExamDto.model_validate(doc)
+        )
     return [
         PregnancyDto.from_model(
             p,
             as_of=as_of,
             visit_count=visit_counts.get(p.id, 0),
             outcome=outcome_by_pregnancy.get(p.id),
+            conditions=conditions_by_pregnancy.get(p.id, []),
+            vitals=vitals_by_pregnancy.get(p.id, []),
+            exams=exams_by_pregnancy.get(p.id, []),
         )
         for p in pregnancies
     ]
@@ -163,12 +278,7 @@ async def get_pregnancy(
     if not pregnancy or pregnancy.is_deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     await require_patient_access(pregnancy.patient_id, user, db)
-    return PregnancyDto.from_model(
-        pregnancy,
-        as_of=as_of,
-        visit_count=await _visit_count(db, pregnancy.id),
-        outcome=await _load_outcome(db, pregnancy.id),
-    )
+    return await _pregnancy_dto(db, pregnancy, as_of=as_of)
 
 
 @router.patch("/pregnancies/{pregnancy_id}", response_model=PregnancyDto)
@@ -192,11 +302,7 @@ async def update_pregnancy(
         pregnancy.estimated_due_date = naegele_due_date(pregnancy.lmp_date)
     await db.commit()
     await db.refresh(pregnancy)
-    return PregnancyDto.from_model(
-        pregnancy,
-        visit_count=await _visit_count(db, pregnancy.id),
-        outcome=await _load_outcome(db, pregnancy.id),
-    )
+    return await _pregnancy_dto(db, pregnancy)
 
 
 @router.delete("/pregnancies/{pregnancy_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -294,11 +400,7 @@ async def register_pregnancy_outcome(
     await db.commit()
     await db.refresh(pregnancy)
     await db.refresh(outcome)
-    return PregnancyDto.from_model(
-        pregnancy,
-        visit_count=await _visit_count(db, pregnancy.id),
-        outcome=outcome,
-    )
+    return await _pregnancy_dto(db, pregnancy)
 
 
 @router.get(
@@ -423,3 +525,183 @@ async def delete_pregnancy_visit(
     await require_patient_access(pregnancy.patient_id, user, db, AccessLevel.contribute)
     visit.is_deleted = True
     await db.commit()
+
+
+# --------------------------- Clinical integrations (OB-4) ---------------------------
+# Intercorrências are linked Conditions (find-or-created via the WS-3 service, so
+# they land in the problem list with a single source of truth); a vital and an
+# exam point back at the episode through a nullable FK, exactly as WS-8 did for
+# consultations. Everything is same-patient: a cross-patient link is a 422.
+_PLACEHOLDER_DISPLAY = "—"
+
+
+@router.post(
+    "/patients/{patient_id}/pregnancies/{pregnancy_id}/conditions",
+    response_model=PregnancyDto,
+    status_code=status.HTTP_201_CREATED,
+)
+async def add_pregnancy_condition(
+    patient_id: uuid.UUID,
+    pregnancy_id: uuid.UUID,
+    body: PregnancyConditionInput,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Record an intercorrência (gestational diagnosis) in the episode (OB-4).
+
+    The problem-list Condition is found-or-created by ``(patient_id, code)``
+    through the WS-3 service (reused, never reimplemented), so the same CID-10
+    never duplicates. Re-adding a previously removed intercorrência re-activates
+    the existing link instead of inserting a second one.
+    """
+    await require_patient_access(patient_id, user, db, AccessLevel.contribute)
+    pregnancy = await _load_pregnancy_for_patient(db, patient_id, pregnancy_id)
+    code = body.cid10_code or None
+    display = body.cid10_display or code or _PLACEHOLDER_DISPLAY
+    condition = await resolve_condition(
+        db,
+        patient_id=patient_id,
+        owner_id=user.id,
+        code=code,
+        code_display=display,
+        condition_id=body.condition_id,
+    )
+    link = (
+        await db.execute(
+            select(PregnancyCondition).where(
+                PregnancyCondition.pregnancy_id == pregnancy_id,
+                PregnancyCondition.condition_id == condition.id,
+            )
+        )
+    ).scalar_one_or_none()
+    if link is None:
+        db.add(
+            PregnancyCondition(
+                pregnancy_id=pregnancy_id,
+                condition_id=condition.id,
+                cid10_code=code,
+                cid10_display=body.cid10_display,
+            )
+        )
+    else:
+        # Re-adding an intercorrência that had been removed: reactivate the link.
+        link.is_deleted = False
+        link.cid10_code = code
+        link.cid10_display = body.cid10_display
+    await db.commit()
+    await db.refresh(pregnancy)
+    return await _pregnancy_dto(db, pregnancy)
+
+
+@router.delete(
+    "/patients/{patient_id}/pregnancies/{pregnancy_id}/conditions/{condition_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def remove_pregnancy_condition(
+    patient_id: uuid.UUID,
+    pregnancy_id: uuid.UUID,
+    condition_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Remove an intercorrência from the episode (OB-4).
+
+    Soft-deletes only the link; the Condition stays in the problem list (a
+    diagnosis is not erased by un-linking it from one gestation).
+    """
+    await require_patient_access(patient_id, user, db, AccessLevel.contribute)
+    await _load_pregnancy_for_patient(db, patient_id, pregnancy_id)
+    link = (
+        await db.execute(
+            select(PregnancyCondition).where(
+                PregnancyCondition.pregnancy_id == pregnancy_id,
+                PregnancyCondition.condition_id == condition_id,
+                PregnancyCondition.is_deleted == False,  # noqa: E712
+            )
+        )
+    ).scalar_one_or_none()
+    if link is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    link.is_deleted = True
+    await db.commit()
+
+
+async def _apply_pregnancy_link(
+    db: AsyncSession, pregnancy: Pregnancy, body: PregnancyLinkRequest, *, link: bool
+) -> None:
+    """Set (or clear) ``pregnancy_id`` on the vital/exam named by *body* (OB-4).
+
+    Only a resource of the SAME patient may be linked: a cross-patient link is a
+    422, never a silent success. ``link=False`` detaches (sets the FK to null).
+    Ownership never moves — the observations router and the document vault keep
+    owning their rows; only the optional back-reference changes.
+    """
+    target = pregnancy.id if link else None
+    if body.observation_id is not None:
+        obs = await db.get(Observation, body.observation_id)
+        if obs is None or obs.is_deleted:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+        if obs.patient_id != pregnancy.patient_id:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="observation_id does not belong to this patient",
+            )
+        obs.pregnancy_id = target
+        return
+    doc = await db.get(DocumentReference, body.document_id)
+    if doc is None or doc.is_deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    if doc.patient_id != pregnancy.patient_id:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="document_id does not belong to this patient",
+        )
+    doc.pregnancy_id = target
+
+
+@router.post(
+    "/patients/{patient_id}/pregnancies/{pregnancy_id}/link", response_model=PregnancyDto
+)
+async def link_pregnancy_resource(
+    patient_id: uuid.UUID,
+    pregnancy_id: uuid.UUID,
+    body: PregnancyLinkRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Attribute an existing vital (Observation) or exam (DocumentReference) to
+    the episode (OB-4).
+
+    ``observation_id`` links a vital (category=measurement); ``document_id``
+    links an exam — the report whose analytes are its Observation rows. The
+    resource must belong to the same patient, else 422.
+    """
+    await require_patient_access(patient_id, user, db, AccessLevel.contribute)
+    pregnancy = await _load_pregnancy_for_patient(db, patient_id, pregnancy_id)
+    await _apply_pregnancy_link(db, pregnancy, body, link=True)
+    await db.commit()
+    await db.refresh(pregnancy)
+    return await _pregnancy_dto(db, pregnancy)
+
+
+@router.post(
+    "/patients/{patient_id}/pregnancies/{pregnancy_id}/unlink", response_model=PregnancyDto
+)
+async def unlink_pregnancy_resource(
+    patient_id: uuid.UUID,
+    pregnancy_id: uuid.UUID,
+    body: PregnancyLinkRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Detach a vital or exam from the episode (OB-4).
+
+    Soft-unlink only: the FK is cleared, the vital/exam itself survives (it
+    simply no longer belongs to this gestation).
+    """
+    await require_patient_access(patient_id, user, db, AccessLevel.contribute)
+    pregnancy = await _load_pregnancy_for_patient(db, patient_id, pregnancy_id)
+    await _apply_pregnancy_link(db, pregnancy, body, link=False)
+    await db.commit()
+    await db.refresh(pregnancy)
+    return await _pregnancy_dto(db, pregnancy)
