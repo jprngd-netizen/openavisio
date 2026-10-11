@@ -20,7 +20,10 @@ reconhecer esse tipo de documento e rotear a extração para as seções correta
 
 ## Escopo — R4 em 3 fases
 
-### Fase 1 — Schema/modelos (backend, migrações aditivas)
+### Fase 1 — Schema/modelos (backend, migrações aditivas) — ✅ **CONCLUÍDA**
+
+> Entregue em dois workstreams empilhados: **R4A** (`f3a4b5c6d7e8`, `Pregnancy`+`PregnancyVisit`) e
+> **R4B** (`b7c8d9e0f1a2`, `NursingCare`+`NewbornRecord`). Suíte **558 passed** nos dois caminhos; base `25ac2d7`.
 
 1. **`Pregnancy`** += `risk_classification` (habitual/intermediário/alto), `planned_pregnancy`,
    `contraceptive_at_conception`, `gravida`, `para_vaginal`, `para_cesarean`, `abortions`, `living_children`,
