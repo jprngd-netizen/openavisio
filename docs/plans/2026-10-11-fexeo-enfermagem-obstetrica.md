@@ -46,7 +46,10 @@ reconhecer esse tipo de documento e rotear a extração para as seções correta
 5. **Reuso**: `Observation` (vitais + labs por trimestre), `Condition` (intercorrências/IST/violência),
    `MedicationStatement` (suplementos/uterotônicos), `Recommendation`/`CalendarEvent` (exames/retorno/encaminhamento).
 
-### Fase 2 — UI
+### Fase 2 — UI — ✅ **CONCLUÍDA**
+
+> **UI-1** Gestação + Pré-natal (`644d62e`); **UI-2** Enfermagem (subformulários parto/pós-parto/saúde sexual) +
+> nova seção **Recém-nascido** (`5f8123f`). `tsc` 0, `build` 0, i18n pt/en/de **2217** chaves em paridade exata.
 
 - Enriquecer os formulários das seções: **Gestação**, **Pré-natal** (visita), **Enfermagem** (obstétrico, com
   subformulários parto / pós-parto / saúde sexual) e novo painel **RN** (vinculado ao desfecho).
