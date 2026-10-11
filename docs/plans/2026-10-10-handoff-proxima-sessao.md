@@ -17,8 +17,8 @@
 | **OB-4** integrações · **OB-5** enfermagem (geral+obstétrica) | ⬜ a fazer |
 
 - **Produção = LOCAL nesta VM (Ashburn, `vnic-oracle-vm-1-181196`)**, em `/opt/stacks/openavisio`, servida por
-  `health.gabrielsalem.com.br → openavisio-frontend:3000` (Caddy local). Versão **v0.10.0**, head Alembic
-  **`f8b9c0d1e2f3`**, 9 containers `healthy`, smoke 307.
+  `health.gabrielsalem.com.br → openavisio-frontend:3000` (Caddy local). Versão **v0.12.0**, head Alembic
+  **`e2f3a4b5c6d7`**, 9 containers `healthy`, smoke 307.
 - **Branch base**: `feat/prontuario-hardening` (head a atualizar; última = `9e05221`).
 - **Suíte**: **519 passed** nos DOIS caminhos: `cd backend && uv run pytest -q` **e**
   `OA_TEST_SCHEMA=migrations uv run pytest -q`. `tsc --noEmit` exit 0; i18n pt/en/de **1672** chaves idênticas.
@@ -99,3 +99,16 @@ Plano: `docs/plans/2026-10-10-escopo-grande-obstetricia-interacao.md` (Parte A +
   (conftest suporta `OA_TEST_SCHEMA=migrations`).
 - Frontend: `frontend/src/app/patients/[id]/*` (inclui `pregnancy/`) · `frontend/src/lib/{api,patientSections}.ts` ·
   `frontend/src/messages/{pt,en,de}.json`.
+
+---
+
+## Atualização — 2026-10-11 (Parte A entregue)
+
+**Escopo grande (Parte A) COMPLETO e em produção (v0.12.0).** Workstreams obstétricos/enfermagem mergeados na
+base `feat/prontuario-hardening` (`1111b97`): **OB-1** (`Pregnancy`), **OB-2** (`PregnancyVisit` pré-natal),
+**OB-3** (`PregnancyOutcome`, taxonomia completa), **OB-4** (integrações: `PregnancyCondition` + vitais/exames
+ligados ao episódio), **OB-5** (`NursingCare` — enfermagem geral/obstétrica). Suíte **541 passed** nos DOIS
+caminhos, `tsc` 0, i18n pt/en/de, head Alembic **`e2f3a4b5c6d7`**. Tags: v0.10.0 → v0.11.0 → v0.12.0.
+
+**Resta apenas:** backlog de interação (IX-1..IX-4, engine próprio; o MVP usou a Memed) —
+`docs/plans/2026-10-10-parte-b-interacao.md`.
