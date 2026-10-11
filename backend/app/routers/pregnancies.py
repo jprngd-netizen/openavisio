@@ -8,13 +8,21 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.access import AccessLevel, require_patient_access
 from app.core.database import get_db
 from app.deps import get_current_user
-from app.models.pregnancy import Pregnancy, PregnancyStatus, PregnancyVisit
+from app.models.pregnancy import (
+    OUTCOME_STATUS,
+    Pregnancy,
+    PregnancyOutcome,
+    PregnancyStatus,
+    PregnancyVisit,
+)
 from app.models.user import User
 from app.schemas.pregnancy import (
     GestationalAgeDto,
     ObstetricSummaryDto,
     PregnancyCreateRequest,
     PregnancyDto,
+    PregnancyOutcomeCreateRequest,
+    PregnancyOutcomeDto,
     PregnancyUpdateRequest,
     PregnancyVisitCreateRequest,
     PregnancyVisitDto,
@@ -43,6 +51,17 @@ async def _visit_count(db: AsyncSession, pregnancy_id: uuid.UUID) -> int:
         )
     )
     return int(result.scalar_one())
+
+
+async def _load_outcome(db: AsyncSession, pregnancy_id: uuid.UUID) -> PregnancyOutcome | None:
+    """The (single) live outcome of an episode, or ``None`` while open (OB-3)."""
+    result = await db.execute(
+        select(PregnancyOutcome).where(
+            PregnancyOutcome.pregnancy_id == pregnancy_id,
+            PregnancyOutcome.is_deleted == False,  # noqa: E712
+        )
+    )
+    return result.scalar_one_or_none()
 
 
 async def _load_pregnancy_for_patient(
@@ -95,8 +114,21 @@ async def list_pregnancies(
         .group_by(PregnancyVisit.pregnancy_id)
     )
     visit_counts = {row[0]: row[1] for row in counts.all()}
+    # OB-3: expose each episode's outcome (if any) in one grouped query too.
+    outcomes = await db.execute(
+        select(PregnancyOutcome).where(
+            PregnancyOutcome.pregnancy_id.in_([p.id for p in pregnancies]),
+            PregnancyOutcome.is_deleted == False,  # noqa: E712
+        )
+    )
+    outcome_by_pregnancy = {o.pregnancy_id: o for o in outcomes.scalars().all()}
     return [
-        PregnancyDto.from_model(p, as_of=as_of, visit_count=visit_counts.get(p.id, 0))
+        PregnancyDto.from_model(
+            p,
+            as_of=as_of,
+            visit_count=visit_counts.get(p.id, 0),
+            outcome=outcome_by_pregnancy.get(p.id),
+        )
         for p in pregnancies
     ]
 
@@ -132,7 +164,10 @@ async def get_pregnancy(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
     await require_patient_access(pregnancy.patient_id, user, db)
     return PregnancyDto.from_model(
-        pregnancy, as_of=as_of, visit_count=await _visit_count(db, pregnancy.id)
+        pregnancy,
+        as_of=as_of,
+        visit_count=await _visit_count(db, pregnancy.id),
+        outcome=await _load_outcome(db, pregnancy.id),
     )
 
 
@@ -158,7 +193,9 @@ async def update_pregnancy(
     await db.commit()
     await db.refresh(pregnancy)
     return PregnancyDto.from_model(
-        pregnancy, visit_count=await _visit_count(db, pregnancy.id)
+        pregnancy,
+        visit_count=await _visit_count(db, pregnancy.id),
+        outcome=await _load_outcome(db, pregnancy.id),
     )
 
 
@@ -220,6 +257,66 @@ async def obstetric_summary(
     para = counts.get(PregnancyStatus.completed.value, 0)
     aborto = sum(counts.get(s, 0) for s in _LOSS_STATUSES)
     return ObstetricSummaryDto(gravida=gravida, para=para, aborto=aborto)
+
+
+# ------------------------------- Outcome (OB-3) -------------------------------
+# Registering the outcome is the act that CLOSES the episode: the terminal status
+# and ``ended_at`` are set from the outcome, and the outcome is 1:1 with the
+# episode (a second registration is refused). The record is a snapshot of its
+# date — its GA is derived for ``as_of=outcome_date``.
+
+
+@router.post(
+    "/patients/{patient_id}/pregnancies/{pregnancy_id}/outcome",
+    response_model=PregnancyDto,
+    status_code=status.HTTP_201_CREATED,
+)
+async def register_pregnancy_outcome(
+    patient_id: uuid.UUID,
+    pregnancy_id: uuid.UUID,
+    body: PregnancyOutcomeCreateRequest,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_patient_access(patient_id, user, db, AccessLevel.contribute)
+    pregnancy = await _load_pregnancy_for_patient(db, patient_id, pregnancy_id)
+    # Idempotency: one outcome per episode. A duplicate is a client conflict.
+    if await _load_outcome(db, pregnancy_id) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An outcome is already recorded for this pregnancy.",
+        )
+    outcome = PregnancyOutcome(pregnancy_id=pregnancy_id, owner_id=user.id, **body.model_dump())
+    db.add(outcome)
+    # Closing the episode: adequate terminal status + the outcome's own date.
+    pregnancy.status = OUTCOME_STATUS[body.outcome_type].value
+    pregnancy.ended_at = body.outcome_date
+    await db.commit()
+    await db.refresh(pregnancy)
+    await db.refresh(outcome)
+    return PregnancyDto.from_model(
+        pregnancy,
+        visit_count=await _visit_count(db, pregnancy.id),
+        outcome=outcome,
+    )
+
+
+@router.get(
+    "/patients/{patient_id}/pregnancies/{pregnancy_id}/outcome",
+    response_model=PregnancyOutcomeDto,
+)
+async def get_pregnancy_outcome(
+    patient_id: uuid.UUID,
+    pregnancy_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await require_patient_access(patient_id, user, db)
+    pregnancy = await _load_pregnancy_for_patient(db, patient_id, pregnancy_id)
+    outcome = await _load_outcome(db, pregnancy_id)
+    if outcome is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+    return PregnancyOutcomeDto.from_model(outcome, pregnancy=pregnancy)
 
 
 # ------------------------------- Prenatal visits (OB-2) -------------------------------

@@ -4,8 +4,11 @@ from datetime import date, datetime
 from pydantic import BaseModel, Field, model_validator
 
 from app.models.pregnancy import (
+    LIVE_BIRTH_OUTCOMES,
     EdemaSeverity,
     FetalPresentation,
+    NewbornSex,
+    PregnancyOutcomeType,
     PregnancyStatus,
     Proteinuria,
 )
@@ -27,6 +30,61 @@ class GestationalAgeDto(OrmBase):
     basis: str  # "lmp" | "ultrasound"
 
 
+class PregnancyOutcomeDto(OrmBase):
+    """The dated outcome that closes an episode (OB-3).
+
+    ``gestational_age`` is computed for the outcome's own date
+    (``as_of=outcome_date``) — the record is a snapshot of its date.
+    """
+
+    id: uuid.UUID
+    pregnancy_id: uuid.UUID
+    outcome_type: str
+    outcome_date: date
+    newborn_weight_g: int | None
+    apgar_1: int | None
+    apgar_5: int | None
+    newborn_sex: str | None
+    notes: str | None
+    created_at: datetime
+    updated_at: datetime
+    gestational_age: GestationalAgeDto | None = None
+
+    @classmethod
+    def from_model(cls, outcome, *, pregnancy) -> "PregnancyOutcomeDto":
+        # GA at the outcome date, using the episode's dating basis (DUM or the
+        # ultrasound-corrected DPP). Never "today".
+        ga = gestational_age(
+            outcome.outcome_date,
+            lmp_date=pregnancy.lmp_date,
+            ultrasound_due_date=pregnancy.ultrasound_due_date,
+        )
+        return cls(
+            id=outcome.id,
+            pregnancy_id=outcome.pregnancy_id,
+            outcome_type=outcome.outcome_type,
+            outcome_date=outcome.outcome_date,
+            newborn_weight_g=outcome.newborn_weight_g,
+            apgar_1=outcome.apgar_1,
+            apgar_5=outcome.apgar_5,
+            newborn_sex=outcome.newborn_sex,
+            notes=outcome.notes,
+            created_at=outcome.created_at,
+            updated_at=outcome.updated_at,
+            gestational_age=(
+                GestationalAgeDto(
+                    weeks=ga.weeks,
+                    days=ga.days,
+                    total_days=ga.total_days,
+                    as_of=ga.as_of,
+                    basis=ga.basis,
+                )
+                if ga is not None
+                else None
+            ),
+        )
+
+
 class PregnancyDto(OrmBase):
     id: uuid.UUID
     patient_id: uuid.UUID
@@ -46,10 +104,17 @@ class PregnancyDto(OrmBase):
     gestational_age: GestationalAgeDto | None = None
     # Number of prenatal visits recorded against this episode (OB-2).
     visit_count: int = 0
+    # The outcome that closed the episode, when one was recorded (OB-3).
+    outcome: PregnancyOutcomeDto | None = None
 
     @classmethod
     def from_model(
-        cls, pregnancy, *, as_of: date | None = None, visit_count: int = 0
+        cls,
+        pregnancy,
+        *,
+        as_of: date | None = None,
+        visit_count: int = 0,
+        outcome=None,
     ) -> "PregnancyDto":
         ga = display_gestational_age(pregnancy, as_of=as_of)
         return cls(
@@ -76,6 +141,11 @@ class PregnancyDto(OrmBase):
                 else None
             ),
             visit_count=visit_count,
+            outcome=(
+                PregnancyOutcomeDto.from_model(outcome, pregnancy=pregnancy)
+                if outcome is not None
+                else None
+            ),
         )
 
 
@@ -104,6 +174,36 @@ class PregnancyUpdateRequest(BaseModel):
     ultrasound_date: date | None = None
     ended_at: date | None = None
     notes: str | None = None
+
+
+class PregnancyOutcomeCreateRequest(BaseModel):
+    """Register the outcome that closes an episode (OB-3).
+
+    Newborn fields are only accepted for a live birth (vaginal/cesarean
+    delivery); for a loss they must be omitted — a 422 otherwise, so a loss can
+    never carry a spurious newborn record.
+    """
+
+    outcome_type: PregnancyOutcomeType
+    outcome_date: date
+    # Newborn data — live birth only. Plausible ranges guard data entry.
+    newborn_weight_g: int | None = Field(default=None, gt=0, le=8000)
+    apgar_1: int | None = Field(default=None, ge=0, le=10)
+    apgar_5: int | None = Field(default=None, ge=0, le=10)
+    newborn_sex: NewbornSex | None = None
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def _newborn_only_for_live_birth(self) -> "PregnancyOutcomeCreateRequest":
+        if self.outcome_type not in LIVE_BIRTH_OUTCOMES and any(
+            v is not None
+            for v in (self.newborn_weight_g, self.apgar_1, self.apgar_5, self.newborn_sex)
+        ):
+            raise ValueError(
+                "newborn data is only valid for a live birth "
+                "(vaginal or cesarean delivery)"
+            )
+        return self
 
 
 class ObstetricSummaryDto(OrmBase):
