@@ -95,3 +95,8 @@ class NursingCare(OwnedResource):
     instrument_type: Mapped[str | None] = mapped_column(String(120))
     # Dados estruturados específicos do instrumento — JSON (JSONB).
     structured_data: Mapped[dict | None] = mapped_column(JSONB)
+    # Proveniência (R4 Fase 3): o documento FExEO que materializou este cuidado.
+    # Nullable; permite ao re-verify retrair só o que ESTE documento criou.
+    document_reference_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("document_references.id"), nullable=True, index=True
+    )

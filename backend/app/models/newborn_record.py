@@ -121,3 +121,8 @@ class NewbornRecord(OwnedResource):
     skin_to_skin_1h: Mapped[bool | None] = mapped_column(Boolean)
     cord_clamping: Mapped[str | None] = mapped_column(String(30))
     notes: Mapped[str | None] = mapped_column(Text)
+    # Proveniência (R4 Fase 3): o documento FExEO que materializou este registro.
+    # Nullable; permite ao re-verify retrair só o que ESTE documento criou.
+    document_reference_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("document_references.id"), nullable=True, index=True
+    )

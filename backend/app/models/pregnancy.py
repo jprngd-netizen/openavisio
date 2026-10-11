@@ -272,6 +272,10 @@ class PregnancyOutcome(OwnedResource):
     newborn_sex: Mapped[str | None] = mapped_column(String(20))
     # Intercorrências / free-text notes about the outcome.
     notes: Mapped[str | None] = mapped_column(Text)
+    # Proveniência (R4 Fase 3): o documento FExEO que materializou este desfecho.
+    document_reference_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("document_references.id"), nullable=True, index=True
+    )
 
 
 class PregnancyVisit(OwnedResource):
@@ -341,6 +345,12 @@ class PregnancyVisit(OwnedResource):
     # Ganho ponderal semanal dentro do esperado e plano de parto elaborado.
     weight_gain_weekly_ok: Mapped[bool | None] = mapped_column(Boolean)
     birth_plan_elaborated: Mapped[bool | None] = mapped_column(Boolean)
+    # Proveniência (R4 Fase 3): o documento FExEO que materializou esta visita.
+    # Nullable — uma visita charted à mão não carrega proveniência. Permite ao
+    # re-verify retrair (soft-delete) só o que ESTE documento criou.
+    document_reference_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("document_references.id"), nullable=True, index=True
+    )
 
 
 class PregnancyCondition(BaseModel):
