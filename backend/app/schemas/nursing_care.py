@@ -3,7 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, model_validator
 
-from app.models.nursing_care import NursingCareCategory
+from app.models.nursing_care import NursingCareCategory, NursingCareSubcategory
 from app.schemas.common import OrmBase, TzDateTime
 
 
@@ -21,6 +21,10 @@ class NursingCareDto(OrmBase):
     pregnancy_id: uuid.UUID | None
     notes: str | None
     performed_by: str | None
+    # FExEO-SUS structured fields (R4 Fase 1) — all optional.
+    subcategory: str | None = None
+    instrument_type: str | None = None
+    structured_data: dict | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -38,6 +42,10 @@ class NursingCareCreateRequest(BaseModel):
     pregnancy_id: uuid.UUID | None = None
     notes: str | None = None
     performed_by: str | None = None
+    # FExEO-SUS structured fields (R4 Fase 1) — all optional.
+    subcategory: NursingCareSubcategory | None = None
+    instrument_type: str | None = None
+    structured_data: dict | None = None
 
     @model_validator(mode="after")
     def _gestation_only_for_obstetric(self) -> "NursingCareCreateRequest":
@@ -54,3 +62,7 @@ class NursingCareUpdateRequest(BaseModel):
     pregnancy_id: uuid.UUID | None = None
     notes: str | None = None
     performed_by: str | None = None
+    # FExEO-SUS structured fields (R4 Fase 1) — all optional.
+    subcategory: NursingCareSubcategory | None = None
+    instrument_type: str | None = None
+    structured_data: dict | None = None

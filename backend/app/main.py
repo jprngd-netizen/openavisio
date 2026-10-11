@@ -21,6 +21,7 @@ from app.routers import (
     pregnancies,
     family_history,
     nursing_care,
+    newborn_records,
     conditions,
     correspondents,
     dashboard,
@@ -91,6 +92,7 @@ app.include_router(immunizations.router, prefix="/api", tags=["immunizations"])
 app.include_router(pregnancies.router, prefix="/api", tags=["pregnancies"])
 app.include_router(family_history.router, prefix="/api", tags=["family-history"])
 app.include_router(nursing_care.router, prefix="/api", tags=["nursing-care"])
+app.include_router(newborn_records.router, prefix="/api", tags=["newborn-records"])
 app.include_router(cid10.router, prefix="/api", tags=["cid10"])
 app.include_router(access.router, prefix="/api", tags=["access"])
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
