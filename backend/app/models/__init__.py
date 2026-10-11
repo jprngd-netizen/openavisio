@@ -26,7 +26,12 @@ from app.models.pregnancy import (
     Proteinuria,
 )
 from app.models.family_history import FamilyHistory, FamilyRelationship
-from app.models.nursing_care import NursingCare, NursingCareCategory
+from app.models.nursing_care import NursingCare, NursingCareCategory, NursingCareSubcategory
+from app.models.newborn_record import (
+    NewbornClassification,
+    NewbornRecord,
+    NewbornRecordSex,
+)
 from app.models.medication import MedicationStatement
 from app.models.document import DocumentReference
 from app.models.incident import Incident
@@ -97,6 +102,10 @@ __all__ = [
     "FamilyRelationship",
     "NursingCare",
     "NursingCareCategory",
+    "NursingCareSubcategory",
+    "NewbornRecord",
+    "NewbornRecordSex",
+    "NewbornClassification",
     "MedicationStatement",
     "DocumentReference",
     "Incident",

@@ -3,7 +3,7 @@ from datetime import datetime
 from enum import StrEnum
 
 from sqlalchemy import DateTime, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import OwnedResource
@@ -20,6 +20,24 @@ class NursingCareCategory(StrEnum):
 
     general = "general"
     obstetric = "obstetric"
+
+
+class NursingCareSubcategory(StrEnum):
+    """Finer nursing-care subcategory (FExEO-SUS / CEEO-Rede Alyne, R4 Fase 1).
+
+    A controlled ``StrEnum`` distinguishing the four acompanhamento instruments
+    that are charted as nursing care: ``labor`` (I.2 — trabalho de parto, parto,
+    nascimento e pós-parto imediato), ``postpartum`` (I.3 — pós-parto e
+    alojamento conjunto), ``sexual_reproductive`` (I.4 — saúde sexual e
+    reprodutiva) and ``general`` (any other nursing note). Nullable: a record
+    charted before this vocabulary existed, or one that does not fit an
+    instrument, simply carries no subcategory.
+    """
+
+    labor = "labor"
+    postpartum = "postpartum"
+    sexual_reproductive = "sexual_reproductive"
+    general = "general"
 
 
 class NursingCare(OwnedResource):
@@ -67,3 +85,13 @@ class NursingCare(OwnedResource):
     notes: Mapped[str | None] = mapped_column(Text)
     # Who carried out the care (free text; nullable).
     performed_by: Mapped[str | None] = mapped_column(String(256))
+
+    # --- FExEO-SUS structured fields (R4 Fase 1, itens 3 e 4). All
+    # nullable/additive so existing records and data are never broken. ---
+    # Subcategoria do cuidado de enfermagem (labor/postpartum/
+    # sexual_reproductive/general) — diferencia os 4 instrumentos de I.2–I.4.
+    subcategory: Mapped[str | None] = mapped_column(String(30))
+    # Tipo de instrumento de acompanhamento aplicado (proveniência do registro).
+    instrument_type: Mapped[str | None] = mapped_column(String(120))
+    # Dados estruturados específicos do instrumento — JSON (JSONB).
+    structured_data: Mapped[dict | None] = mapped_column(JSONB)
