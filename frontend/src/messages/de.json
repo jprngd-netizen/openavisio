@@ -273,7 +273,8 @@
       "Encounters": "Untersuchungen, Verlauf und körperliche Untersuchung",
       "Cover": "Identifikation und Kopf des Datensatzes",
       "Antecedents": "Eigen-, Familienanamnese und Gewohnheiten",
-      "Pregnancy": "Schwangerschaftsepisoden, SSW und Termin"
+      "Pregnancy": "Schwangerschaftsepisoden, SSW und Termin",
+      "NursingCare": "Pflegeeinträge, allgemein und geburtshilflich"
     },
     "TodayAtGlance": "Heute auf einen Blick",
     "ShowAllAppointments": "Alle Termine anzeigen",
@@ -299,7 +300,8 @@
     "ErasePermanently": "Dauerhaft löschen",
     "Cover": "Deckblatt der Akte",
     "Antecedents": "Anamnese",
-    "Pregnancy": "Schwangerschaft"
+    "Pregnancy": "Schwangerschaft",
+    "NursingCare": "Pflege"
   },
   "PatientForm": {
     "NewTitle": "Neuer Patient",
@@ -1826,5 +1828,23 @@
     "Sex_female": "Weiblich",
     "Sex_male": "Männlich",
     "Sex_unknown": "Unbekannt"
+  },
+  "Nursing": {
+    "Title": "Pflege",
+    "Note": "Ein Pflegeeintrag ist datiert und eingefroren: er hält den Zeitpunkt der Pflege fest und wird nie durch einen späteren Wert überschrieben.",
+    "NewRecord": "Neuer Pflegeeintrag",
+    "OccurredAt": "Datum und Uhrzeit der Pflege",
+    "Category": "Kategorie",
+    "Category_all": "Alle",
+    "Category_general": "Allgemein",
+    "Category_obstetric": "Geburtshilflich",
+    "Pregnancy": "Schwangerschaft",
+    "PregnancyNone": "— keine Schwangerschaft —",
+    "PerformedBy": "Durchgeführt von",
+    "Notes": "Pflegenotiz",
+    "Save": "Speichern",
+    "Add": "Hinzufügen",
+    "Delete": "Löschen",
+    "None": "Kein Pflegeeintrag."
   }
 }

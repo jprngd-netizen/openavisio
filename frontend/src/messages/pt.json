@@ -273,7 +273,8 @@
       "Encounters": "Consultas, evolução e exame físico",
       "Cover": "Identificação e cabeçalho do prontuário",
       "Antecedents": "Antecedentes pessoais, familiares e hábitos",
-      "Pregnancy": "Episódios gestacionais, IG e DPP"
+      "Pregnancy": "Episódios gestacionais, IG e DPP",
+      "NursingCare": "Registros de enfermagem, geral e obstétricos"
     },
     "TodayAtGlance": "Hoje em resumo",
     "ShowAllAppointments": "Ver todas as consultas",
@@ -299,7 +300,8 @@
     "ErasePermanently": "Apagar permanentemente",
     "Cover": "Capa do Prontuário",
     "Antecedents": "Antecedentes",
-    "Pregnancy": "Gestação"
+    "Pregnancy": "Gestação",
+    "NursingCare": "Enfermagem"
   },
   "PatientForm": {
     "NewTitle": "Novo paciente",
@@ -1826,5 +1828,23 @@
     "Sex_female": "Feminino",
     "Sex_male": "Masculino",
     "Sex_unknown": "Ignorado"
+  },
+  "Nursing": {
+    "Title": "Enfermagem",
+    "Note": "O registro de enfermagem é datado e congelado: guarda o instante em que o cuidado ocorreu, nunca reescrito por um valor atual.",
+    "NewRecord": "Novo registro de enfermagem",
+    "OccurredAt": "Data e hora do cuidado",
+    "Category": "Categoria",
+    "Category_all": "Todos",
+    "Category_general": "Geral",
+    "Category_obstetric": "Obstétrica",
+    "Pregnancy": "Gestação",
+    "PregnancyNone": "— sem gestação —",
+    "PerformedBy": "Executado por",
+    "Notes": "Registro de enfermagem",
+    "Save": "Salvar",
+    "Add": "Adicionar",
+    "Delete": "Excluir",
+    "None": "Nenhum registro de enfermagem."
   }
 }

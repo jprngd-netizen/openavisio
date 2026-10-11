@@ -203,6 +203,19 @@ export const createFamilyHistory = async (patientId: string, data: any) => api.p
 export const updateFamilyHistory = async (id: string, data: any) => api.patch<any>(`/api/family-history/${id}`, data);
 export const deleteFamilyHistory = async (id: string) => api.delete<void>(`/api/family-history/${id}`);
 
+// Nursing-care records (OB-5) — dated, frozen notes (general + obstetric).
+// `occurredAt` is the instant the care happened; `category` is `general` or
+// `obstetric`; `pregnancyId` may cite the episode an obstetric record annotates.
+// The listing is newest-care-first; `category` optionally filters server-side.
+export const getNursingCare = async (patientId: string, category?: string) =>
+  api.get<any[]>(`/api/patients/${patientId}/nursing-care${category ? `?category=${category}` : ""}`);
+export const createNursingCare = async (patientId: string, data: any) =>
+  api.post<any>(`/api/patients/${patientId}/nursing-care`, data);
+export const updateNursingCare = async (id: string, data: any) =>
+  api.patch<any>(`/api/nursing-care/${id}`, data);
+export const deleteNursingCare = async (id: string) =>
+  api.delete<void>(`/api/nursing-care/${id}`);
+
 // Obstetric episodes (Pregnancy, OB-1)
 // `asOf` is the explicit date the gestational age is computed for (never assumed
 // server-side); ended episodes freeze their age at `ended_at` regardless.

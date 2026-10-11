@@ -273,7 +273,8 @@
       "Encounters": "Consultations, progress notes and physical exam",
       "Cover": "Chart identification and header",
       "Antecedents": "Personal, family history and habits",
-      "Pregnancy": "Pregnancy episodes, GA and due date"
+      "Pregnancy": "Pregnancy episodes, GA and due date",
+      "NursingCare": "Nursing care records, general and obstetric"
     },
     "TodayAtGlance": "Today at a glance",
     "ShowAllAppointments": "Show all appointments",
@@ -299,7 +300,8 @@
     "ErasePermanently": "Erase permanently",
     "Cover": "Record Cover",
     "Antecedents": "Antecedents",
-    "Pregnancy": "Pregnancy"
+    "Pregnancy": "Pregnancy",
+    "NursingCare": "Nursing"
   },
   "PatientForm": {
     "NewTitle": "New patient",
@@ -1826,5 +1828,23 @@
     "Sex_female": "Female",
     "Sex_male": "Male",
     "Sex_unknown": "Unknown"
+  },
+  "Nursing": {
+    "Title": "Nursing",
+    "Note": "A nursing record is dated and frozen: it keeps the instant the care occurred, never rewritten by a later value.",
+    "NewRecord": "New nursing record",
+    "OccurredAt": "Date and time of care",
+    "Category": "Category",
+    "Category_all": "All",
+    "Category_general": "General",
+    "Category_obstetric": "Obstetric",
+    "Pregnancy": "Pregnancy",
+    "PregnancyNone": "— no gestation —",
+    "PerformedBy": "Performed by",
+    "Notes": "Nursing note",
+    "Save": "Save",
+    "Add": "Add",
+    "Delete": "Delete",
+    "None": "No nursing record."
   }
 }

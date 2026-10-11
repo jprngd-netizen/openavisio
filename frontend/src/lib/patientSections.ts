@@ -11,6 +11,7 @@ import {
   IdCard,
   History,
   Baby,
+  HeartPulse,
   type LucideIcon,
 } from "lucide-react";
 
@@ -31,4 +32,5 @@ export const PATIENT_SECTIONS: { key: string; segment: string; Icon: LucideIcon;
   { key: "Calendar", segment: "calendar", Icon: Calendar, tint: "bg-teal-500/10 text-teal-600 dark:text-teal-400" },
   { key: "Prescriptions", segment: "prescriptions", Icon: FileSignature, tint: "bg-sky-500/10 text-sky-600 dark:text-sky-400" },
   { key: "Pregnancy", segment: "pregnancy", Icon: Baby, tint: "bg-pink-500/10 text-pink-600 dark:text-pink-400" },
+  { key: "NursingCare", segment: "nursing", Icon: HeartPulse, tint: "bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-400" },
 ];
