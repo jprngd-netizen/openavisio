@@ -7,6 +7,14 @@ import { useTranslations } from "next-intl";
 import { verifyDocument } from "@/lib/api";
 import { DocumentViewer } from "@/components/DocumentViewer";
 import { Check, ChevronDown, FileText } from "lucide-react";
+import {
+  FEXEO_CLINICAL,
+  FEXEO_COMPETENCY,
+  FEXEO_SUBOBJECTS,
+  FexeoVerifySection,
+  FexeoFormativeNotice,
+  pruneEmpty,
+} from "./FexeoVerifySection";
 
 interface MentionedPerson {
   name: string;
@@ -38,12 +46,16 @@ interface ExtractionJson {
   observations?: Observation[];
   appointments?: Appointment[];
   recommendations?: string[];
+  // R4 Fase 3 — FExEO obstetric-nursing instrument (present only for the
+  // clinical FExEO document types; sub-objects vary per instrument).
+  fexeo?: Record<string, any> | null;
 }
 
 interface Props {
   docId: string;
   patientId: string;
   extractionJson: ExtractionJson;
+  documentClassification?: string | null;
   contentType: string;
   extractedText?: string | null;
 }
@@ -61,11 +73,33 @@ function toggle(setFn: React.Dispatch<React.SetStateAction<Set<number>>>, index:
   });
 }
 
-export function VerifyForm({ docId, patientId, extractionJson, contentType, extractedText }: Props) {
+export function VerifyForm({ docId, patientId, extractionJson, documentClassification, contentType, extractedText }: Props) {
   const router = useRouter();
   const t = useTranslations("Verify");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  // R4 Fase 3 — the formative competency assessment never seeds the chart;
+  // a clinical FExEO instrument carries the optional ``fexeo`` sub-objects.
+  const isFormative = documentClassification === FEXEO_COMPETENCY;
+  const isFexeoClinical = !!documentClassification && FEXEO_CLINICAL.has(documentClassification);
+  const fexeo = (extractionJson.fexeo && typeof extractionJson.fexeo === "object" ? extractionJson.fexeo : null) as
+    | Record<string, any>
+    | null;
+  const presentFexeoSubs = fexeo
+    ? FEXEO_SUBOBJECTS.filter((sub) => fexeo[sub] && typeof fexeo[sub] === "object" && Object.keys(fexeo[sub]).length > 0)
+    : [];
+  const [selectedFexeo, setSelectedFexeo] = useState<Set<string>>(() => new Set(presentFexeoSubs));
+  const showFexeo = isFexeoClinical && presentFexeoSubs.length > 0;
+
+  function toggleFexeo(sub: string) {
+    setSelectedFexeo((prev) => {
+      const next = new Set(prev);
+      if (next.has(sub)) next.delete(sub);
+      else next.add(sub);
+      return next;
+    });
+  }
 
   const diagnoses = extractionJson.diagnoses ?? [];
   const medications = extractionJson.medications ?? [];
@@ -112,6 +146,7 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
     allObservations.length > 0 ||
     appointments.length > 0 ||
     recommendations.length > 0 ||
+    presentFexeoSubs.length > 0 ||
     extractionJson.summary;
 
   // OCR text panel — open by default when there's nothing to verify.
@@ -121,16 +156,35 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
     setError(null);
     startTransition(async () => {
       try {
-        await verifyDocument(docId, {
-          diagnoses: editedDx.filter((_, i) => selectedDx.has(i)),
-          medications: editedMeds.filter((_, i) => selectedMeds.has(i)),
-          observations: [
-            ...editedMeasurements.filter((_, i) => selectedMeasurements.has(i)),
-            ...editedLab.filter((_, i) => selectedLab.has(i)),
-          ],
-          appointments: editedAppts.filter((_, i) => selectedAppts.has(i)),
-          recommendations: editedRecs.filter((_, i) => selectedRecs.has(i)),
-        });
+        // A formative instrument seeds nothing: clinical selections are empty
+        // and no ``fexeo`` object is sent.
+        const payload: Record<string, unknown> = isFormative
+          ? { diagnoses: [], medications: [], observations: [], appointments: [], recommendations: [] }
+          : {
+              diagnoses: editedDx.filter((_, i) => selectedDx.has(i)),
+              medications: editedMeds.filter((_, i) => selectedMeds.has(i)),
+              observations: [
+                ...editedMeasurements.filter((_, i) => selectedMeasurements.has(i)),
+                ...editedLab.filter((_, i) => selectedLab.has(i)),
+              ],
+              appointments: editedAppts.filter((_, i) => selectedAppts.has(i)),
+              recommendations: editedRecs.filter((_, i) => selectedRecs.has(i)),
+            };
+
+        // FExEO clinical instrument: send only the confirmed sub-objects, and
+        // inside each only the fields the document actually states.
+        if (isFexeoClinical) {
+          const chosen = presentFexeoSubs.filter((sub) => selectedFexeo.has(sub));
+          if (chosen.length === 0 || fexeo === null) {
+            payload.fexeo = null;
+          } else {
+            const out: Record<string, unknown> = {};
+            for (const sub of chosen) out[sub] = pruneEmpty(fexeo[sub]);
+            payload.fexeo = out;
+          }
+        }
+
+        await verifyDocument(docId, payload);
         // push re-fetches the (dynamic) list route; a following refresh() would
         // keep the transition pending and hang the "Saving…" button.
         router.push(`/patients/${patientId}/documents`);
@@ -152,6 +206,15 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
         </div>
       )}
 
+      {/* Formative (Parte II) — nothing is materialised; the clinical sections
+          below are hidden. */}
+      {isFormative && <FexeoFormativeNotice />}
+
+      {/* FExEO clinical instrument — confirm the proposed sub-objects. */}
+      {showFexeo && fexeo && (
+        <FexeoVerifySection fexeo={fexeo} selected={selectedFexeo} onToggle={toggleFexeo} />
+      )}
+
       {/* Summary */}
       {extractionJson.summary && (
         <div className="rounded-xl border bg-card p-5">
@@ -170,6 +233,9 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
         </div>
       )}
 
+      {/* Clinical sections — hidden for the formative competency assessment. */}
+      {!isFormative && (
+        <>
       {/* Recommendations */}
       {recommendations.length > 0 && (
         <SelectionSection title={t("Recommendations")} hint={t("RecommendationsHint")}>
@@ -357,6 +423,8 @@ export function VerifyForm({ docId, patientId, extractionJson, contentType, extr
             </EditableCheckRow>
           ))}
         </SelectionSection>
+      )}
+        </>
       )}
 
       {/* Referenced Persons */}

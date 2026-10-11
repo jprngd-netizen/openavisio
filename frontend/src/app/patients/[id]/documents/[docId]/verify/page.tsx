@@ -25,7 +25,7 @@ export default async function VerifyPage({ params }: { params: Promise<{ id: str
         current="Verify"
       />
 
-      <VerifyForm docId={docId} patientId={id} extractionJson={doc.extraction_json} contentType={doc.content_type ?? ""} extractedText={doc.extracted_text ?? null} />
+      <VerifyForm docId={docId} patientId={id} extractionJson={doc.extraction_json} documentClassification={doc.document_classification ?? null} contentType={doc.content_type ?? ""} extractedText={doc.extracted_text ?? null} />
       <AiNotice />
 
     </AppLayout>
