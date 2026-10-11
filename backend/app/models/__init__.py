@@ -26,6 +26,7 @@ from app.models.pregnancy import (
     Proteinuria,
 )
 from app.models.family_history import FamilyHistory, FamilyRelationship
+from app.models.nursing_care import NursingCare, NursingCareCategory
 from app.models.medication import MedicationStatement
 from app.models.document import DocumentReference
 from app.models.incident import Incident
@@ -94,6 +95,8 @@ __all__ = [
     "Proteinuria",
     "FamilyHistory",
     "FamilyRelationship",
+    "NursingCare",
+    "NursingCareCategory",
     "MedicationStatement",
     "DocumentReference",
     "Incident",
