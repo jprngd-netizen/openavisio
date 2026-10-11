@@ -65,6 +65,23 @@ reconhecer esse tipo de documento e rotear a extração para as seções correta
 - **Roteamento no `POST /documents/{id}/verify`** por tipo → cria/víncula `Pregnancy`, `PregnancyVisit`,
   `NursingCare`, `NewbornRecord`, `PregnancyOutcome`; dedupe por data/episódio; campos formativos descartados.
 
+## Contrato do payload `fexeo` (Fase 3)
+
+A extração devolve, além das entidades atuais, um objeto **opcional** `fexeo` (presente só quando
+`document_type` é um dos tipos FExEO clínicos). O `verify` recebe o mesmo objeto em
+`VerifyDocumentRequest.fexeo` e roteia por `DocumentReference.document_classification`:
+
+- **`fexeo_prenatal_monitoring`** → `{"pregnancy": {<patch>}, "prenatal_visit": {<campos R4A>}}`
+  (+ observations/conditions/medications pelo caminho atual).
+- **`fexeo_labor_birth_record`** → `{"pregnancy": {…}, "nursing_care": {"subcategory": "labor"|"postpartum", "structured_data": {…}}, "newborn": {…}, "outcome": {…}}`.
+- **`fexeo_postpartum_rooming_record`** → `{"nursing_care": {"subcategory": "postpartum", …}, "newborn": {…}}`.
+- **`fexeo_sexual_reproductive_visit`** → `{"nursing_care": {"subcategory": "sexual_reproductive", "structured_data": {…}}}`.
+- **`fexeo_competency_assessment`** → **não materializa** nada clínico (marcar como formativo; só arquiva).
+
+Regras: cada sub-objeto carrega **só o que o documento afirma** (nada inferido); vínculo a `Pregnancy` por
+DUM/nome/data; dedupe de `PregnancyVisit` por data; campos formativos (especializanda/preceptora/marcos
+NO/1–4) **sempre descartados**; continua "IA sugere → humano confirma".
+
 ## Fora de escopo
 
 - **Parte II** (avaliação de competências) — nunca vira dado clínico.
