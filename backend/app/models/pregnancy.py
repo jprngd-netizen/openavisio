@@ -2,7 +2,7 @@ import uuid
 from datetime import date
 from enum import StrEnum
 
-from sqlalchemy import Date, ForeignKey, String, Text, UniqueConstraint
+from sqlalchemy import Date, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -65,4 +65,73 @@ class Pregnancy(OwnedResource):
     ultrasound_date: Mapped[date | None] = mapped_column(Date)
     # When the episode ended (delivery/loss) — nullable while active.
     ended_at: Mapped[date | None] = mapped_column(Date)
+    notes: Mapped[str | None] = mapped_column(Text)
+
+
+class FetalPresentation(StrEnum):
+    """Presenting part at the prenatal visit (nullable = not assessed yet)."""
+
+    cephalic = "cephalic"
+    breech = "breech"
+    transverse = "transverse"
+    oblique = "oblique"
+    variable = "variable"
+    not_assessed = "not_assessed"
+
+
+class EdemaSeverity(StrEnum):
+    """Lower-limb edema grade (a pre-eclampsia screening signal)."""
+
+    none = "none"
+    mild = "mild"
+    moderate = "moderate"
+    severe = "severe"
+
+
+class Proteinuria(StrEnum):
+    """Dipstick proteinuria (a pre-eclampsia screening signal)."""
+
+    negative = "negative"
+    trace = "trace"
+    plus1 = "plus1"
+    plus2 = "plus2"
+    plus3 = "plus3"
+    plus4 = "plus4"
+
+
+class PregnancyVisit(OwnedResource):
+    """A prenatal consultation recorded against a ``Pregnancy`` episode (OB-2).
+
+    A *visit* is not an ``Encounter``: it is a dated obstetric record whose
+    obstetric measurements only make sense next to the episode they belong to
+    (**OB-DEC-2**). Following the plan's "the record is a snapshot of its date"
+    principle, ``visit_date`` is the date the measurements were taken and the
+    one date the record is anchored to; the gestational age shown for a visit
+    is derived *for that date* (``as_of=visit_date``), never for "today" — see
+    ``app.services.gestation``. ``visit_date`` is unique per episode (a
+    same-day duplicate visit is a data-entry error).
+
+    PA/weight are deliberately **not** duplicated here: they are vitals (WS-4 /
+    OB-4) and already have a single source of truth (``observations``). This
+    resource keeps only the obstetric fields that have no home elsewhere.
+    """
+
+    __tablename__ = "pregnancy_visits"
+    __table_args__ = (
+        UniqueConstraint("pregnancy_id", "visit_date", name="uq_pregnancy_visits_pregnancy_date"),
+    )
+
+    pregnancy_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("pregnancies.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    # Day of the consultation — the anchor the record's GA is computed for.
+    visit_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    fundal_height_cm: Mapped[float | None] = mapped_column(Numeric(5, 1))
+    fetal_heart_rate_bpm: Mapped[int | None] = mapped_column(Integer)
+    presentation: Mapped[str | None] = mapped_column(String(30))
+    edema: Mapped[str | None] = mapped_column(String(20))
+    proteinuria: Mapped[str | None] = mapped_column(String(20))
     notes: Mapped[str | None] = mapped_column(Text)
