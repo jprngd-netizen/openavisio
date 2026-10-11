@@ -1,103 +1,101 @@
-# Handoff — próxima sessão (escrito 2026-10-10)
+# Handoff — próxima sessão (atualizado 2026-10-11)
 
-> Para retomar o projeto **OpenAvisio** (endurecimento clínico do prontuário) numa sessão nova.
-> Leia isto + os planos referenciados antes de agir.
+> Para retomar o **OpenAvisio** (endurecimento clínico) numa sessão nova. Leia isto + os planos referenciados.
+> **Mudança de infra:** a VPS SP foi excluída em 2026-10-11; **produção agora roda LOCAL nesta VM (Ashburn)**.
 
 ## 1. Onde estamos
 
 | Frente | Estado |
 |---|---|
-| **R1** (safety clínico: WS-1..WS-5b, WS-4, WS-9) | ✅ **em produção** (deploy v0.8.0) |
-| **R2** (WS-6 selo/versão · WS-7 imunizações+familiares · WS-8 vínculos exame/prescrição↔consulta · WS-10 continuidade) | ✅ **em produção** (deploy **v0.9.0**) |
-| **WS-12** (suíte exercita o caminho de migração + drift genuíno) | ✅ mergeado |
-| **MVP interação** (aviso via Memed) | ✅ commit `87dcb11` — **na branch, NÃO deployado** |
-| **OB-1** (recurso `Pregnancy`) | 🔄 **rodando** (delegação `deleg_34214bea`, branch `feat/ob1-pregnancy`) |
+| **R1** (safety clínico: WS-1..WS-5b, WS-4, WS-9) | ✅ em produção |
+| **R2** (WS-6 selo · WS-7 imunizações · WS-8 vínculos · WS-10 continuidade) | ✅ em produção (desde v0.9.0) |
+| **WS-12** (suíte cobre o caminho de migração) | ✅ mergeado |
+| **MVP interação** (aviso via Memed) | ✅ em produção (v0.10.0) |
+| **OB-1** (`Pregnancy`) | ✅ mergeado + em produção |
+| **OB-2** (pré-natal `PregnancyVisit`) | ✅ mergeado + em produção |
+| **OB-3** desfecho/parto | ⬜ próximo |
+| **OB-4** integrações · **OB-5** enfermagem (geral+obstétrica) | ⬜ a fazer |
 
-- **Prod**: `health.gabrielsalem.com.br` (VPS `vpssp`, `/opt/stacks/openavisio`, :9340/9341). Versão **v0.9.0**,
-  `alembic_version = a9b8c7d6e5f4`, backend/frontend `healthy`, smoke 307.
-- **Branch base de trabalho**: `feat/prontuario-hardening`, head **`87dcb11`** (working tree limpo).
-- **Alembic head**: **`a9b8c7d6e5f4`** (único). Cadeia:
-  `o7b8c9d0e1f2 → w5a1b2c3d4e5 → x6b2c3d4e5f6 → y7c3d4e5f6a7 → z7v8w9x0y1z2 → a1c2o3m4p5g6 →
-  c3e4f5a6b7d8 → c4f5a6b7d8e9 → d6f7a8b9c0d1 → e7f8a9b0c1d2 → a9b8c7d6e5f4`.
-- **Suíte**: baseline **502 passed** (começou em 422). Dois caminhos verdes:
-  `cd backend && uv run pytest -q` **e** `OA_TEST_SCHEMA=migrations uv run pytest -q`.
-- **i18n**: pt/en/de com **1640** chaves idênticas. `tsc --noEmit` exit 0.
+- **Produção = LOCAL nesta VM (Ashburn, `vnic-oracle-vm-1-181196`)**, em `/opt/stacks/openavisio`, servida por
+  `health.gabrielsalem.com.br → openavisio-frontend:3000` (Caddy local). Versão **v0.10.0**, head Alembic
+  **`f8b9c0d1e2f3`**, 9 containers `healthy`, smoke 307.
+- **Branch base**: `feat/prontuario-hardening` (head a atualizar; última = `9e05221`).
+- **Suíte**: **519 passed** nos DOIS caminhos: `cd backend && uv run pytest -q` **e**
+  `OA_TEST_SCHEMA=migrations uv run pytest -q`. `tsc --noEmit` exit 0; i18n pt/en/de **1672** chaves idênticas.
+- **A VPS SP (`vpssp`) está MORTA** (SSH timeout). `deploy/deploy.sh <ssh-target>` **não serve mais** para prod.
 
 ## 2. Primeira ação da próxima sessão
 
-1. **Verificar o OB-1** quando a delegação voltar: `git log`, `alembic heads` (head único), `uv run pytest -q`
-   (≥502), `OA_TEST_SCHEMA=migrations uv run pytest -q`, `pnpm exec tsc --noEmit`, paridade i18n.
-2. Se verde → **merge ff** de `feat/ob1-pregnancy` na base e `push`.
-3. Continuar a Parte A do escopo grande (ver §4).
+Continuar o escopo grande (Parte A) com **OB-3 (desfecho/parto)**. Antes, puxar a base e confirmar o estado
+(`git log`, `alembic heads`, `pytest`).
 
 ## 3. Decisões vigentes (não reabrir sem nova decisão registrada)
 
-- **DEC-1b**: obstetrícia = **episódio obstétrico completo** (pré-natal, consultas, exames, desfecho).
-- **DEC-2b**: interação medicamentosa = base externa — **mas o MVP usa a Memed** (ver abaixo).
-- **DEC-3**: taxonomia de `encounter_type` aprovada (aplicada no WS-10).
-- **OB-DEC-1**: **GOP derivado** das gestações (sem campos gravida/para no `Patient`).
-- **OB-DEC-2**: pré-natal = **tabela própria** (`PregnancyVisit`), NÃO reusar `Encounter`.
-- **OB-DEC-3**: desfechos **completos** — parto vaginal/cesárea + abortamento (espontâneo/induzido) +
-  ectópica + óbito fetal.
-- **NOVO ESCOPO**: **seção de cuidados de enfermagem (geral + obstétrica)** — workstream OB-5 (a planejar).
-- **Interação (MVP, owner 2026-10-10)**: checagem fica com a **Memed** (alerta nativo no módulo). Nosso
-  engine (IX-1..IX-4: DDInter local + mapeamento ANVISA) vai para **backlog pós-MVP**. Limitação conhecida:
-  medicação em texto livre fora da Memed **não** é checada automaticamente.
-- **PRINCÍPIO DE PROJETO — "o registro é retrato da data"**: registro de consulta (e versão selada, WS-6)
-  mostra o que era **fato naquela data**; nunca reescrito por valor derivado/atual. IG/GOP no registro são
-  calculados **na data do atendimento**, não "hoje". Painéis vivos (meds ativas, GOP corrente) ficam fora
-  do registro histórico. WS-3 (snapshot do CID no vínculo) e WS-6 (snapshot selado) já respeitam isso.
+- **DEC-1b**: obstetrícia = **episódio obstétrico completo**. **OB-DEC-1**: GOP **derivado**. **OB-DEC-2**:
+  pré-natal = **tabela própria** `PregnancyVisit` (feito no OB-2). **OB-DEC-3**: desfechos **completos** (parto
+  vaginal/cesárea + abortamento espontâneo/induzido + ectópica + óbito fetal) — é o OB-3.
+- **NOVO ESCOPO**: seção de **cuidados de enfermagem (geral + obstétrica)** — workstream OB-5.
+- **Interação = MVP pela Memed** (alerta nativo). Engine próprio (IX-1..IX-4: DDInter local + ANVISA) = **backlog
+  pós-MVP**; IMSES opcional se houver chave. Pesquisa: `docs/research/2026-10-10-drug-interaction.md`.
+- **PRINCÍPIO "o registro é retrato da data"**: IG/GOP de um registro são calculados **na data do registro**,
+  nunca "hoje"; painéis vivos ficam fora do histórico. (OB-1/OB-2 já seguem: IG `as_of`, não armazenada.)
 
 ## 4. Próximos passos (escopo grande — Parte A)
 
-`docs/plans/2026-10-10-escopo-grande-obstetricia-interacao.md` (Parte A + **Adendo**).
+Plano: `docs/plans/2026-10-10-escopo-grande-obstetricia-interacao.md` (Parte A + **Adendo**).
 
-- **OB-1** 🔄 `Pregnancy` (modelo + migração + API + UI "Gestação"; DUM/DPP Naegele, correção por USG,
-  IG `as_of`). *(em andamento)*
-- **OB-2** pré-natal (`PregnancyVisit`, tabela própria) — campos obstétricos (IG, AU, BCF, apresentação,
-  edema/PA), visível na timeline da gestação.
-- **OB-3** desfecho/parto (completo, inclui abortamento/ectópica/óbito fetal) + dados do RN, encerra o episódio.
+- **OB-3** desfecho/parto (taxonomia completa OB-DEC-3) + dados do RN, encerra o episódio.
 - **OB-4** integrações (Condition gestacional, vitais e exames via WS-8 ligados ao episódio).
-- **OB-5** seção de **cuidados de enfermagem** (geral + obstétrica) — datada e congelada (retrato da data).
-- **Backlog**: interação IX-1..IX-4 (`docs/plans/2026-10-10-parte-b-interacao.md`) — se o owner pedir a
-  chave do **IMSES**, dá para adicionar a camada PT; senão, só **DDInter local** (`docs/research/2026-10-10-drug-interaction.md`).
+- **OB-5** cuidados de enfermagem (geral + obstétrica) — datados e congelados (retrato da data).
+- **Backlog**: interação IX-1..IX-4 (`docs/plans/2026-10-10-parte-b-interacao.md`).
 
-## 5. Deploy / release (PHI — só com ok do Gabriel + backup)
+## 5. Deploy / release — agora LOCAL (PHI: só com ok do Gabriel + backup)
 
-- **deploy**: `./deploy/deploy.sh vpssp <tag> /opt/stacks/openavisio` — `git archive` do **tag**, rebuild,
-  backend roda `alembic upgrade head` no startup.
-- **backup antes**: `ssh vpssp 'U=$(docker exec openavisio-postgres printenv POSTGRES_USER);
-  D=$(docker exec openavisio-postgres printenv POSTGRES_DB); docker exec openavisio-postgres pg_dump -U "$U" "$D"
-  | gzip > /opt/stacks/openavisio/backups/vaultdb-pre-<tag>.sql.gz'` (backups em `/opt/stacks/openavisio/backups/`).
-- **pendente**: subir o aviso de interação do MVP + a obstetrícia. Sugerido **empacotar** num próximo release
-  (`v0.10.0`) após a obstetrícia, ou um `v0.9.1` só com o aviso.
-- **rollback** = redeploy do tag anterior (migrações são aditivas/retrocompatíveis no que foi feito até aqui).
+1. **Backup primeiro**:
+   `docker exec openavisio-postgres pg_dump -U openavisio vaultdb | gzip > /opt/stacks/openavisio/backups/vaultdb-pre-<tag>.sql.gz`
+2. **Tag anotada** + push; depois extrair e rebuildar:
+   ```bash
+   git archive --format=tar <tag> | tar -x --no-same-owner -C /opt/stacks/openavisio
+   (cd /opt/stacks/openavisio && docker compose up -d --build)
+   ```
+   O backend roda `alembic upgrade head` no startup. Sem `--delete` → `.env`/`data/`/`backups/` e arquivos
+   não-rastreados ficam intactos.
+3. **Verificar**: containers `healthy`; `docker exec openavisio-postgres psql -U openavisio -d vaultdb -tAc
+   'select version_num from alembic_version;'` == novo head; `curl -o /dev/null -w '%{http_code}'
+   https://health.gabrielsalem.com.br/` → **307**.
+4. **⚠️ Rede de produção**: o Caddy local alcança o app pela rede externa **`vw-net`** (`health → openavisio-frontend:3000`).
+   O anexo vive em `/opt/stacks/openavisio/compose.ashburn.yaml` (**não-rastreado**) + `COMPOSE_FILE=compose.yaml:compose.override.yaml:compose.ashburn.yaml`
+   no `.env`. **Não** mover isso para arquivo rastreado — o `git archive` sobrescreve e o Caddy passa a dar **502**.
+   Detalhe na skill `openavisio-dev`.
+5. **Rollback** = redeploy do tag anterior (seguro se as migrações forem retrocompatíveis).
 
 ## 6. Como trabalhar (gotchas)
 
-- **Subagentes compartilham working tree + banco de teste (`vaultdb_test`)** → workstreams **de schema rodam
-  em série** com branches empilhadas sobre `feat/prontuario-hardening`. Verificar antes de mergear.
-- Delegar: `hermes -p senna chat -q "<brief>" -Q` **ou** `delegate_task` (bg; o brief tem de ser
-  autossuficiente — sessão nova não herda contexto). **Verificar o auto-relato antes de dar como feito.**
-- Testes: `cd backend && uv run pytest -q` (132s). Postgres de teste no container `oa-pg`.
+- **Subagentes compartilham working tree + banco de teste (`vaultdb_test`)** → workstreams de schema **em série**,
+  branches empilhadas sobre `feat/prontuario-hardening`. **Corrida de branch:** commite mudanças de doc/plano na
+  base **ANTES** de despachar um filho que faz `git checkout -b`, senão o merge deixa de ser ff.
+- **Filho NÃO deve rodar o gate em background** (processo de subagente morre ao terminar → trabalho fica sem commit).
+  Gate em **foreground**; commitar só com o gate verde. Se um filho travar, ler
+  `.../cache/delegation/live/<id>/task-0.log` e re-despachar um filho "concluir esta branch" (não criar branch nova).
+- **Verificar o auto-relato do filho** (`git log`, `alembic heads`, rodar pytest) — não aceitar como prova.
+- Testes: `cd backend && uv run pytest -q` (~135s). Postgres de teste no container `oa-pg`.
 - **Frontend é Next.js 16** com breaking changes — ler `frontend/AGENTS.md` + `node_modules/next/dist/docs/`.
 - `HTTP_422_UNPROCESSABLE_ENTITY` está deprecado no FastAPI — o repo ainda usa a constante (warning conhecido).
 
 ## 7. Pendências / bloqueios
 
-- **Scratch DBs** `vaultdb_ws5bf`, `vaultdb_ws5chk` no `oa-pg` — não derrubados (gate de aprovação); inofensivos.
-- Aviso de interação do MVP e obstetrícia **ainda não deployados** (prod = v0.9.0).
-- `docs/plans/2026-10-09-prontuario-clinico-hardening.md` é o **plano-mestre** (R1/R2/WS-12); o de
-  escopo grande cobre R3; `docs/research/2026-10-10-drug-interaction.md` tem a pesquisa de interação.
+- **Interação** engine próprio (IX-1..IX-4) — backlog.
+- Scratch DBs `vaultdb_ws5bf`, `vaultdb_ws5chk` no `oa-pg` — não derrubados (inofensivos).
+- `docs/plans/2026-10-09-prontuario-clinico-hardening.md` é o **plano-mestre** (R1/R2/WS-12); o de escopo
+  grande cobre R3; `docs/research/2026-10-10-drug-interaction.md` tem a pesquisa de interação.
 
 ## 8. Mapa rápido de arquivos
 
-- Planos: `docs/plans/2026-10-09-prontuario-clinico.md` (fundo), `...-hardening.md` (mestre),
-  `2026-10-10-escopo-grande-obstetricia-interacao.md` (+Adendo), `2026-10-10-parte-b-interacao.md`, **este handoff**.
-- Pesquisa: `docs/research/2026-10-10-drug-interaction.md`.
-- Runbook: `docs/runbooks/migration-parity.md`.
-- Backend: `backend/app/models/`, `backend/app/services/`, `backend/app/routers/`, `backend/alembic/versions/`,
-  `backend/tests/` (conftest suporta `OA_TEST_SCHEMA=migrations`).
-- Frontend: `frontend/src/app/patients/[id]/*`, `frontend/src/lib/{api,patientSections}.ts`,
+- Planos: `docs/plans/2026-10-09-prontuario-clinico.md` (fundo) · `...-hardening.md` (mestre) ·
+  `2026-10-10-escopo-grande-obstetricia-interacao.md` (+Adendo) · `2026-10-10-parte-b-interacao.md` · **este**.
+- Pesquisa: `docs/research/2026-10-10-drug-interaction.md`. Runbook: `docs/runbooks/migration-parity.md`.
+- Skill do projeto: **`openavisio-dev`** (gate, migração, deploy local, gotcha vw-net).
+- Backend: `backend/app/{models,services,routers,schemas}` · `backend/alembic/versions/` · `backend/tests/`
+  (conftest suporta `OA_TEST_SCHEMA=migrations`).
+- Frontend: `frontend/src/app/patients/[id]/*` (inclui `pregnancy/`) · `frontend/src/lib/{api,patientSections}.ts` ·
   `frontend/src/messages/{pt,en,de}.json`.
-- Deploy: `deploy/deploy.sh`.
