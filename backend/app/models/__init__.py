@@ -13,6 +13,7 @@ from app.models.referral import Referral, ReferralStatus
 from app.models.clinical_history import ClinicalHistory
 from app.models.allergy import Allergy
 from app.models.immunization import Immunization, ImmunizationStatus
+from app.models.pregnancy import Pregnancy, PregnancyStatus
 from app.models.family_history import FamilyHistory, FamilyRelationship
 from app.models.medication import MedicationStatement
 from app.models.document import DocumentReference
@@ -71,6 +72,8 @@ __all__ = [
     "Allergy",
     "Immunization",
     "ImmunizationStatus",
+    "Pregnancy",
+    "PregnancyStatus",
     "FamilyHistory",
     "FamilyRelationship",
     "MedicationStatement",
