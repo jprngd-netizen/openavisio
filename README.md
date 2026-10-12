@@ -1,315 +1,239 @@
 # OpenAvisio
 
-**A privacy-first personal health record for families.** Upload doctors' letters, lab
-reports and discharge summaries — OpenAvisio reads them and turns them into a
-structured record: diagnoses with their source documents, medications with their
-periods, lab values with reference ranges, appointments on a timeline.
+**Prontuário eletrônico self-hosted para cuidado compartilhado — com IA local, criptografia por paciente e conformidade LGPD.**
 
-Beyond the document pipeline it also keeps the **clinical record** itself: the
-prontuário — one entry per visit, with SOAP notes, a CID-10 code and the vital signs
-taken during the consultation — and **electronic prescriptions** issued through
-Memed/SNCR with an ICP-Brasil signature.
+> Fork brasileiro de um prontuário open-source alemão (AGPL-3.0), reconstruído por um médico
+> do trabalho para o contexto clínico brasileiro: prontuário SOAP, obstetrícia, enfermagem
+> obstétrica, prescrição eletrônica (Memed/SNCR) e conformidade LGPD/ANPD.
 
-Built by a father managing his daughter's rare-disease paperwork. Everything runs on
-**your own server** — including the AI. Nothing leaves your house.
+O OpenAvisio é um **servidor de prontuário** que roda na sua máquina. Você sobe documentos
+médicos (PDFs, laudos, exames, imagens) e a IA local lê, classifica e extrai os dados
+estruturados — diagnósticos, medicações, medidas, resultados de laboratório — direto para o
+prontuário do paciente. A partir daí o sistema mantém o **registro clínico** de verdade:
+consultas com nota SOAP, CID-10, sinais vitais, alergias, imunizações, obstetrícia completa,
+prescrições assinadas com ICP-Brasil.
 
-## Try it
-
-**https://demo.openavisio.org** — no signup needed:
-
-| Login | Password | Role |
-|---|---|---|
-| `admin@demo.openavisio.org` | `Demo123!Admin` | Admin |
-| `caregiver@demo.openavisio.org` | `Demo123!Care` | Caregiver |
-
-Synthetic data (one fictional patient, six documents), resets every night, AI answers
-are canned mock responses — the demo talks to no model at all.
-
-![Patient overview](docs/screenshots/dashboard.png)
-
-![Documents with extracted insights](docs/screenshots/documents.png)
-
-![Diagnoses with their source documents](docs/screenshots/conditions.png)
-
-## Why
-
-- **Your server, your data.** AGPL-3.0, self-hosted, per-patient envelope encryption;
-  erasing a patient destroys their key — crypto-shredding that reaches the backups.
-- **Local AI or none.** OCR, classification and extraction run against your own
-  Ollama/vLLM. No cloud egress unless you deliberately switch it on.
-- **The paperwork is included.** DPIA, RoPA, GDPR checklist, breach-response runbook
-  and an AVV template ship in `docs/` — the documents a family, a Verein or a care
-  home actually needs to run this legally.
-- **Not a medical device — deliberately.** The software transcribes documents; it
-  does not diagnose, grade or predict. See `docs/regulatory-positioning.md`.
+Nada sai da sua infraestrutura. Nem os dados, nem a IA.
 
 ---
 
-## What OpenAvisio does
+## Por que existe
 
-**Document upload & AI Processing Pipeline**
-Upload any medical PDF, image, or scan. The Processing Pipeline automatically runs OCR, classifies the document, and extracts structured clinical data — Diagnoses, Medications, Measurements, Lab Results — directly into the patient record. It also generates a human-readable Summary, Recommendations (e.g. "return in three months"), and proposes Events (appointments, follow-ups) for the caregiver to accept onto the health timeline.
+Projeto nascido de uma necessidade concreta: prontuário de verdade, no consultório, sem
+depender de SaaS que trata dado clínico como commodity. Os três eixos:
 
-**Clinical data**
-Each Patient record tracks:
-- **Consultations (prontuário)** — one entry per visit: SOAP narrative blocks (chief complaint, history, physical exam, assessment, plan), a CID-10 code, and the **vital signs taken during the visit** (weight, height, blood pressure, temperature, oxygen saturation, heart rate, BMI). The vitals are stored as Measurements linked to the consultation, so they feed the same history and charts.
-- **Prescriptions** — electronic prescriptions issued through **Memed** (SNCR numbering + ICP-Brasil signature), stored with their signed PDF.
-- **Diagnoses** — medical conditions attributed to the patient
-- **Medications** — current and historical drugs with dosage and period
-- **Measurements** — weight, blood pressure, temperature, oxygen saturation, etc., shown as **interactive history charts** (unit-aware tooltip, drag-to-zoom, one colour per series); each reading is tagged with its source (consultation / extracted from a document / manual)
-- **Lab Results** — outcomes from blood tests, biopsies, and other clinical tests
-- **Incidents** — adverse events (seizures, falls, allergic reactions) with suspected triggers
-- **Events** — health timeline entries: appointments, hospital stays, therapy sessions
-- **Health Log** — patient self-reported daily record: mood, pain, sleep, medication compliance
+- **O dado é seu, e o servidor é seu.** AGPL-3.0, self-hosted, envelope encryption por
+  paciente. Apagar um paciente destrói a chave dele — *crypto-shredding* que alcança os
+  backups. Não existe multi-tenancy: uma instalação serve uma organização.
+- **IA local, ou nenhuma.** OCR, classificação, extração, chat e embeddings rodam no seu
+  Ollama/vLLM. Sem egress para nuvem a menos que você ligue isso de propósito.
+- **Conformidade embutida.** DPIA, RoPA, checklist LGPD/ANPD, runbook de resposta a
+  incidentes e template de contrato em `docs/`. A documentação que um consultório
+  realmente precisa para operar legalmente.
 
-Patients are **searchable** by name or identifier from the patient list.
+---
 
-**Localisation** — the interface ships in **Portuguese, English and German**, switchable
-from the navigation. In Portuguese the legal pages are framed for **LGPD / ANPD**
-(Lei 13.709/2018); in German they keep the original §5 DDG / DSGVO wording.
+## O que faz
 
-**AI Health Assistant**
-Conversational interface that searches across all clinical data and documents to answer questions about a patient's health record.
+### Prontuário clínico (o núcleo)
 
-**Data sharing**
-A Coordinator can open a Sharing Purpose (e.g. an epilepsy study collecting EEG files) that asks every caregiver for a kind of data. Caregivers choose which documents to share and consent per file — identified or anonymously. Consented files can then be collected and forwarded to the study; consent is recorded, freezes once a file is shared, and can be revoked at any time.
+Uma consulta (`Encounter`) é uma entrada completa de prontuário:
 
-**Access model**
-- **Coordinator** — onboards new Patients, assigns access to other Users
-- **Caregiver** — manages a specific Patient's day-to-day care; covers family members, nurses, legal guardians, and anyone in the care circle
-- **Group** — named set of Patients for bulk access management (useful in care homes and clinics)
+- **Nota SOAP** — queixa principal, história, exame físico, avaliação, plano.
+- **N diagnósticos** — múltiplos CID-10 por consulta, cada um gerando/atualizando uma
+  `Condition` na lista de problemas com proveniência (origem rastreável).
+- **Sinais vitais** — PA como painel com componentes, peso, altura, temperatura, saturação,
+  FC, FR, glicemia capilar, dor (EVA), perímetro cefálico com percentil. Validação de
+  plausibilidade no servidor e no cliente (valor implausível é rejeitado com aviso).
+- **Alergias estruturadas** — substância, reação, severidade, criticidade, status. Alerta no
+  ato de prescrever substância conflitante, banner na capa.
+- **Medicações ativas** — visão "medicamentos em uso agora" a um clique da consulta, com
+  detecção de duplicidade.
+- **Selo e versão** — profissional responsável + conselho; evolução emitida gera **versão
+  imutável selada por hash**; edição cria nova versão (nada é sobrescrito em silêncio).
+- **Continuidade** — taxonomia de tipo de atendimento, retorno agendado que vira
+  `CalendarEvent`, encaminhamento registrado.
 
-**Tiers**
-| Tier | License required | Patients | Users |
-|---|---|---|---|
-| Personal (default) | None — AGPL | up to 10 | up to 3 |
-| Commercial | Valid License file | Unlimited | Unlimited |
+### Obstetrícia e enfermagem obstétrica (FExEO-SUS)
 
-A Commercial License that expires enters a 30-day grace period before falling back to Personal limits.
+Episódio obstétrico completo, modelado a partir dos instrumentos do caderno
+**FExEO-SUS / CEEO-Rede Alyne** (Ministério da Saúde + UFMG):
+
+- **Gestação** — DUM, DPP, idade gestacional calculada, classificação de risco, histórico
+  obstétrico (G/P/A), fatores de risco para pré-eclâmpsia, profilaxia com AAS.
+- **Pré-natal** — visitas com exame físico dirigido, AU, BCF, apresentação, edema
+  classificado, vacinas na gestação, orientações registradas.
+- **Desfecho e recém-nascido** — tipo de parto, dados do RN (APGAR, peso, comprimento,
+  perímetros, exame físico sistema por sistema, reflexos, eliminações, imunização BCG/HepB).
+- **Enfermagem** — subcategorias parto / pós-parto / saúde sexual / geral, com dados
+  estruturados por instrumento.
+
+### Demais recursos clínicos
+
+- **Documentos** — upload de PDF/imagem, pipeline de IA (OCR, classificação, extração),
+  embeddings pgvector para RAG. IA **sugere**, o humano **confirma** — nada é gravado sem
+  verificação.
+- **Medições** — histórico com gráficos interativos, cada leitura com sua origem
+  (consulta / documento / manual).
+- **Exames** — resultados de laboratório, biópsias e outros, com tabelas estruturadas.
+- **Imunizações** — vacinas com dados de lote/fabricante.
+- **Antecedentes** — familiares por grau de parentesco, com condição associada.
+- **Intercorrências** — eventos adversos (convulsões, quedas, reações alérgicas) com
+  gatilhos suspeitos.
+- **Diário de saúde** — registro do paciente: humor, dor, sono, adesão medicamentosa.
+
+### Prescrição eletrônica
+
+Prescrições via **Memed/SNCR**, com numeração SNCR e assinatura **ICP-Brasil**, armazenadas
+com o PDF assinado. Alerta de alergia no momento de prescrever.
+
+### Compartilhamento de dados
+
+Um Coordenador abre uma **Finalidade de Compartilhamento** (ex.: estudo de epilepsia
+coletando EEG); cada cuidador consente por arquivo, identificado ou anônimo. O consentimento
+é registrado, congela quando o arquivo é compartilhado e pode ser revogado. Links externos
+de documento têm escopo e expiração.
+
+### Modelo de acesso
+
+- **Admin** — administra a organização, usuários, licença. **Sem acesso clínico** por
+  design (ADR 025).
+- **Coordenador** — cadastra pacientes, delega acesso, gerencia grupos.
+- **Cuidador** — cuida do dia a dia de pacientes específicos; é relação por paciente, não
+  papel de sistema. Cobre família, enfermagem, responsável legal e qualquer um no círculo
+  de cuidado. Vínculo legal é uma flag no grant (`is_legal_representative`, ADR 027).
+- **Grupo** — conjunto nomeado de pacientes para gestão de acesso em bloco.
+
+### Localização
+
+Interface em **português, inglês e alemão**, com paridade de chaves nos três idiomas. Em
+português as páginas legais são enquadradas em **LGPD / ANPD** (Lei 13.709/2018).
+
+---
 
 ## Stack
 
-| Layer | Technology |
+| Camada | Tecnologia |
 |---|---|
 | Backend | FastAPI + uv (Python 3.12) |
 | ORM | SQLAlchemy 2.0 async + asyncpg + Alembic |
-| Auth | passlib/bcrypt + python-jose JWT + py_webauthn (passkeys) + next-auth v5 |
-| Background jobs | Celery + Redis |
-| Frontend | Next.js 16 App Router + Tailwind CSS + shadcn/ui + @simplewebauthn/browser |
-| i18n | next-intl (pt, en, de) — pt framed for LGPD/ANPD |
-| DB | PostgreSQL 17 + pgvector (768-dim HNSW embeddings) |
-| AI | Separate FastAPI microservice (Ollama / vLLM / Mistral / mock) |
-| Reverse proxy | Caddy (HTTP routing, production) |
+| Auth | bcrypt + python-jose (JWT) + py_webauthn (passkeys) + next-auth v5 |
+| Jobs | Celery + Redis |
+| Frontend | Next.js 16 App Router + Tailwind CSS + shadcn/ui |
+| i18n | next-intl (pt, en, de) — pt enquadrado em LGPD/ANPD |
+| Banco | PostgreSQL 17 + pgvector (embeddings 768-dim HNSW) |
+| IA | microsserviço FastAPI separado (Ollama / vLLM / Mistral / mock) |
+| Proxy | Caddy (produção) |
+| Mobile | Capacitor (shell sobre o frontend web — ADR 023) |
 
-## Quick Start (dev)
+**Escala atual** (verificada no repositório): ~39 modelos-tabela · 34 routers ·
+58 migrações Alembic · 47 páginas Next.js · suíte de testes com 567 testes verdes +
+7 suítes Playwright E2E.
 
-### Prerequisites
+---
+
+## Arquitetura
+
+```
+openavisio/
+├── backend/          # FastAPI + SQLAlchemy + Celery
+│   └── app/
+│       ├── core/     # config, database, security, audit
+│       ├── models/   # ORM — 39 arquivos de modelo
+│       ├── schemas/  # DTOs Pydantic
+│       ├── routers/  # 34 routers montados
+│       ├── auth/     # RBAC — PatientAccessService
+│       ├── workers/  # pipeline Celery + scheduler
+│       └── deps.py   # DI: get_db, get_current_user, acesso a paciente
+├── frontend/         # Next.js 16 App Router
+│   └── src/
+│       ├── app/      # 47 páginas (pacientes, família, obstetrícia, admin, auth)
+│       ├── components/
+│       ├── lib/      # api.ts — wrappers tipados da API
+│       └── messages/ # i18n JSON (pt, en, de)
+├── aiservice/        # FastAPI — OCR, classify, extract, embed, chat
+├── mobile/           # shell Capacitor
+└── deploy/           # compose dev/prod + Caddyfile
+```
+
+### Pipeline de documentos
+
+Upload → criptografia (AES-256-GCM) → cadeia Celery:
+1. **OCR** — Tesseract/OCRmyPDF + fallback de LLM de visão
+2. **Classificação** — tipo de documento + emissor
+3. **Extração** — entidades via LLM → armazenadas como JSONB
+4. **Embedding** — chunks pgvector para RAG
+
+O cuidador revisa o dado extraído → confirma → as entidades clínicas reais são criadas.
+
+### Decisões de arquitetura
+
+34 ADRs em `docs/adr/` documentam as decisões de fundo — do modelo de acesso à estratégia
+de criptografia em repouso, passagem de autenticação com next-auth v5, criptografia
+envelope por paciente com *crypto-shredding* (ADR 031), snapshot de release como base
+limpa (ADR 032). Vale a leitura: é onde está o raciocínio, não só o código.
+
+---
+
+## Rodando
+
+### Requisitos
+
 - Docker + Docker Compose
-- Node.js 22+ (for frontend dev outside Docker)
-- Python 3.12 + [uv](https://docs.astral.sh/uv/) (for backend dev outside Docker)
+- Node.js 22+ (frontend fora do Docker)
+- Python 3.12 + [uv](https://docs.astral.sh/uv/) (backend fora do Docker)
 
-### 1. Configure environment
+### Subir a stack de desenvolvimento
 
 ```bash
 cp .env.example .env
-# Edit .env — set APP_SECRET, POSTGRES_PASSWORD, etc.
-# AI is optional: leave OLLAMA_URL empty to disable, or set AI_BACKEND=mock for canned responses
-```
-
-**Passkey (WebAuthn) settings** — required for passkey sign-in to work:
-
-| Variable | Default | Description |
-|---|---|---|
-| `WEBAUTHN_RP_ID` | `localhost` | Registerable domain suffix (no port) — must match the browser origin |
-| `WEBAUTHN_RP_NAME` | `OpenAvisio` | Human-readable site name shown in the OS passkey dialog |
-| `WEBAUTHN_ORIGIN` | `http://localhost:3000` | Full origin of the frontend, e.g. `https://health.example.com` |
-
-**Licensing** — required for Commercial tier enforcement:
-
-| Variable | Default | Description |
-|---|---|---|
-| `LICENSE_PUBLIC_KEY` | _(embedded production key)_ | Ed25519 public key (raw 32 bytes, base64) used to verify Commercial License files. Leave unset in production. Set to the dev public key for local license testing — see `docs/license-format.md`. |
-
-See [docs/license-format.md](docs/license-format.md) for the license file format and how to generate test licenses.
-
-`setup.sh` sets these automatically from your domain. In dev you only need them if you change the default ports.
-
-### 2. Start all services
-
-```bash
+# Edite .env — defina APP_SECRET, POSTGRES_PASSWORD, etc.
+# A IA é opcional: deixe OLLAMA_URL vazio para desligar, ou AI_BACKEND=mock para respostas prontas
 docker compose -f deploy/docker-compose.dev.yml up
 ```
 
-Services:
-- **Backend API**: http://localhost:8000 (FastAPI docs at `/docs`)
-- **Frontend**: http://localhost:3000
-- **Flower** (Celery monitor): http://localhost:5555
-- **PostgreSQL**: localhost:5432
-- **Redis**: localhost:6379
+Serviços:
 
-### 3. Seed dev data
+| Serviço | URL |
+|---|---|
+| Backend API | http://localhost:8000 (docs em `/docs`) |
+| Frontend | http://localhost:3000 |
+| Flower (Celery) | http://localhost:5555 |
+| PostgreSQL | localhost:5432 |
+| Redis | localhost:6379 |
+
+### Semear dados de desenvolvimento
 
 ```bash
 curl -X POST http://localhost:8000/api/dev/seed
 # Admin: admin@openavisio.dev / Admin123!Admin
 ```
 
-### 4. First-time setup (fresh DB)
+### Desenvolvimento híbrido (recomendado)
 
-Visit http://localhost:3000 → you'll be redirected to `/setup` to create the organization + admin account.
-
-## Development (devcontainer — recommended)
-
-Requires: VS Code + Docker Desktop. No local Python/Node install needed.
-
-### 1. Open in container
-
-Open the repo in VS Code, then either:
-- Click the **Reopen in Container** popup in the bottom-right, or
-- `Ctrl+Shift+P` → **Dev Containers: Reopen in Container**
-
-VS Code will build the image and start Postgres + Redis automatically. This takes a few minutes the first time.
-
-### 2. Wait for setup to finish
-
-Watch the **Terminal** panel at the bottom — `postCreateCommand` runs automatically:
-- `uv sync` — installs Python dependencies into `.venv`
-- `pnpm install` — installs frontend dependencies
-
-The terminal prompt returns when it's done.
-
-### 3. Open split terminals
-
-Use `` Ctrl+Shift+` `` to open a new terminal. You'll need two (or three for Celery).  
-All commands run from inside the container — no local Python or Node needed.
-
-**Terminal 1 — backend:**
-```bash
-cd backend
-uv run alembic upgrade head   # first time only — applies DB migrations
-uv run uvicorn app.main:app --reload
-```
-
-**Terminal 2 — frontend:**
-```bash
-cd frontend
-pnpm dev
-```
-
-**Terminal 3 — Celery (optional, only needed for document processing):**
-```bash
-cd backend
-uv run celery -A app.workers.celery_app worker --loglevel=info
-```
-
-### 4. Open in browser
-
-Ports are forwarded to your host automatically — open these in your normal browser:
-
-| Service | URL |
-|---|---|
-| Frontend | http://localhost:3000 |
-| Backend API + docs | http://localhost:8000/docs |
-| Flower (Celery monitor) | http://localhost:5555 |
-
-### 5. Seed dev data (first time)
-
-In any terminal:
-```bash
-curl -X POST http://localhost:8000/api/dev/seed
-# Login: admin@openavisio.dev / Admin123!Admin
-```
-
-See [docs/adr/002-devcontainer.md](docs/adr/002-devcontainer.md) for rationale.
-
-## Development (hybrid — recommended)
-
-Run infra in Docker, app code locally. Best DX: native hot reload + debugger, no rebuilds.
-
-### 1. Start infra
+Infra no Docker, código nativo — hot reload nativo e debugger, sem rebuilds.
 
 ```bash
 docker compose -f deploy/docker-compose.infra.yml up -d
+cd backend && uv sync && uv run alembic upgrade head && uv run uvicorn app.main:app --reload
+# em outro terminal:
+cd frontend && pnpm install && pnpm dev
 ```
 
-### 2. Configure `.env`
+Ver [`docs/adr/001-hybrid-local-dev.md`](docs/adr/001-hybrid-local-dev.md) e
+[`docs/adr/002-devcontainer.md`](docs/adr/002-devcontainer.md) para o racional. O
+devcontainer é suportado para quem prefere zero setup local.
 
-Uncomment and set the direct `DATABASE_URL`:
+### Testes
 
-```env
-DATABASE_URL=postgresql+asyncpg://openavisio:devpassword123@localhost:5432/vaultdb
-```
-
-### 3. Run backend
+Os testes usam um banco separado, `vaultdb_test`. Crie uma vez:
 
 ```bash
-cd backend
-uv sync
-uv run alembic upgrade head
-uv run uvicorn app.main:app --reload
-# → http://localhost:8000/docs
-```
-
-### 4. Run frontend
-
-```bash
-cd frontend
-pnpm install
-pnpm dev
-# → http://localhost:3000
-```
-
-### 5. Celery (optional — only for background job testing)
-
-```bash
-cd backend
-uv run celery -A app.workers.celery_app worker --loglevel=info
-```
-
-See [docs/adr/001-hybrid-local-dev.md](docs/adr/001-hybrid-local-dev.md) for rationale.
-
-## Development (without Docker)
-
-### Backend
-
-```bash
-cd backend
-uv sync
-uv run alembic upgrade head
-uv run uvicorn app.main:app --reload
-# → http://localhost:8000/docs
-```
-
-### Frontend
-
-```bash
-cd frontend
-pnpm install
-pnpm dev
-# → http://localhost:3000
-```
-
-### Celery workers
-
-```bash
-cd backend
-uv run celery -A app.workers.celery_app worker --loglevel=info
-uv run celery -A app.workers.celery_app beat --loglevel=info
-```
-
-### Tests
-
-Tests use a separate `vaultdb_test` database. Create it once:
-
-```bash
-# From the repo root (infra must be running)
 docker compose -f deploy/docker-compose.infra.yml exec postgres \
   psql -U openavisio -d vaultdb -c "CREATE DATABASE vaultdb_test;"
 docker compose -f deploy/docker-compose.infra.yml exec postgres \
   psql -U openavisio -d vaultdb_test -c "CREATE EXTENSION IF NOT EXISTS vector;"
 ```
-
-Run tests locally (with infra running):
 
 ```bash
 cd backend
@@ -317,184 +241,50 @@ TEST_DATABASE_URL=postgresql+asyncpg://openavisio:devpassword123@localhost:5432/
   uv run pytest -v
 ```
 
-Run tests in the production Docker stack (no separate infra needed):
-
-```bash
-docker compose exec backend bash -c "cd /app && uv run pytest -v"
-# The default TEST_DATABASE_URL points to postgres:5432/vaultdb_test inside Docker
-```
-
-## Architecture
-
-```
-openavisio-py/
-├── backend/          # FastAPI + SQLAlchemy + Celery
-│   └── app/
-│       ├── core/     # config, database, security, audit
-│       ├── models/   # SQLAlchemy ORM (25 models)
-│       ├── schemas/  # Pydantic DTOs
-│       ├── routers/  # 15 router files (58 endpoints)
-│       ├── auth/     # RBAC — PatientAccessService
-│       ├── workers/  # Celery pipeline + scheduler
-│       └── deps.py   # DI: get_db, get_current_user, patient access
-├── frontend/         # Next.js 16 App Router
-│   └── src/
-│       ├── app/      # 20 pages (patients, family, admin, auth)
-│       ├── components/
-│       ├── lib/      # api.ts (58 typed wrappers), utils.ts
-│       └── messages/ # i18n JSON (pt, en, de)
-├── aiservice/        # Python FastAPI — OCR, classify, extract, embed, chat
-└── deploy/
-    ├── docker-compose.dev.yml
-    ├── docker-compose.prod.yml
-    └── Caddyfile
-```
-
-### Document processing pipeline
-
-Upload → encrypt (AES-256-GCM) → Celery chain:
-1. **OCR** — Tesseract/OCRmyPDF + vision LLM fallback
-2. **Classification** — document type + provider
-3. **Extraction** — entities via LLM → stored as JSONB
-4. **Embedding** — pgvector chunks for RAG
-
-Caregiver reviews extracted data → confirms → real FHIR entities created.
-
-### RBAC
-
-Three system roles: **Admin**, **Coordinator** (onboard Patients, manage access), **User** (view assigned Patients only).  
-Row-level patient access: ownership → Group membership → Caregiver grant (legal relationships recorded as attributes on the grant, not a separate path).
-
-### AI
-
-Set `AI_BACKEND` in `.env`:
-- `ollama` — local Ollama instance (`OLLAMA_URL` required)
-- `vllm` — vLLM server (`VLLM_URL` required)
-- `mistral` — Mistral API
-- `mock` — canned responses, full pipeline without GPU (dev/CI)
-- _(empty)_ — AI disabled, uploads saved with `status=skipped`
-
-## API
-
-Full REST API documented at http://localhost:8000/docs (58 endpoints).
-
-Key endpoint groups:
-- `POST /api/auth/login` + `/api/auth/refresh`
-- `GET/POST /api/auth/passkey/*` — WebAuthn registration + authentication ceremonies; passkey CRUD
-- `GET/POST /api/patients` + sub-resources (documents, consultations/encounters, diagnoses, medications, measurements, lab-results, incidents, events, health-log, prescriptions, chat, export)
-- `GET/POST /api/patients/{id}/encounters` + `GET/PATCH/DELETE /api/encounters/{id}` — prontuário entries; the vitals of a visit travel as `measurements` and are stored as linked observations
-- `GET/POST /api/groups` + members + invite flow
-- `GET/POST /api/patients/{id}/caregivers` + invite/revoke
-- `GET /api/admin/*` — users, groups, invitations, audit, AI settings, license
-- `POST /api/dev/seed` + `/api/dev/reset` (development only)
-
-## Roadmap
-
-- **Consultation audio transcription** — optionally record the appointment and transcribe
-  it in-app, then extract the clinical data identified in the recording (history, findings,
-  vitals, prescriptions) straight into the encounter. **Off by default and opt-in**: it is
-  available during the visit, only when the patient consents to being recorded.
-
-## Production deployment
-
-Clone, configure, start — that's it.
-
-```bash
-cd /opt
-git clone https://codeberg.org/openavisio/openavisio.git
-cd openavisio
-./setup.sh
-docker compose up -d
-```
-
-`setup.sh` checks prerequisites, generates all secrets, and asks a handful of questions. The first visit to your domain or IP redirects to `/setup` to create the organization and admin account.
+A suíte exercita dois caminhos de schema: `create_all` (default) e migração Alembic
+(`OA_TEST_SCHEMA=migrations`) — paridade migração↔modelo verificada por teste
+(ADR/runbook em `docs/runbooks/migration-parity.md`).
 
 ---
 
-### Requirements
+## Deploy em produção
 
-| | |
-|---|---|
-| OS | Ubuntu 22.04 / 24.04 or Debian 12 |
-| CPU | 2 cores minimum |
-| RAM | 4 GB minimum (8 GB recommended if running Ollama locally) |
-| Disk | 20 GB minimum |
-| Docker | 24+ with Compose plugin |
-| Proxmox LXC | Container must be **privileged** — enable via Proxmox web UI: Container → Options → Features → check **nesting** and **keyctl** |
-
-### 1. Get a Docker-ready machine
-
-**Option A — Proxmox LXC (recommended for homelab):**
-Run the [Proxmox community scripts](https://community-scripts.org/scripts/docker) from the Proxmox shell. This creates a privileged Ubuntu LXC with Docker already installed — skip to step 2.
-
-**Option B — existing Ubuntu / Debian server:**
-
-```bash
-apt update && apt install -y ca-certificates curl git
-install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/$(. /etc/os-release && echo "$ID")/gpg \
-  -o /etc/apt/keyrings/docker.asc
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] \
-  https://download.docker.com/linux/$(. /etc/os-release && echo "$ID") \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
-  > /etc/apt/sources.list.d/docker.list
-apt update && apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
-```
-
-### 2. Clone and run setup
+Clone, configure, suba:
 
 ```bash
 cd /opt
-git clone https://codeberg.org/openavisio/openavisio.git
+git clone <seu-repo> openavisio
 cd openavisio
 ./setup.sh --start
 ```
 
-`setup.sh` will ask for:
-- **Domain or IP** — used to set `NEXTAUTH_URL` and CORS origins
-- **AI backend** — choose `ollama` (local), `mistral` (cloud), or `mock` (no GPU, for testing)
-- **Ollama URL** — if using Ollama, the endpoint it's reachable at
+`setup.sh` verifica pré-requisitos, gera todos os segredos e faz algumas perguntas
+(domínio/IP, backend de IA). A primeira visita ao domínio redireciona para `/setup`,
+onde você cria a organização e a conta de admin.
 
-Everything else (secrets, database password, CORS) is generated or derived automatically.
+### Requisitos de máquina
 
-**TLS / HTTPS:** Caddy handles HTTP routing on port 80 only. For HTTPS, choose one of:
+| | |
+|---|---|
+| SO | Ubuntu 22.04 / 24.04 ou Debian 12 |
+| CPU | 2 núcleos mínimo |
+| RAM | 4 GB mínimo (8 GB recomendado com Ollama local) |
+| Disco | 20 GB mínimo |
+| Docker | 24+ com o plugin Compose |
+| LXC Proxmox | O container deve ser **privilegiado** — habilite **nesting** e **keyctl** em Container → Options → Features |
 
-- **External reverse proxy (default)** — put [Nginx Proxy Manager](https://nginxproxymanager.com/) or any other proxy in front and point it at `http://<host>:80`.
-- **Caddy automatic HTTPS (Let's Encrypt)** — change `http://{$DOMAIN}` to `{$DOMAIN}` in `deploy/Caddyfile`, expose ports 443/443-udp in `deploy/docker-compose.prod.yml`, and make sure port 443 is reachable from the internet (no upstream proxy intercepting TLS).
+### IA local
 
-### 3. Ollama (local AI)
-
-Ollama runs **outside** the Docker Compose stack so it can access the GPU directly.
-
-**Proxmox: run Ollama on the host**, not the LXC:
+O Ollama roda **fora** do Compose, para acessar a GPU diretamente. No Proxmox, rode no host:
 
 ```bash
-# On the Proxmox host:
 curl -fsSL https://ollama.com/install.sh | sh
-
-# Allow LXC containers to connect:
-mkdir -p /etc/systemd/system/ollama.service.d
-cat > /etc/systemd/system/ollama.service.d/override.conf <<EOF
-[Service]
-Environment="OLLAMA_HOST=0.0.0.0:11434"
-EOF
-systemctl daemon-reload && systemctl restart ollama
 ```
 
-Set `OLLAMA_URL` to the Proxmox host IP when `setup.sh` asks (e.g. `http://192.168.1.10:11434`).
+Depois do primeiro login, configure em **Admin → Ollama / AI Backend** qual modelo serve
+cada tarefa. Sem GPU, use `AI_BACKEND=mock` para exercitar o pipeline inteiro.
 
-Pull models before configuring them in the admin UI:
-
-```bash
-ollama pull alibayram/medgemma:27b   # extraction
-ollama pull gemma4:31b               # classification + chat
-ollama pull nomic-embed-text         # embeddings (required for AI Health Assistant)
-ollama pull glm-ocr                  # vision OCR (image-only PDFs)
-```
-
-After first login, go to **Admin → Ollama / AI Backend** to assign each model to its task.
-
-### Updating
+### Atualizando
 
 ```bash
 git pull
@@ -502,4 +292,22 @@ docker compose pull
 docker compose up -d --build
 ```
 
-Migrations run automatically on backend startup.
+Migrações rodam automaticamente na inicialização do backend.
+
+---
+
+## Licença e atribuição
+
+Distribuído sob **AGPL-3.0** (ver [`LICENSE`](LICENSE)).
+
+Este projeto é derivado de um prontuário open-source publicado originalmente na Alemanha
+(cuja base está preservada no histórico deste repositório sob os snapshots "public snapshot",
+ADR 032). A camada clínica brasileira — endurecimento do prontuário (alergias estruturadas,
+reconciliação de medicação, N diagnósticos, vitais ampliados, selo/versão da evolução,
+imunizações, continuidade), obstetrícia e enfermagem obstétrica segundo os instrumentos
+FExEO-SUS/CEEO-Rede Alyne, integração de prescrição eletrônica Memed/SNCR e o enquadramento
+LGPD/ANPD — foi desenvolvida de forma independente.
+
+Conforme a AGPL-3.0, o código-fonte completo está disponível neste repositório. Se você roda
+uma instância modificada como serviço de rede, a licença exige que a fonte da sua versão
+também esteja disponível aos usuários.
