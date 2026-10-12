@@ -21,8 +21,9 @@ git tag -a vX.Y.Z -m "Release vX.Y.Z — <one-line summary>"
 git push origin vX.Y.Z
 ```
 
-The tag is annotated (not lightweight) so it carries a message and a date. The
-Codeberg mirror picks it up automatically.
+The tag is annotated (not lightweight) so it carries a message and a date. Tag
+releases on the current public repository; any configured mirror or release
+automation picks the tag up from there.
 
 `v0.1.0` (18 Jul 2026) was the first tagged release — the point where the
 Go-Live blockers were cleared.

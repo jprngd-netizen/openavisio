@@ -2,7 +2,9 @@
 
 Python FastAPI microservice for medical document extraction. Supports Ollama (local), vLLM (high-throughput), and Mistral (cloud) backends.
 
-> **Deployment guide:** See [`docs/ai-setup.md`](../docs/ai-setup.md) for profiles, multi-URL round-robin, and Mistral configuration.
+> **Part of this fork.** This service is one component of the OpenAvisio Brazilian clinical fork — a self-hosted record built on top of an AGPL-3.0 open-source upstream (see the root [`README.md`](../README.md) and ADR 032). It is not a standalone project: it talks to the backend over the endpoints listed below. Operational context, profiles, and deployment live in the repository docs.
+
+> **Configuration:** see [ADR 005 — AI model configuration](../docs/adr/005-ai-model-configuration.md) for profiles and backend selection, and the root [`README.md`](../README.md) (Deploy → IA local) for how the service is wired into a deployment.
 
 ## How It Works
 
@@ -32,7 +34,7 @@ All chat/inference calls run with **`temperature=0`** (greedy decoding), set cen
 | `qwen3:14b` | ~9 GB | Text | **Default** — classification |
 | `nomic-embed-text` | ~0.3 GB | Embedding | **Required** for RAG chat pipeline |
 
-See [`docs/models.md`](../docs/models.md) for GPU hardware profiles (8-80 GB VRAM) and per-tier configuration.
+See [`docs/research-gpu-upgrade.md`](../docs/research-gpu-upgrade.md) and [`docs/research-extraction-model.md`](../docs/research-extraction-model.md) for GPU hardware profiles and per-tier model choices.
 
 ## Setup
 
@@ -74,7 +76,7 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 | `AI_BACKEND` | Backend: `ollama`, `vllm`, or `mistral` | `ollama` |
 | `AI_PROFILE` | Profile for model defaults: `homelab`, `team`, `org`, `cloud` | *(none)* |
 | `MISTRAL_API_KEY` | Mistral API key (when `AI_BACKEND=mistral`) | — |
-| `AI_ALLOW_CLOUD_EGRESS` | Required opt-in for cloud backends. `AI_BACKEND=mistral` refuses to start unless this is `true`, because it egresses all patient data (OCR text, extracted entities, RAG context) to the Mistral cloud — GDPR/HIPAA implications; ensure a data-processing agreement and patient consent. Prefer `ollama`/`vllm` to keep data on-premise | `false` |
+| `AI_ALLOW_CLOUD_EGRESS` | Required opt-in for cloud backends. `AI_BACKEND=mistral` refuses to start unless this is `true`, because it egresses all patient data (OCR text, extracted entities, RAG context) to the Mistral cloud — data-protection implications (under Brazilian law, LGPD/ANPD; also GDPR if you serve EU patients); ensure a data-processing agreement and patient consent. Prefer `ollama`/`vllm` to keep data on-premise | `false` |
 
 ## API Endpoints
 

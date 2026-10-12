@@ -1,6 +1,6 @@
-# OpenAvisio — Mac Mini homelab
-# IA: OmniRoute (Tailscale 100.102.64.95:20128) em vez de Ollama local
-# Sem Caddy interno — VPS Caddy reverse-proxies para 192.168.0.9:9340 (frontend) e :9341 (api)
+# OpenAvisio — stack de produção
+# IA: opcionalmente delegada a um serviço externo de inferência; por padrão, Ollama local.
+# Sem proxy reverso interno: o TLS é terminado à frente da stack (frontend na porta 9340, api na 9341).
 
 services:
   postgres:

@@ -45,3 +45,9 @@ data/
 # Celery
 celerybeat-schedule
 celerybeat.pid
+
+# Internal dev plans — kept outside the public repo
+docs/plans/
+docs/research/
+.hermes/
+

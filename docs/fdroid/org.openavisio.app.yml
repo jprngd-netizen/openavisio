@@ -1,13 +1,13 @@
 # Reference copy of the fdroiddata metadata for OpenAvisio.
 # Authoritative file lives in fdroid/fdroiddata as metadata/org.openavisio.app.yml.
 #
-# VERIFIED green on F-Droid's buildserver (MR !43322), and locally clean via
+# VERIFIED green on F-Droid's upstream buildserver, and locally clean via
 # `fdroid lint org.openavisio.app` + `fdroid rewritemeta` (fdroidserver 2.4.5).
 # ALWAYS run those two locally before touching this recipe - it's what stops the
 # review ping-pong (CONTRIBUTING.md: "fdroid lint ... doesn't report warnings").
 #
 # Reviewer-enforced conventions baked in here:
-#   - commit is the FULL hash of the built commit on Codeberg, never a tag/branch.
+#   - commit is the FULL hash of the built commit in the public repository, never a tag/branch.
 #   - subdir is the app MODULE (mobile/android/app) = where build/ is generated;
 #     with that, fdroid finds the APK by default, so no `output:` is needed. gradle
 #     searches up for settings.gradle, so it still builds the multi-module project.
@@ -17,18 +17,19 @@
 #     to 9.15.9 via npm -g (Node 20 corepack can't load pnpm 11 ESM).
 #   - scandelete path is relative to the repo root and version-pinned to the CLI.
 #   - No Name/Summary/Description here - those live in fastlane (mobile/android/app/fastlane).
-# The `commit:` below is release-specific; bump it (to the new Codeberg commit) each release.
+# The `commit:` below is release-specific; bump it (to the new public-repo commit) each release.
 
 Categories:
   - Health Manager
 License: AGPL-3.0-only
 AuthorName: OpenAvisio
 WebSite: https://openavisio.org
-SourceCode: https://codeberg.org/openavisio/openavisio
-IssueTracker: https://codeberg.org/openavisio/openavisio/issues
+# Point these at the public repository that hosts this fork's source.
+SourceCode: https://github.com/jprngd-netizen/openavisio
+IssueTracker: https://github.com/jprngd-netizen/openavisio/issues
 
 RepoType: git
-Repo: https://codeberg.org/openavisio/openavisio.git
+Repo: https://github.com/jprngd-netizen/openavisio.git
 
 Builds:
   - versionName: 0.1.0-beta

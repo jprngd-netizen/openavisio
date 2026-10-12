@@ -93,8 +93,8 @@ The **guardian** is the person responsible for safekeeping the private key and
 for producing it during a restore. The guardian must be:
 
 - **Named explicitly** in the organization's operational records (not in this
-  repo). For the OpenAvisio homelab deployment, the guardian is the
-  **orchestrator/owner** (Gabriel Salem).
+  repo). In the owner's own deployment, the guardian is the
+  **orchestrator/owner**.
 - Reachable within the restore SLA (see Restore below).
 - The **only** person who can authorise a restore. No restore runs without the
   guardian's explicit approval.
@@ -207,7 +207,7 @@ production, and write the date and the wall-clock time it took into this file:
 | Date | By | Duration | Outcome |
 |---|---|---|---|
 | 2026-07-14 | Claude, scratch host | ~4 min (copy 1s, restore 9s, backend build + decrypt 162s) | **Passed.** 1 patient, 21 documents, 20 conditions, 5 medications, 34 encrypted blobs. Three PDFs decrypted end to end (`%PDF-`, 2.3 MB / 936 KB / 640 KB) with their extracted text. |
-| 2026-10-08 | Senna (orchestrator), scratch `pgvector:pg17` on the SP host | ~2 min (age decrypt ~6s, restore ~20s, 3-document decrypt ~3s) | **Passed.** Restored `clinical-2026-10-08` + its same-date keystore into a throwaway Postgres: 3 patients, 12 documents, 243 observations, 3 conditions, 2 prescriptions, 3 patient KEKs, 2 users. Three blobs decrypted end to end with the master KEK (`\xff\xd8\xff\xe0` JPEG 160 KB, `%PDF-` 172 KB). Restored on the app host so the master KEK never left the SP box; the age key was brought in transiently and shredded afterwards. |
+| 2026-10-08 | orchestrator, scratch `pgvector:pg17` on the app host | ~2 min (age decrypt ~6s, restore ~20s, 3-document decrypt ~3s) | **Passed.** Restored `clinical-2026-10-08` + its same-date keystore into a throwaway Postgres: 3 patients, 12 documents, 243 observations, 3 conditions, 2 prescriptions, 3 patient KEKs, 2 users. Three blobs decrypted end to end with the master KEK (`\xff\xd8\xff\xe0` JPEG 160 KB, `%PDF-` 172 KB). Restored on the app host so the master KEK never left that host; the age key was brought in transiently and shredded afterwards. |
 
 **What the drill found before it even started:** the backup script was silently
 destroying good backups. A `pg_dump` that died (Postgres briefly down during a
@@ -223,7 +223,7 @@ a day, the logs said "ok", and only a restore would ever have found it.
 ## Off-server sync (#144)
 
 Backups on the app server's own disk die with the app server. And a copy on
-another container of the same Proxmox host shares its power supply, its disk
+another container of the same virtualization host shares its power supply, its disk
 shelf and its house fire — off-site is the goal.
 
 The invariant, whatever the target: **whoever compromises the app server must

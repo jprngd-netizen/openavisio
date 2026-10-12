@@ -7,6 +7,11 @@ reconnects automatically.
 
 App ID: `org.openavisio.app` (never change — store identity).
 
+> **Part of this fork.** This is the mobile shell of the OpenAvisio Brazilian
+> clinical fork, built on top of an AGPL-3.0 open-source upstream (see the root
+> [`README.md`](../README.md) and ADR 032). It wraps the fork's web frontend and
+> is not usable standalone.
+
 ## Workflow
 
 ```bash
@@ -52,7 +57,7 @@ Two things that will bite you, both learned the hard way:
   Hence the finite number of y's above.
 
 No local SDK, or no cable to the phone? CI builds it too, on every push to
-`mobile/**` and on demand — `.forgejo/workflows/mobile-apk.yml` — and publishes it:
+`mobile/**` and on demand — see the project's CI workflows — and publishes it:
 
     (build it with the steps above, or grab it from the project releases)
 

@@ -1,4 +1,15 @@
-# GDPR checklist for new features
+# GDPR checklist for new features (inherited)
+
+> **Scope note for this fork.** This checklist was inherited from the upstream
+> (German/EU) project and is written against the **GDPR / DSGVO** and its
+> article numbering. It is kept because the engineering obligations map almost
+> one-to-one onto Brazilian law — but the **primary legal framework of this fork
+> is the LGPD** (Lei 13.709/2018), supervised by the **ANPD**. Read every
+> "GDPR article" below in the light of the corresponding LGPD article (data
+> minimisation → LGPD art. 6; erasure → art. 18; security → art. 46; etc.),
+> and see [`docs/regulatory-positioning.md`](regulatory-positioning.md) and the
+> RoPA/DPIA for the LGPD/ANPD framing. The checklist steps and file paths are
+> still correct and should be run as-is.
 
 Run this checklist before merging any feature that stores, processes, displays, or transmits personal data. "Personal data" in OpenAvisio means anything linked to a Patient or User — clinical data, documents, health logs, messages, access records, audit entries.
 

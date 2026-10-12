@@ -32,9 +32,10 @@ Getting `org.openavisio.app` onto the official f-droid.org repository as a beta.
    yml builds an unsigned release APK from a clean tree (JDK 21 + SDK 36). The
    `subdir`/`prebuild` reflect the validated sequence; `fdroid build` may still
    want minor tweaks, but the build itself is proven.
-3. **Public issue tracker.** The `IssueTracker` points at Codeberg, but issues
-   live on the private Forgejo. Either enable issues on the public mirror or
-   point somewhere public. (Minor — F-Droid does not require it.)
+3. **Public issue tracker.** The `IssueTracker` must point at a public tracker
+   for the fork's repository. Point it at the public GitHub repo's issues (or
+   enable issues on whatever public mirror is used). (Minor — F-Droid does not
+   require it.)
 
 ## Before touching the recipe: lint it locally
 
@@ -51,11 +52,13 @@ This is how the review round-trips stop. Reviewer-enforced rules are in the
 recipe's header comments (full commit hash, subdir = app module, prebuild as a
 list, valid category, no Name/Summary/Description).
 
-## Status: submitted, build green, reviewer feedback addressed
+## Status: build proven, packaging not yet submitted
 
-MR **fdroid/fdroiddata!43322** is open with a **green pipeline** — F-Droid's own
-buildserver built and verified the app from source. Awaiting maintainer review;
-~24–48h after merge it publishes. Built from tag `v0.1.0-beta2`.
+The recipe has been verified against F-Droid's buildserver: it built and
+produced the app from source in a clean F-Droid environment. A merge request
+against `fdroid/fdroiddata` still has to be opened from this fork (once the
+public repository URL is in place); after merge the app publishes within
+~24–48h. Recipe validated from tag `v0.1.0-beta2`.
 
 The build works around several F-Droid-environment realities (all in the recipe,
 see the header comments in `org.openavisio.app.yml`):

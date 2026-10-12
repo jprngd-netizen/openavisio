@@ -63,13 +63,13 @@ ssh root@<vps-ip>
 
 ```bash
 cd /opt
-git clone https://codeberg.org/openavisio/openavisio.git
+git clone https://github.com/jprngd-netizen/openavisio.git
 cd openavisio
 ```
 
 **Resultado esperado:** diretório `/opt/openavisio/` com o código.
 
-**Se falhar:** verificar conectividade com Codeberg, permissões.
+**Se falhar:** verificar conectividade com o host do repositório, permissões.
 
 ### 1.3 — Fazer checkout do tag
 
